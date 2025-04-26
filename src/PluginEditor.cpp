@@ -10,12 +10,20 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 {
     audioProcessor.params.addParameterListener("sync", this);
 
-    setSize (540, 540);
+    setSize (640, 640);
     setScaleFactor(audioProcessor.scale);
     auto col = 10;
     auto row = 10;
 
+
     // TOP BAR
+    addAndMakeVisible(logoLabel);
+    logoLabel.setColour(juce::Label::ColourIds::textColourId, Colours::white);
+    logoLabel.setFont(FontOptions(26.0f));
+    logoLabel.setText("GATE-12", NotificationType::dontSendNotification);
+    logoLabel.setBounds(col, row-3, 100, 30);
+    col += 110;
+
 #if defined(DEBUG)
     addAndMakeVisible(presetExport);
     presetExport.setAlpha(0.f);
@@ -29,33 +37,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         DBG(xmlString.toStdString());
     };
 #endif
-
-    col += 160;
-    addAndMakeVisible(sizeLabel);
-    sizeLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
-    sizeLabel.setFont(FontOptions(16.0f));
-    sizeLabel.setText("UI", NotificationType::dontSendNotification);
-    sizeLabel.setBounds(col, row, 30, 25);
-
-    addAndMakeVisible(sizeMenu);
-    sizeMenu.addItem("100%", 1);
-    sizeMenu.addItem("125%", 2);
-    sizeMenu.addItem("150%", 3);
-    sizeMenu.addItem("175%", 4);
-    sizeMenu.addItem("200%", 5);
-    sizeMenu.setSelectedId(audioProcessor.scale == 1.0f ? 1
-        : audioProcessor.scale == 1.25f ? 2
-        : audioProcessor.scale == 1.5f ? 3
-        : audioProcessor.scale == 1.75f ? 4
-        : 5);
-    sizeMenu.onChange = [this]()
-        {
-            const int value = sizeMenu.getSelectedId();
-            auto scale = value == 1 ? 1.0f : value == 2 ? 1.25f : value == 3 ? 1.5f : value == 4 ? 1.75f : 2.0f;
-            audioProcessor.setScale(scale);
-            setScaleFactor(audioProcessor.scale);
-        };
-    sizeMenu.setBounds(col+25,row,80,25);
 
     addAndMakeVisible(syncMenu);
     syncMenu.setTooltip("Tempo sync");
@@ -77,15 +58,39 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     syncMenu.addItem("1/4.", 16);
     syncMenu.addItem("1/2.", 17);
     syncMenu.addItem("1/1.", 18);
-    syncMenu.setBounds(col+75, row, 60, 25);
+    syncMenu.setBounds(col, row, 80, 25);
     syncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "sync", syncMenu);
+    col += 90;
 
     // TODO pattern selector
+
+    for (int i = 0; i < 12; ++i) {
+        auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
+
+        btn->setRadioGroupId (1337);
+        btn->setClickingTogglesState (false);
+        btn->setColour (TextButton::textColourOffId,  Colour(globals::COLOR_BG));
+        btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
+        btn->setColour (TextButton::buttonColourId,   Colour(globals::COLOR_ACTIVE).darker(0.8f));
+        btn->setColour (TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
+        btn->setBounds (col + i * 22, row, 22, 25);
+        btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
+        btn->setComponentID(i == 0 ? "leftCorner" : i == 11 ? "rightCorner" : "middle");
+        btn->onClick = [i, this]() {
+            patterns[i].get()->setToggleState(true, dontSendNotification);
+        };
+        addAndMakeVisible(*btn);
+
+        patterns.push_back(std::move(btn));
+    }
+    col += 230;
+
     addAndMakeVisible(trigSyncLabel);
     trigSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
     trigSyncLabel.setFont(FontOptions(16.0f));
     trigSyncLabel.setText("Trig Sync", NotificationType::dontSendNotification);
-    trigSyncLabel.setBounds(col+100, row, 70, 25);
+    trigSyncLabel.setBounds(col, row, 70, 25);
+    col += 75;
 
     addAndMakeVisible(trigSyncMenu);
     trigSyncMenu.addItem("Off", 1);
@@ -94,57 +99,60 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     trigSyncMenu.addItem("1 Beat", 4);
     trigSyncMenu.addItem("2 Beats", 5);
     trigSyncMenu.addItem("4 Beats", 6);
-    trigSyncMenu.setBounds(col + 200, row, 60, 25);
+    trigSyncMenu.setBounds(col, row, 90, 25);
     trigSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigsync", trigSyncMenu);
 
     // KNOBS
-    row += 40;
+    row += 35;
     col = 10;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hzFloat1);
     addAndMakeVisible(*rate);
-    rate->setBounds(col,row,70,75);
-    col += 70;
+    rate->setBounds(col,row,80,75);
+    col += 75;
 
-    phase = std::make_unique<Rotary>(p, "phase", "Phase", LabelFormat::percent);
+    phase = std::make_unique<Rotary>(p, "phase", "Phase", LabelFormat::integerx100);
     addAndMakeVisible(*phase);
-    phase->setBounds(col,row,70,75);
-    col += 70;
+    phase->setBounds(col,row,80,75);
+    col += 75;
 
-    min = std::make_unique<Rotary>(p, "min", "Min", LabelFormat::percent);
+    min = std::make_unique<Rotary>(p, "min", "Min", LabelFormat::integerx100);
     addAndMakeVisible(*min);
-    min->setBounds(col,row,70,75);
-    col += 70;
+    min->setBounds(col,row,80,75);
+    col += 75;
 
-    max = std::make_unique<Rotary>(p, "max", "Max", LabelFormat::percent);
+    max = std::make_unique<Rotary>(p, "max", "Max", LabelFormat::integerx100);
     addAndMakeVisible(*max);
-    max->setBounds(col,row,70,75);
-    col += 70;
+    max->setBounds(col,row,80,75);
+    col += 75;
 
-    smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", LabelFormat::percent);
+    smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", LabelFormat::integerx100);
     addAndMakeVisible(*smooth);
-    smooth->setBounds(col,row,70,75);
-    col += 70;
+    smooth->setBounds(col,row,80,75);
+    col += 75;
 
-    attack = std::make_unique<Rotary>(p, "attack", "Attack", LabelFormat::percent);
+    attack = std::make_unique<Rotary>(p, "attack", "Attack", LabelFormat::integerx100);
     addAndMakeVisible(*attack);
-    attack->setBounds(col,row,70,75);
-    col += 70;
+    attack->setBounds(col,row,80,75);
+    col += 75;
 
-    release = std::make_unique<Rotary>(p, "release", "Release", LabelFormat::percent);
+    release = std::make_unique<Rotary>(p, "release", "Release", LabelFormat::integerx100);
     addAndMakeVisible(*release);
-    release->setBounds(col,row,70,75);
-    col += 70;
+    release->setBounds(col,row,80,75);
+    col += 75;
 
-    tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::percent);
+    tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::integerx100, true);
     addAndMakeVisible(*tension);
-    tension->setBounds(col,row,70,75);
-    col += 70;
+    tension->setBounds(col,row,80,75);
+    col += 75;
 
     // ABOUT
     about = std::make_unique<About>();
     addAndMakeVisible(*about);
     about->setBounds(getBounds());
     about->setVisible(false);
+
+    customLookAndFeel = new CustomLookAndFeel();
+    setLookAndFeel(customLookAndFeel);
 
     toggleUIComponents();
 }
@@ -167,9 +175,9 @@ void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameter
 
 void GATE12AudioProcessorEditor::toggleUIComponents()
 {
-    auto isRateSync = (int)audioProcessor.params.getRawParameterValue("sync")->load() == 0;
+    //auto isRateSync = (int)audioProcessor.params.getRawParameterValue("sync")->load() == 0;
 
-    rate.get()->setVisible(isRateSync);
+    //rate.get()->setVisible(isRateSync);
 }
 
 //==============================================================================

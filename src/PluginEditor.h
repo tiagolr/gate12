@@ -37,13 +37,13 @@ private:
     Label malletLabel;
     std::unique_ptr<About> about;
 
+    std::vector<std::unique_ptr<TextButton>> patterns;
+
 #if defined(DEBUG)
     juce::TextButton presetExport;
 #endif
 
-    Label logo;
-    Label sizeLabel;
-    ComboBox sizeMenu;
+    Label logoLabel;
     ComboBox syncMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> syncAttachment;
     Label trigSyncLabel;
@@ -67,7 +67,6 @@ private:
     // gridSelector
     // retrigger button
     // play button
-
 
     TooltipWindow tooltipWindow;
 

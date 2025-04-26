@@ -41,11 +41,8 @@ void Rotary::paint(juce::Graphics& g) {
     auto value = param->convertFrom0to1(normValue);
 
     draw_rotary_slider(g, normValue); 
-    auto label = param->getName(0);
-    g.setColour(juce::Colour(globals::COLOR_NEUTRAL));
-    g.setFont(15.0f);
-    g.drawText(label, 0, 10, getWidth(), 16, juce::Justification::centred, true);
     draw_label_value(g, value);
+    //g.drawRect(getLocalBounds());
 }
 
 void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
@@ -53,8 +50,13 @@ void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
     auto text = name;
     if (mouse_down) {
         if (format == LabelFormat::percent) text = std::to_string((int)std::round((slider_val * 100))) + " %";
+        if (format == LabelFormat::integerx100) text = std::to_string((int)std::round((slider_val * 100)));
         else if (format == LabelFormat::hz) text = std::to_string((int)slider_val) + " Hz";
-        else if (format == LabelFormat::hzFloat1) text = std::to_string((int)std::round(slider_val * 100) / 100) + " %";
+        else if (format == LabelFormat::hzFloat1) {
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(1) << slider_val << " Hz";
+            text = ss.str();
+        }
         else if (format == LabelFormat::float1) {
             std::stringstream ss;
             ss << std::fixed << std::setprecision(1) << slider_val;
@@ -72,10 +74,9 @@ void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
         }
     }
 
-    g.setColour(juce::Colour(globals::COLOR_NEUTRAL));
-    g.setFont(15.0f);
+    g.setColour(Colours::white);
+    g.setFont(16.0f);
     g.drawText(text, 0, getHeight() - 16, getWidth(), 16, juce::Justification::centred, true);
-    //g.drawRect(getLocalBounds());
 }
 
 void Rotary::mouseDown(const juce::MouseEvent& e) 
@@ -138,17 +139,22 @@ void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {
     const float radius = 16.0f;
     const float angle = -deg130 + slider_pos * (deg130 - -deg130);
 
-    g.setColour(juce::Colour(0xff00ff00));
-    g.fillEllipse(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius-4.0f, radius*2.0f, radius*2.0f);
+    g.setColour(juce::Colour(globals::COLOR_KNOB));
+    g.fillEllipse(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius - 4.0f, radius*2.0f, radius*2.0f);
 
-    g.setColour(Colour(0xffffffff));
+    g.setColour(Colour(globals::COLOR_KNOB));
+    juce::Path arcKnob;
+    arcKnob.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 4.0f, radius + 5.0f, radius + 5.0f, 0,-deg130, deg130, true);
+    g.strokePath(arcKnob, PathStrokeType(3.0, PathStrokeType::JointStyle::curved, PathStrokeType::rounded));
+
+    g.setColour(Colour(globals::COLOR_ACTIVE));
     if ((isSymmetric && slider_pos != 0.5f) || (!isSymmetric && slider_pos)) {
-        juce::Path arc;
-        arc.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 4.0f, radius + 2.0f, radius + 2.0f, 0, isSymmetric ? 0 : -deg130, angle, true);
-        g.strokePath(arc, PathStrokeType(2.0, PathStrokeType::JointStyle::curved, PathStrokeType::rounded));
+        juce::Path arcActive;
+        arcActive.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 4.0f, radius + 5.0f, radius + 5.0f, 0, isSymmetric ? 0 : -deg130, angle, true);
+        g.strokePath(arcActive, PathStrokeType(3.0, PathStrokeType::JointStyle::curved, PathStrokeType::rounded));
     }
 
-    g.setColour(Colour(globals::COLOR_NEUTRAL));
+    g.setColour(Colours::white);
     juce::Path p;
     p.addLineSegment (juce::Line<float>(0.0f, -5.0f, 0.0f, -radius + 5.0f), 0.1f);
     juce::PathStrokeType(3.0f, PathStrokeType::JointStyle::curved, PathStrokeType::rounded).createStrokedPath(p, p);

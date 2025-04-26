@@ -258,8 +258,8 @@ template <typename FloatType>
 void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals disableDenormals;
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-    auto totalNumInputChannels = getTotalNumInputChannels();
+    //auto totalNumOutputChannels = getTotalNumOutputChannels();
+    //auto totalNumInputChannels = getTotalNumInputChannels();
     auto numSamples = buffer.getNumSamples();
 
     // remove midi messages that have been processed
