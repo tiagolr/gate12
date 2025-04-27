@@ -12,6 +12,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
      )
     , settings{}
     , params(*this, &undoManager, "PARAMETERS", {
+        std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio" }, 0),
         std::make_unique<juce::AudioParameterInt>("pattern", "Pattern", 1, 12, 1),
         std::make_unique<juce::AudioParameterChoice>("sync", "Sync", StringArray { "Rate Hz", "1/16", "1/8", "1/4", "1/2", "1/1", "2/1", "4/1", "1/16t", "1/8t", "1/4t", "1/2t", "1/1t", "1/16.", "1/8.", "1/4.", "1/2.", "1/1." }, 5),
         std::make_unique<juce::AudioParameterFloat>("rate", "Rate", juce::NormalisableRange<float>(0.01f, 140.0f, 0.01f, 0.3f), 1.0f),

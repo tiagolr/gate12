@@ -61,7 +61,12 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
     TextButton loopButton;
     TextButton retriggerButton;
-    TextButton snap;
+    ComboBox triggerMenu;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> triggerAttachment;
+    TextButton audioSettingsButton;
+    Label gridLabel;
+    TextButton snapButton;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;
 
     TooltipWindow tooltipWindow;
 

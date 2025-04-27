@@ -9,8 +9,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     , audioProcessor (p)
 {
     audioProcessor.params.addParameterListener("sync", this);
+    audioProcessor.params.addParameterListener("trigger", this);
 
-    setSize (640, 640);
+    setSize (660, 640);
     setScaleFactor(audioProcessor.scale);
     auto col = 10;
     auto row = 10;
@@ -62,8 +63,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     syncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "sync", syncMenu);
     col += 100;
 
-    // TODO pattern selector
-
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
 
@@ -76,7 +75,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         btn->setColour (TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
         btn->setBounds (col + i * 22, row, 22, 25);
         btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
-        btn->setComponentID(i == 0 ? "leftCorner" : i == 11 ? "rightCorner" : "middle");
+        btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
         btn->onClick = [i, this]() {
             patterns[i].get()->setToggleState(true, dontSendNotification);
         };
@@ -84,6 +83,22 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
         patterns.push_back(std::move(btn));
     }
+    col += 274;
+
+    addAndMakeVisible(triggerMenu);
+    triggerMenu.setTooltip("Envelope trigger:\nSync - song playback\nMIDI - midi notes\nAudio - audio input");
+    triggerMenu.addItem("Sync", 1);
+    triggerMenu.addItem("MIDI", 2);
+    triggerMenu.addItem("Audio", 3);
+    triggerMenu.setBounds(col, row, 80, 25);
+    triggerAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigger", triggerMenu);
+    col += 90;
+
+    addAndMakeVisible(audioSettingsButton);
+    audioSettingsButton.setTooltip("Toggle audio knobs");
+    audioSettingsButton.setComponentID("button");
+    audioSettingsButton.setColour(TextButton::buttonColourId, Colour(globals::COLOR_AUDIO));
+    audioSettingsButton.setBounds(col, row, 25, 25);
 
     // KNOBS
     row += 35;
@@ -130,6 +145,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     col = 10;
     row += 95;
+
+    // THIRD ROW
 
     juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
     juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
@@ -199,11 +216,21 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(retriggerButton);
     retriggerButton.setTooltip("Restart envelope");
     retriggerButton.setButtonText("R");
-    retriggerButton.setColour(TextButton::buttonColourId, Colours::transparentWhite);
-    retriggerButton.setColour(TextButton::textColourOnId, Colour(globals::COLOR_ACTIVE));
-    retriggerButton.setColour(TextButton::textColourOffId, Colour(globals::COLOR_ACTIVE));
+    retriggerButton.setComponentID("button");
+    retriggerButton.setColour(TextButton::buttonColourId, Colour(globals::COLOR_ACTIVE));
     retriggerButton.setVisible(audioProcessor.alwaysPlaying);
     retriggerButton.setBounds(col, row, 25, 25);
+
+    // THIRD ROW RIGHT
+    col = getWidth() - 10 - 60;
+
+    addAndMakeVisible(snapButton);
+    snapButton.setTooltip("Snap to grid on/off");
+    snapButton.setButtonText("Snap");
+    snapButton.setComponentID("button");
+    snapButton.setBounds(col, row, 60, 25);
+    snapButton.setClickingTogglesState(true);
+    snapAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.params, "snap", snapButton);
 
     // FOOTER
     row = getHeight() - 35;
@@ -211,7 +238,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(trigSyncLabel);
     trigSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
     trigSyncLabel.setFont(FontOptions(16.0f));
-    trigSyncLabel.setText("Trig Sync", NotificationType::dontSendNotification);
+    trigSyncLabel.setText("Pat. Sync", NotificationType::dontSendNotification);
     trigSyncLabel.setBounds(col, row, 70, 25);
     col += 75;
 
@@ -243,6 +270,7 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
     setLookAndFeel(nullptr);
     delete customLookAndFeel;
     audioProcessor.params.removeParameterListener("sync", this);
+    audioProcessor.params.removeParameterListener("trigger", this);
 }
 
 void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
@@ -259,6 +287,13 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     //auto isRateSync = (int)audioProcessor.params.getRawParameterValue("sync")->load() == 0;
 
     //rate.get()->setVisible(isRateSync);
+
+    auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
+    auto triggerColor = trigger == 0 ? globals::COLOR_ACTIVE : trigger == 1 ? globals::COLOR_MIDI : globals::COLOR_AUDIO;
+    triggerMenu.setColour(ComboBox::arrowColourId, Colour(triggerColor));
+    triggerMenu.setColour(ComboBox::textColourId, Colour(triggerColor));
+    triggerMenu.setColour(ComboBox::outlineColourId, Colour(triggerColor));
+    audioSettingsButton.setVisible(trigger == 2);
 }
 
 //==============================================================================
