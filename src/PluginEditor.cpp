@@ -16,8 +16,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     auto col = 10;
     auto row = 10;
 
-
     // TOP BAR
+
     addAndMakeVisible(logoLabel);
     logoLabel.setColour(juce::Label::ColourIds::textColourId, Colours::white);
     logoLabel.setFont(FontOptions(26.0f));
@@ -94,13 +94,24 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     triggerAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigger", triggerMenu);
     col += 90;
 
-    addAndMakeVisible(audioSettingsButton);
-    audioSettingsButton.setTooltip("Toggle audio knobs");
-    audioSettingsButton.setComponentID("button");
-    audioSettingsButton.setColour(TextButton::buttonColourId, Colour(globals::COLOR_AUDIO));
-    audioSettingsButton.setBounds(col, row, 25, 25);
+    juce::MemoryInputStream audioInputStream(BinaryData::gear_png, BinaryData::gear_pngSize, false);
+    juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
+    if (audioImage.isValid()) {
+        audioSettingsLogo.setImages(false, true, true,
+            audioImage, 1.0f, juce::Colours::transparentBlack,
+            audioImage, 1.0f, juce::Colours::transparentBlack,
+            audioImage, 1.0f, juce::Colours::transparentBlack
+        );
+    }
+    addAndMakeVisible(audioSettingsLogo);
+    audioSettingsLogo.setBounds(col+4, row+4, 25-8, 25-8);
+    audioSettingsLogo.onClick = [this]() {
+        showAudioKnobs = !showAudioKnobs;
+        toggleUIComponents();
+    };
 
     // KNOBS
+
     row += 35;
     col = 10;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hzFloat1);
@@ -147,7 +158,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     row += 95;
 
     // THIRD ROW
-
     juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
     juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
     if (paintImage.isValid()) {
@@ -232,6 +242,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     snapButton.setClickingTogglesState(true);
     snapAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.params, "snap", snapButton);
 
+    col -= 60;
+    gridSelector = std::make_unique<GridSelector>(p);
+    gridSelector.get()->setTooltip("Grid size can also be set using mouse wheel on view");
+    addAndMakeVisible(*gridSelector);
+    gridSelector->setBounds(col,row,50,25);
+
     // FOOTER
     row = getHeight() - 35;
     col = 10;
@@ -284,16 +300,34 @@ void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameter
 
 void GATE12AudioProcessorEditor::toggleUIComponents()
 {
-    //auto isRateSync = (int)audioProcessor.params.getRawParameterValue("sync")->load() == 0;
-
-    //rate.get()->setVisible(isRateSync);
-
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
     auto triggerColor = trigger == 0 ? globals::COLOR_ACTIVE : trigger == 1 ? globals::COLOR_MIDI : globals::COLOR_AUDIO;
     triggerMenu.setColour(ComboBox::arrowColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::textColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::outlineColourId, Colour(triggerColor));
-    audioSettingsButton.setVisible(trigger == 2);
+    audioSettingsLogo.setVisible(trigger == 2);
+    if (!audioSettingsLogo.isVisible()) {
+        showAudioKnobs = false;
+    }
+    else {
+        juce::MemoryInputStream audioInputStream(
+            showAudioKnobs ? BinaryData::geardark_png : BinaryData::gear_png, 
+            showAudioKnobs ? BinaryData::geardark_pngSize : BinaryData::gear_pngSize, 
+            false
+        );
+        juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
+        if (audioImage.isValid()) {
+            audioSettingsLogo.setImages(false, true, true,
+                audioImage, 1.0f, juce::Colours::transparentBlack,
+                audioImage, 1.0f, juce::Colours::transparentBlack,
+                audioImage, 1.0f, juce::Colours::transparentBlack
+            );
+        }
+    }
+
+    // layout knobs
+
+    repaint();
 }
 
 //==============================================================================
@@ -317,6 +351,10 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
         triangle.closeSubPath();
         g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
 
+    }
+    if (audioSettingsLogo.isVisible() && showAudioKnobs) {
+        g.setColour(Colour(globals::COLOR_AUDIO));
+        g.fillRoundedRectangle(audioSettingsLogo.getBounds().expanded(4,4).toFloat(), 3.0f);
     }
 }
 

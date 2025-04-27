@@ -55,6 +55,8 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         patterns[i]->buildSegments();
     }
     pattern = patterns[0];
+    preSamples.resize(1000, 0); // samples array size must be >= viewport width 
+    postSamples.resize(1000, 0); // samples array size must be >= viewport width
 
     loadSettings();
 }
@@ -236,6 +238,7 @@ void GATE12AudioProcessor::onSlider()
     // auto grid = (int)params.getRawParameterValue("grid")->load();
     // auto retrigger = (bool)params.getRawParameterValue("retrigger")->load();
     // auto patsync = (int)params.getRawParameterValue("patsync")->load();
+    gridSegs = (int)params.getRawParameterValue("grid")->load();
 
     //tension = (double)params.getRawParameterValue("tension")->load();
 }

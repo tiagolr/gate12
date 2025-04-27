@@ -8,9 +8,13 @@
 */
 
 #pragma once
+#include <JuceHeader.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "../dsp/Pattern.h"
 
-/*
-class View : public IControl
+class GATE12AudioProcessor;
+
+class View : public juce::Component, private juce::AudioProcessorValueTreeState::Listener
 {
 public:
   int winx = 0;
@@ -25,40 +29,38 @@ public:
   int rmousePoint = -1;
   const int HOVER_RADIUS = 8;
 
-  View(const IRECT&, GATE1&);
-  void Draw(IGraphics& g) override;
-  void OnResize() override;
-  bool IsDirty() override {
-    return true;
-  }
-  void drawWave(IGraphics& g, std::vector<sample> samples, IColor color);
-  void drawGrid(IGraphics& g);
-  void drawSegments(IGraphics& g);
-  void drawMidPoints(IGraphics& g);
-  void drawPoints(IGraphics& g);
-  void drawSeek(IGraphics& g);
+  View(GATE12AudioProcessor&);
+  ~View() override;
+  void init();
+  void paint(Graphics& g) override;
+  void drawWave(Graphics& g, std::vector<double> samples, Colour color);
+  void drawGrid(Graphics& g);
+  void drawSegments(Graphics& g);
+  void drawMidPoints(Graphics& g);
+  void drawPoints(Graphics& g);
+  void drawSeek(Graphics& g);
   std::vector<double> View::getMidpointXY(Segment seg);
   int getHoveredPoint(int x, int y);
   int getHoveredMidpoint(int x, int y);
 
-  void OnMouseDrag(float x, float y, float dX, float dY, const IMouseMod& mod) override;
-  void OnMouseOver(float x, float y, const IMouseMod& mod) override;
-  void OnMouseDown(float x, float y, const IMouseMod& mod) override;
-  void OnMouseUp(float x, float y, const IMouseMod& mod) override;
-  void OnMouseDblClick(float x, float y, const IMouseMod& mod) override;
-  void OnMouseWheel(float x, float y, const IMouseMod& mod, float d);
+  void mouseDown(const juce::MouseEvent& e) override;
+  void mouseUp(const juce::MouseEvent& e) override;
+  void mouseDrag(const juce::MouseEvent& e) override;
+  void mouseDoubleClick(const juce::MouseEvent& e) override;
+  void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
-  void paint(int x, int y, const IMouseMod& mod);
+  void parameterChanged (const juce::String& parameterID, float newValue) override;
   void showRightMouseMenu(int x, int y);
-  void OnPopupMenuSelection(IPopupMenu* pSelectedMenu, int valIdx) override;
+
+  void applyPaintTool(int x, int y, const MouseEvent& e);
 
 private:
-  GATE1& gate;
+  GATE12AudioProcessor& audioProcessor;
   double origTension = 0;
   int dragStartY = 0;
+  Point<int> start_mouse_pos;
 
-  bool isSnapping(const IMouseMod& mod);
+  bool isSnapping(const MouseEvent& e);
   bool isCollinear(Segment seg);
   bool pointInRect(int x, int y, int xx, int yy, int w, int h);
 };
-*/

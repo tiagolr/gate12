@@ -31,7 +31,6 @@ public:
 
 protected:
     juce::String paramId;
-    juce::String velId;
     juce::String name;
     LabelFormat format;
     GATE12AudioProcessor& audioProcessor;

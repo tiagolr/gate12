@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "ui/Rotary.h"
+#include "ui/GridSelector.h"
 #include "ui/CustomLookAndFeel.h"
 #include "ui/About.h"
 
@@ -34,6 +35,7 @@ private:
     std::unique_ptr<About> about;
 
     std::vector<std::unique_ptr<TextButton>> patterns;
+    bool showAudioKnobs = false;
 
 #if defined(DEBUG)
     juce::TextButton presetExport;
@@ -63,9 +65,10 @@ private:
     TextButton retriggerButton;
     ComboBox triggerMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> triggerAttachment;
-    TextButton audioSettingsButton;
+    ImageButton audioSettingsLogo;
     Label gridLabel;
     TextButton snapButton;
+    std::unique_ptr<GridSelector> gridSelector;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;
 
     TooltipWindow tooltipWindow;

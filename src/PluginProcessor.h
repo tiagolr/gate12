@@ -26,10 +26,20 @@ struct MIDIMsg {
 class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener
 {
 public:
+    Pattern* pattern; // current pattern
     float scale = 1.0f; // UI scale
     int currentProgram = -1;
     bool alwaysPlaying = false;
+    bool isPlaying = false;
+    bool drawWave = false; // option
+    bool linkEdgePoints = false; // option
+    int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
+    int gridSegs = 1; // grid size, same as grid param but for fast access
+    std::vector<double> preSamples; // used by view to draw pre audio
+    std::vector<double> postSamples; // used by view to draw post audio
     bool dualSmooth = false; // use either single smooth or attack and release
+    double xpos = 0.0; // envelope x pos (0..1)
+    double ypos = 0.0; // envelope y pos (0..1)
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -83,7 +93,6 @@ public:
     juce::UndoManager undoManager;
 
 private:
-    Pattern* pattern;
     Pattern* patterns[12];
     bool paramChanged = false; // flag that triggers on any param change
     juce::ApplicationProperties settings;

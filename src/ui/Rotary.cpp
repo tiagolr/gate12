@@ -13,17 +13,11 @@ Rotary::Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name,
 {
     setName(name);
     audioProcessor.params.addParameterListener(paramId, this);
-    if (velId.isNotEmpty()) {
-        audioProcessor.params.addParameterListener(velId, this);
-    }
 }
 
 Rotary::~Rotary()
 {
     audioProcessor.params.removeParameterListener(paramId, this);
-    if (velId.isNotEmpty()) {
-        audioProcessor.params.removeParameterListener(velId, this);
-    }
 }
 
 void Rotary::parameterChanged(const juce::String& parameterID, float newValue) 
@@ -47,7 +41,7 @@ void Rotary::paint(juce::Graphics& g) {
 
 void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
 {
-    auto text = name;
+    auto text = String(name);
     if (mouse_down) {
         if (format == LabelFormat::percent) text = std::to_string((int)std::round((slider_val * 100))) + " %";
         if (format == LabelFormat::integerx100) text = std::to_string((int)std::round((slider_val * 100)));
