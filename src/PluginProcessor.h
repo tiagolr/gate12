@@ -28,6 +28,7 @@ class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioPro
 public:
     float scale = 1.0f; // UI scale
     int currentProgram = -1;
+    bool alwaysPlaying = false;
     bool dualSmooth = false; // use either single smooth or attack and release
 
     //==============================================================================

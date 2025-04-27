@@ -31,10 +31,6 @@ public:
 private:
     GATE12AudioProcessor& audioProcessor;
     CustomLookAndFeel* customLookAndFeel = nullptr;
-
-    Label noiseLabel;
-    Label envelopeLabel;
-    Label malletLabel;
     std::unique_ptr<About> about;
 
     std::vector<std::unique_ptr<TextButton>> patterns;
@@ -57,16 +53,15 @@ private:
     std::unique_ptr<Rotary> attack;
     std::unique_ptr<Rotary> release;
     std::unique_ptr<Rotary> tension;
-    Label paintModeLabel;
-    ComboBox paintMode;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> paintModeAttachment;
-    Label pointModeLabel;
-    ComboBox pointMode;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointModeAttachment;
+    ImageButton paintLogo;
+    ComboBox paintMenu;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> paintAttachment;
+    ImageButton pointLogo;
+    ComboBox pointMenu;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
+    TextButton loopButton;
+    TextButton retriggerButton;
     TextButton snap;
-    // gridSelector
-    // retrigger button
-    // play button
 
     TooltipWindow tooltipWindow;
 

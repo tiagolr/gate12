@@ -58,9 +58,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     syncMenu.addItem("1/4.", 16);
     syncMenu.addItem("1/2.", 17);
     syncMenu.addItem("1/1.", 18);
-    syncMenu.setBounds(col, row, 80, 25);
+    syncMenu.setBounds(col, row, 90, 25);
     syncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "sync", syncMenu);
-    col += 90;
+    col += 100;
 
     // TODO pattern selector
 
@@ -68,6 +68,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
 
         btn->setRadioGroupId (1337);
+        btn->setTooltip("Pattern selector");
         btn->setClickingTogglesState (false);
         btn->setColour (TextButton::textColourOffId,  Colour(globals::COLOR_BG));
         btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
@@ -83,24 +84,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
         patterns.push_back(std::move(btn));
     }
-    col += 230;
-
-    addAndMakeVisible(trigSyncLabel);
-    trigSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
-    trigSyncLabel.setFont(FontOptions(16.0f));
-    trigSyncLabel.setText("Trig Sync", NotificationType::dontSendNotification);
-    trigSyncLabel.setBounds(col, row, 70, 25);
-    col += 75;
-
-    addAndMakeVisible(trigSyncMenu);
-    trigSyncMenu.addItem("Off", 1);
-    trigSyncMenu.addItem("1/4 Beat", 2);
-    trigSyncMenu.addItem("1/2 Beat", 3);
-    trigSyncMenu.addItem("1 Beat", 4);
-    trigSyncMenu.addItem("2 Beats", 5);
-    trigSyncMenu.addItem("4 Beats", 6);
-    trigSyncMenu.setBounds(col, row, 90, 25);
-    trigSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigsync", trigSyncMenu);
 
     // KNOBS
     row += 35;
@@ -145,6 +128,104 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tension->setBounds(col,row,80,75);
     col += 75;
 
+    col = 10;
+    row += 95;
+
+    juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
+    juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
+    if (paintImage.isValid()) {
+        paintLogo.setImages(false, true, true,
+            paintImage, 1.0f, juce::Colours::transparentBlack,
+            paintImage, 1.0f, juce::Colours::transparentBlack,
+            paintImage, 1.0f, juce::Colours::transparentBlack
+        );
+    }
+    addAndMakeVisible(paintLogo);
+    paintLogo.setBounds(col, row, 25, 25);
+    col += 25+10;
+
+    addAndMakeVisible(paintMenu);
+    paintMenu.setTooltip("Paint mode\nRight click on view to paint\nAlt + right click to erase points");
+    paintMenu.addItem("Erase", 1);
+    paintMenu.addItem("Line", 2);
+    paintMenu.addItem("Saw Up", 3);
+    paintMenu.addItem("Saw Down", 4);
+    paintMenu.addItem("Triangle", 5);
+    paintMenu.setBounds(col, row, 90, 25);
+    paintAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "paint", paintMenu);
+    col += 100;
+
+    juce::MemoryInputStream pointInputStream(BinaryData::point_png, BinaryData::point_pngSize, false);
+    juce::Image pointImage = juce::ImageFileFormat::loadFrom(pointInputStream);
+    if (pointImage.isValid()) {
+        pointLogo.setImages(false, true, true,
+            pointImage, 1.0f, juce::Colours::transparentBlack,
+            pointImage, 1.0f, juce::Colours::transparentBlack,
+            pointImage, 1.0f, juce::Colours::transparentBlack
+        );
+    }
+    addAndMakeVisible(pointLogo);
+    pointLogo.setBounds(col, row, 25, 25);
+    col += 25+10;
+
+    addAndMakeVisible(pointMenu);
+    pointMenu.setTooltip("Point mode\nRight click points to change mode");
+    pointMenu.addItem("Hold", 1);
+    pointMenu.addItem("Curve", 2);
+    pointMenu.addItem("S-Curve", 3);
+    pointMenu.addItem("Pulse", 4);
+    pointMenu.addItem("Wave", 5);
+    pointMenu.addItem("Triangle", 6);
+    pointMenu.addItem("Stairs", 7);
+    pointMenu.addItem("Smooth St", 8);
+    pointMenu.setBounds(col, row, 90, 25);
+    pointAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "point", pointMenu);
+    col += 100;
+
+    addAndMakeVisible(loopButton);
+    loopButton.setTooltip("Toggle always playing");
+    loopButton.setColour(TextButton::buttonColourId, Colours::transparentWhite);
+    loopButton.setColour(ComboBox::outlineColourId, Colours::transparentWhite);
+    loopButton.setBounds(col, row, 25, 25);
+    loopButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            audioProcessor.alwaysPlaying = !audioProcessor.alwaysPlaying;
+            retriggerButton.setVisible(audioProcessor.alwaysPlaying);
+            repaint();
+        });
+    };
+    col += 35;
+
+    addAndMakeVisible(retriggerButton);
+    retriggerButton.setTooltip("Restart envelope");
+    retriggerButton.setButtonText("R");
+    retriggerButton.setColour(TextButton::buttonColourId, Colours::transparentWhite);
+    retriggerButton.setColour(TextButton::textColourOnId, Colour(globals::COLOR_ACTIVE));
+    retriggerButton.setColour(TextButton::textColourOffId, Colour(globals::COLOR_ACTIVE));
+    retriggerButton.setVisible(audioProcessor.alwaysPlaying);
+    retriggerButton.setBounds(col, row, 25, 25);
+
+    // FOOTER
+    row = getHeight() - 35;
+    col = 10;
+    addAndMakeVisible(trigSyncLabel);
+    trigSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
+    trigSyncLabel.setFont(FontOptions(16.0f));
+    trigSyncLabel.setText("Trig Sync", NotificationType::dontSendNotification);
+    trigSyncLabel.setBounds(col, row, 70, 25);
+    col += 75;
+
+    addAndMakeVisible(trigSyncMenu);
+    trigSyncMenu.setTooltip("Synchronize pattern changes to song position during playback");
+    trigSyncMenu.addItem("Off", 1);
+    trigSyncMenu.addItem("1/4 Beat", 2);
+    trigSyncMenu.addItem("1/2 Beat", 3);
+    trigSyncMenu.addItem("1 Beat", 4);
+    trigSyncMenu.addItem("2 Beats", 5);
+    trigSyncMenu.addItem("4 Beats", 6);
+    trigSyncMenu.setBounds(col, row, 90, 25);
+    trigSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigsync", trigSyncMenu);
+
     // ABOUT
     about = std::make_unique<About>();
     addAndMakeVisible(*about);
@@ -185,6 +266,23 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(globals::COLOR_BG));
+
+    // draw loop play button
+    g.setColour(Colour(globals::COLOR_ACTIVE));
+    if (audioProcessor.alwaysPlaying) {
+        auto loopBounds = loopButton.getBounds().expanded(-5);
+        g.fillRect(loopBounds);
+    }
+    else {
+        juce::Path triangle;
+        auto loopBounds = loopButton.getBounds().expanded(-5);
+        triangle.startNewSubPath(0.0f, 0.0f);    
+        triangle.lineTo(0.0f, (float)loopBounds.getHeight());            
+        triangle.lineTo((float)loopBounds.getWidth(), loopBounds.getHeight() / 2.f);
+        triangle.closeSubPath();
+        g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
+
+    }
 }
 
 void GATE12AudioProcessorEditor::resized()

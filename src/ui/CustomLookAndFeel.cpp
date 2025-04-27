@@ -6,8 +6,8 @@ CustomLookAndFeel::CustomLookAndFeel()
   setColour(ComboBox::textColourId, Colour(globals::COLOR_ACTIVE));
   setColour(ComboBox::arrowColourId, Colour(globals::COLOR_ACTIVE));
   setColour(ComboBox::outlineColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(TooltipWindow::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.4f));
-  setColour(PopupMenu::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.4f).withAlpha(0.99f));
+  setColour(TooltipWindow::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.5f));
+  setColour(PopupMenu::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.5f).withAlpha(0.99f));
   setColour(PopupMenu::highlightedBackgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.8f));
 
   typeface = juce::Typeface::createSystemTypefaceFor(BinaryData::UbuntuMedium_ttf, BinaryData::UbuntuMedium_ttfSize);
