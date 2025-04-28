@@ -31,7 +31,7 @@ The reason for this port is mainly to support Linux and macOS, the previous vers
 
 ## Whats new
 
-  * **cross-platform** available on Windows, macOS and Linux
+  * **Cross-platform** available on Windows, macOS and Linux
   * **Presets** included
   * **Built with JUCE**
   * **Audio trigger** use incomming audio to trigger the envelope
@@ -46,20 +46,8 @@ The reason for this port is mainly to support Linux and macOS, the previous vers
   * Tempo sync or lfo rate (Hz)
   * Attack and release smooth
   * Pre and post waveform display
-  * Global tension control
   * MIDI trigger mode
   * Transient trigger mode
-
-## Tips
-
-  * Click the logo to show help screen with tips
-  * Ctrl for fine adjustments
-  * Double click to reset sliders
-  * Shift to toggle snap on/off
-  * Mouse wheel on view to change grid size
-  * Right click points to change point type
-  * Ctrl + right click view to erase points
-  * Right click view to paint using paint tool
 
 ## Download
 
@@ -67,9 +55,17 @@ The reason for this port is mainly to support Linux and macOS, the previous vers
 * Current builds include VST3 and LV2 for Windows, Linux and macOS plus AU for macOS.
 * Clap is planned when there is official [JUCE support](https://juce.com/blog/juce-roadmap-update-q3-2024/).
 
-## About
+## Tips
 
-
+  * Click the `?` button to show help screen with tips
+  * Ctrl for fine adjustments
+  * Double click to reset sliders
+  * Shift to toggle snap on/off
+  * Mouse wheel on view to change grid size
+  * Right click points to change point type
+  * Ctrl + right click view to erase points
+  * Right click view to paint using paint tool
+  * Alt + Right click to erase points
 
 ## MacOS
 

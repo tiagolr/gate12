@@ -14,6 +14,7 @@
 #include "ui/GridSelector.h"
 #include "ui/CustomLookAndFeel.h"
 #include "ui/About.h"
+#include "ui/View.h"
 
 using namespace globals;
 
@@ -44,9 +45,9 @@ private:
     Label logoLabel;
     ComboBox syncMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> syncAttachment;
-    Label trigSyncLabel;
-    ComboBox trigSyncMenu;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> trigSyncAttachment;
+    Label patSyncLabel;
+    ComboBox patSyncMenu;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patSyncAttachment;
     std::unique_ptr<Rotary> rate;
     std::unique_ptr<Rotary> phase;
     std::unique_ptr<Rotary> min;
@@ -63,6 +64,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
     TextButton loopButton;
     TextButton retriggerButton;
+    Label triggerLabel;
     ComboBox triggerMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> triggerAttachment;
     ImageButton audioSettingsLogo;
@@ -70,6 +72,7 @@ private:
     TextButton snapButton;
     std::unique_ptr<GridSelector> gridSelector;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;
+    std::unique_ptr<View> view;
 
     TooltipWindow tooltipWindow;
 

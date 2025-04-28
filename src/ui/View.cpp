@@ -13,10 +13,17 @@
 
 View::View(GATE12AudioProcessor& p) : audioProcessor(p)
 {
+    startTimerHz(60);
 };
 
 View::~View()
 {
+};
+
+void View::parameterChanged (const juce::String& parameterID, float newValue) 
+{
+    (void)parameterID;
+    (void)newValue;
 };
 
 void View::init() 
@@ -43,7 +50,7 @@ void View::paint(Graphics& g) {
     }
 }
 
-void View::drawWave(Graphics& g, std::vector<double> samples, Colour color)
+void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) const
 {
     double lastX = winx;
     double lastY = winh - std::min(std::abs(samples[0]),1.) * winh + winy;
@@ -69,10 +76,10 @@ void View::drawGrid(Graphics& g)
     int c = -1; // flag used to toggle color only when it changes
 
     for (int i = 0; i < grid + 1; ++i) {
-        auto color = grid % 4 == 0 && i && i % 4 == 0 && i < grid ? 1 : 0;
+        auto color = grid % 4 == 0 && i && i % 4 == 0 && i < grid ? 0 : 1;
         if (color != c) {
             g.setColour(color ? colorNormal : colorBold);
-            color = c;
+            c = color;
         }
         g.drawLine((float)winx, (float)(winy + gridy * i), (float)winx + winw, (float)(winy + gridy * i));
         g.drawLine((float)(winx + gridx * i), (float)winy, (float)(winx + gridx * i), (float)winy + winh);
@@ -111,7 +118,7 @@ void View::drawPoints(Graphics& g)
         auto xx = pt->x * winw + winx;
         auto yy = pt->y * winh + winy;
         g.setColour(Colours::white);
-        g.fillEllipse((float)xx, (float)yy, 4.0f, 4.0f);
+        g.fillEllipse((float)(xx - 4.0), (float)(yy - 4.0), 8.0f, 8.0f);
     }
 
     if (selectedPoint == -1 && selectedMidpoint == -1 && hoverPoint > -1)
@@ -119,7 +126,7 @@ void View::drawPoints(Graphics& g)
         auto xx = points[hoverPoint].x * winw + winx;
         auto yy = points[hoverPoint].y * winh + winy;
         g.setColour(Colours::white.withAlpha(0.5f));
-        g.fillEllipse((float)xx, (float)yy, (float)globals::HOVER_RADIUS, (float)globals::HOVER_RADIUS);
+        g.fillEllipse((float)(xx - HOVER_RADIUS), (float)(yy - HOVER_RADIUS), (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
     if (selectedPoint != -1)
@@ -127,7 +134,7 @@ void View::drawPoints(Graphics& g)
         auto xx = points[selectedPoint].x * winw + winx;
         auto yy = points[selectedPoint].y * winh + winy;
         g.setColour(Colours::red.withAlpha(0.5f));
-        g.fillEllipse((float)xx, (float)yy, 4.0f, 4.0f);
+        g.fillEllipse((float)(xx - 4.0), (float)(yy-4.0), 8.0f, 8.0f);
     }
 }
 
@@ -146,28 +153,28 @@ std::vector<double> View::getMidpointXY(Segment seg)
 
 void View::drawMidPoints(Graphics& g)
 {
-    auto segs = audioProcessor.pattern->segments;
+    auto& segs = audioProcessor.pattern->segments;
 
     g.setColour(Colour(globals::COLOR_ACTIVE));
     for (auto seg = segs.begin(); seg != segs.end(); ++seg) {
         if (!isCollinear(*seg)) {
             auto xy = getMidpointXY(*seg);
-            g.drawEllipse((float)xy[0], (float)xy[1], 3.f, 3.f, 2.f);
+            g.drawEllipse((float)xy[0] - 3.0f, (float)xy[1] - 3.0f, 6.f, 6.f, 2.f);
         }
     }
 
     g.setColour(Colour(globals::COLOR_ACTIVE).withAlpha(0.5f));
     if (selectedPoint == -1 && selectedMidpoint == -1 && hoverMidpoint != -1) {
-        auto seg = segs[hoverMidpoint];
+        auto& seg = segs[hoverMidpoint];
         auto xy = getMidpointXY(seg);
-        g.fillEllipse((float)xy[0], (float)xy[1], (float)globals::HOVER_RADIUS, (float)globals::HOVER_RADIUS);
+        g.fillEllipse((float)xy[0] - HOVER_RADIUS, (float)xy[1] - HOVER_RADIUS, (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
     g.setColour(Colour(globals::COLOR_ACTIVE));
     if (selectedMidpoint != -1) {
-        auto seg = segs[selectedMidpoint];
+        auto& seg = segs[selectedMidpoint];
         auto xy = getMidpointXY(seg);
-        g.fillEllipse((float)xy[0], (float)xy[1], 3.0f, 3.0f);
+        g.fillEllipse((float)xy[0] - 3.0f, (float)xy[1] - 3.0f, 6.0f, 6.0f);
     }
 }
 
@@ -178,7 +185,7 @@ void View::drawSeek(Graphics& g)
     g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
     g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));
     g.setColour(Colour(globals::COLOR_SEEK));
-    g.drawEllipse((float)(xpos * winw + winx), (float)((1 - ypos) * winh + winy), 5.0f, 5.0f, 1.0f);
+    g.drawEllipse((float)(xpos * winw + winx - 5), (float)((1 - ypos) * winh + winy - 5), 10.0f, 10.0f, 1.0f);
 }
 
 int View::getHoveredPoint(int x, int y)
@@ -187,7 +194,7 @@ int View::getHoveredPoint(int x, int y)
     for (auto i = 0; i < points.size(); ++i) {
         auto xx = (int)(points[i].x * winw + winx);
         auto yy = (int)(points[i].y * winh + winy);
-        if (pointInRect(x, y, xx - globals::HOVER_RADIUS, yy - globals::HOVER_RADIUS, globals::HOVER_RADIUS * 2, globals::HOVER_RADIUS * 2)) {
+        if (pointInRect(x, y, xx - HOVER_RADIUS, yy - HOVER_RADIUS, HOVER_RADIUS * 2, HOVER_RADIUS * 2)) {
             return i;
         }
     }
@@ -217,13 +224,15 @@ void View::mouseDown(const juce::MouseEvent& e)
             selectedMidpoint = getHoveredMidpoint(x, y);
 
         if (selectedPoint > -1 || selectedMidpoint > -1) {
+            if (selectedPoint > -1) {
+                setMouseCursor(MouseCursor::NoCursor);
+            }
             if (selectedMidpoint > -1) {
                 origTension = audioProcessor.pattern->points[selectedMidpoint].tension;
                 dragStartY = y;
+                e.source.enableUnboundedMouseMovement(true);
+                setMouseCursor(MouseCursor::NoCursor);
             }
-            e.source.enableUnboundedMouseMovement(true);
-            setMouseCursor(MouseCursor::NoCursor);
-            start_mouse_pos = Desktop::getInstance().getMousePosition();
         }
     }
     else if (e.mods.isRightButtonDown()) {
@@ -239,11 +248,34 @@ void View::mouseDown(const juce::MouseEvent& e)
 
 void View::mouseUp(const juce::MouseEvent& e)
 {
+    if (selectedPoint > -1) {
+        setMouseCursor(MouseCursor::NormalCursor);
+    }
+    else if (selectedMidpoint > -1) {
+        setMouseCursor(MouseCursor::NormalCursor);
+        e.source.enableUnboundedMouseMovement(false);
+        auto& mpoint = audioProcessor.pattern->points[selectedMidpoint];
+        auto& next = audioProcessor.pattern->points[static_cast<size_t>(selectedMidpoint) + 1];
+        double midx = (mpoint.x + next.x) / 2.;
+        int x = (int)(midx * winw + winx) + getScreenPosition().x;
+        int y = (int)(audioProcessor.pattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
+        Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
+    }
     selectedMidpoint = -1;
     selectedPoint = -1;
-    setMouseCursor(MouseCursor::NormalCursor);
-    e.source.enableUnboundedMouseMovement(false);
-    Desktop::getInstance().setMousePosition(start_mouse_pos);
+}
+
+void View::mouseMove(const juce::MouseEvent& e)
+{
+    if (selectedPoint > -1 || selectedMidpoint > -1) 
+        return;
+
+    int x = e.getPosition().x;
+    int y = e.getPosition().y;
+
+    hoverPoint = getHoveredPoint(x , y);
+    if (hoverPoint == -1)
+        hoverMidpoint = getHoveredMidpoint(x, y);
 }
 
 void View::mouseDrag(const juce::MouseEvent& e)
@@ -253,13 +285,6 @@ void View::mouseDrag(const juce::MouseEvent& e)
 
     if (rmousePoint == -1 && e.mods.isRightButtonDown()) {
         applyPaintTool(x, y, e);
-        return;
-    }
-
-    if (selectedPoint == -1 && selectedMidpoint == -1) {
-        hoverPoint = getHoveredPoint(x , y);
-        if (hoverPoint == -1)
-            hoverMidpoint = getHoveredMidpoint(x, y);
         return;
     }
 
@@ -296,19 +321,19 @@ void View::mouseDrag(const juce::MouseEvent& e)
             point.x = xx;
             if (point.x > 1) point.x = 1;
             if (point.x < 0) point.x = 0;
-            auto& prev = points[selectedPoint - 1];
-            auto& next = points[selectedPoint + 1];
+            auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
+            auto& next = points[static_cast<size_t>(selectedPoint) + 1];
             if (point.x < prev.x) point.x = prev.x;
             if (point.x > next.x) point.x = next.x;
         }
     }
 
-    if (selectedMidpoint > -1) {
-        int distance = (int)y - dragStartY;
+    else if (selectedMidpoint > -1) {
+        int distance = y - dragStartY;
         auto& mpoint = points[selectedMidpoint];
-        auto& next = points[selectedMidpoint + 1];
+        auto& next = points[static_cast<size_t>(selectedMidpoint) + 1];
         if (mpoint.y < next.y) distance *= -1;
-        float tension = (float)mpoint.tension + float(distance) / 500.f;
+        float tension = (float)origTension + float(distance) / 500.f;
         if (tension > 1) tension = 1;
         if (tension < -1) tension = -1;
         mpoint.tension = tension;
@@ -358,6 +383,7 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
     auto param = audioProcessor.params.getParameter("grid");
     param->beginChangeGesture();
     param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0 ? 1.0f : -1.0f)));
+    param->endChangeGesture();
 }
 
 void View::showRightMouseMenu(int x, int y)

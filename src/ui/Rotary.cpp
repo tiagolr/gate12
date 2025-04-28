@@ -134,17 +134,17 @@ void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {
     const float angle = -deg130 + slider_pos * (deg130 - -deg130);
 
     g.setColour(juce::Colour(globals::COLOR_KNOB));
-    g.fillEllipse(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius - 4.0f, radius*2.0f, radius*2.0f);
+    g.fillEllipse(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius - 8.0f, radius*2.0f, radius*2.0f);
 
     g.setColour(Colour(globals::COLOR_KNOB));
     juce::Path arcKnob;
-    arcKnob.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 4.0f, radius + 5.0f, radius + 5.0f, 0,-deg130, deg130, true);
+    arcKnob.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 8.0f, radius + 5.0f, radius + 5.0f, 0,-deg130, deg130, true);
     g.strokePath(arcKnob, PathStrokeType(3.0, PathStrokeType::JointStyle::curved, PathStrokeType::rounded));
 
     g.setColour(Colour(globals::COLOR_ACTIVE));
     if ((isSymmetric && slider_pos != 0.5f) || (!isSymmetric && slider_pos)) {
         juce::Path arcActive;
-        arcActive.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 4.0f, radius + 5.0f, radius + 5.0f, 0, isSymmetric ? 0 : -deg130, angle, true);
+        arcActive.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 8.0f, radius + 5.0f, radius + 5.0f, 0, isSymmetric ? 0 : -deg130, angle, true);
         g.strokePath(arcActive, PathStrokeType(3.0, PathStrokeType::JointStyle::curved, PathStrokeType::rounded));
     }
 
@@ -152,5 +152,5 @@ void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {
     juce::Path p;
     p.addLineSegment (juce::Line<float>(0.0f, -5.0f, 0.0f, -radius + 5.0f), 0.1f);
     juce::PathStrokeType(3.0f, PathStrokeType::JointStyle::curved, PathStrokeType::rounded).createStrokedPath(p, p);
-    g.fillPath (p, juce::AffineTransform::rotation (angle).translated(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 4.0f));
+    g.fillPath (p, juce::AffineTransform::rotation (angle).translated(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 8.0f));
 }

@@ -16,7 +16,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     auto col = 10;
     auto row = 10;
 
-    // TOP BAR
+    // FIRST ROW
 
     addAndMakeVisible(logoLabel);
     logoLabel.setColour(juce::Label::ColourIds::textColourId, Colours::white);
@@ -63,27 +63,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     syncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "sync", syncMenu);
     col += 100;
 
-    for (int i = 0; i < 12; ++i) {
-        auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
-
-        btn->setRadioGroupId (1337);
-        btn->setTooltip("Pattern selector");
-        btn->setClickingTogglesState (false);
-        btn->setColour (TextButton::textColourOffId,  Colour(globals::COLOR_BG));
-        btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
-        btn->setColour (TextButton::buttonColourId,   Colour(globals::COLOR_ACTIVE).darker(0.8f));
-        btn->setColour (TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
-        btn->setBounds (col + i * 22, row, 22, 25);
-        btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
-        btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
-        btn->onClick = [i, this]() {
-            patterns[i].get()->setToggleState(true, dontSendNotification);
-        };
-        addAndMakeVisible(*btn);
-
-        patterns.push_back(std::move(btn));
-    }
-    col += 274;
+    addAndMakeVisible(triggerLabel);
+    triggerLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
+    triggerLabel.setFont(FontOptions(16.0f));
+    triggerLabel.setText("Trigger", NotificationType::dontSendNotification);
+    triggerLabel.setBounds(col, row, 60, 25);
+    col += 70-5;
 
     addAndMakeVisible(triggerMenu);
     triggerMenu.setTooltip("Envelope trigger:\nSync - song playback\nMIDI - midi notes\nAudio - audio input");
@@ -110,54 +95,100 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         toggleUIComponents();
     };
 
+    // SECOND ROW
+
+    row += 35;
+    col = 10;
+    for (int i = 0; i < 12; ++i) {
+        auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
+
+        btn->setRadioGroupId (1337);
+        btn->setToggleState(audioProcessor.pattern->index == i, dontSendNotification);
+        btn->setTooltip("Pattern selector");
+        btn->setClickingTogglesState (false);
+        btn->setColour (TextButton::textColourOffId,  Colour(globals::COLOR_BG));
+        btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
+        btn->setColour (TextButton::buttonColourId,   Colour(globals::COLOR_ACTIVE).darker(0.8f));
+        btn->setColour (TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
+        btn->setBounds (col + i * 22, row, 22, 25);
+        btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
+        btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
+        btn->onClick = [i, this]() {
+            patterns[i].get()->setToggleState(true, dontSendNotification);
+            };
+        addAndMakeVisible(*btn);
+
+        patterns.push_back(std::move(btn));
+    }
+    col += 274;
+
+    addAndMakeVisible(patSyncLabel);
+    patSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
+    patSyncLabel.setFont(FontOptions(16.0f));
+    patSyncLabel.setText("Pat. Sync", NotificationType::dontSendNotification);
+    patSyncLabel.setBounds(col, row, 70, 25);
+    col += 75;
+
+    addAndMakeVisible(patSyncMenu);
+    patSyncMenu.setTooltip("Pattern sync - changes pattern in sync with song position during playback");
+    patSyncMenu.addItem("Off", 1);
+    patSyncMenu.addItem("1/4 Beat", 2);
+    patSyncMenu.addItem("1/2 Beat", 3);
+    patSyncMenu.addItem("1 Beat", 4);
+    patSyncMenu.addItem("2 Beats", 5);
+    patSyncMenu.addItem("4 Beats", 6);
+    patSyncMenu.setBounds(col, row, 90, 25);
+    patSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "patsync", patSyncMenu);
+
     // KNOBS
 
     row += 35;
     col = 10;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hzFloat1);
     addAndMakeVisible(*rate);
-    rate->setBounds(col,row,80,75);
+    rate->setBounds(col,row,80,65);
     col += 75;
 
     phase = std::make_unique<Rotary>(p, "phase", "Phase", LabelFormat::integerx100);
     addAndMakeVisible(*phase);
-    phase->setBounds(col,row,80,75);
+    phase->setBounds(col,row,80,65);
     col += 75;
 
     min = std::make_unique<Rotary>(p, "min", "Min", LabelFormat::integerx100);
     addAndMakeVisible(*min);
-    min->setBounds(col,row,80,75);
+    min->setBounds(col,row,80,65);
     col += 75;
 
     max = std::make_unique<Rotary>(p, "max", "Max", LabelFormat::integerx100);
     addAndMakeVisible(*max);
-    max->setBounds(col,row,80,75);
+    max->setBounds(col,row,80,65);
     col += 75;
 
     smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", LabelFormat::integerx100);
     addAndMakeVisible(*smooth);
-    smooth->setBounds(col,row,80,75);
+    smooth->setBounds(col,row,80,65);
     col += 75;
 
     attack = std::make_unique<Rotary>(p, "attack", "Attack", LabelFormat::integerx100);
     addAndMakeVisible(*attack);
-    attack->setBounds(col,row,80,75);
+    attack->setBounds(col,row,80,65);
     col += 75;
 
     release = std::make_unique<Rotary>(p, "release", "Release", LabelFormat::integerx100);
     addAndMakeVisible(*release);
-    release->setBounds(col,row,80,75);
+    release->setBounds(col,row,80,65);
     col += 75;
 
     tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::integerx100, true);
     addAndMakeVisible(*tension);
-    tension->setBounds(col,row,80,75);
+    tension->setBounds(col,row,80,65);
     col += 75;
 
-    col = 10;
-    row += 95;
+    
 
     // THIRD ROW
+    col = 10;
+    row += 75;
     juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
     juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
     if (paintImage.isValid()) {
@@ -248,26 +279,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(*gridSelector);
     gridSelector->setBounds(col,row,50,25);
 
-    // FOOTER
-    row = getHeight() - 35;
-    col = 10;
-    addAndMakeVisible(trigSyncLabel);
-    trigSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
-    trigSyncLabel.setFont(FontOptions(16.0f));
-    trigSyncLabel.setText("Pat. Sync", NotificationType::dontSendNotification);
-    trigSyncLabel.setBounds(col, row, 70, 25);
-    col += 75;
-
-    addAndMakeVisible(trigSyncMenu);
-    trigSyncMenu.setTooltip("Synchronize pattern changes to song position during playback");
-    trigSyncMenu.addItem("Off", 1);
-    trigSyncMenu.addItem("1/4 Beat", 2);
-    trigSyncMenu.addItem("1/2 Beat", 3);
-    trigSyncMenu.addItem("1 Beat", 4);
-    trigSyncMenu.addItem("2 Beats", 5);
-    trigSyncMenu.addItem("4 Beats", 6);
-    trigSyncMenu.setBounds(col, row, 90, 25);
-    trigSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigsync", trigSyncMenu);
+    // VIEW
+    row += 25;
+    col = 0;
+    view = std::make_unique<View>(p);
+    addAndMakeVisible(*view);
+    view->setBounds(col,row,getWidth(), getHeight() - row);
+    view->init();
 
     // ABOUT
     about = std::make_unique<About>();

@@ -14,7 +14,7 @@
 
 class GATE12AudioProcessor;
 
-class View : public juce::Component, private juce::AudioProcessorValueTreeState::Listener
+class View : public juce::Component, private juce::AudioProcessorValueTreeState::Listener, private juce::Timer
 {
 public:
   int winx = 0;
@@ -33,7 +33,7 @@ public:
   ~View() override;
   void init();
   void paint(Graphics& g) override;
-  void drawWave(Graphics& g, std::vector<double> samples, Colour color);
+  void drawWave(Graphics& g, std::vector<double> samples, Colour color) const;
   void drawGrid(Graphics& g);
   void drawSegments(Graphics& g);
   void drawMidPoints(Graphics& g);
@@ -46,6 +46,7 @@ public:
   void mouseDown(const juce::MouseEvent& e) override;
   void mouseUp(const juce::MouseEvent& e) override;
   void mouseDrag(const juce::MouseEvent& e) override;
+  void mouseMove(const juce::MouseEvent& e) override;
   void mouseDoubleClick(const juce::MouseEvent& e) override;
   void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
@@ -54,11 +55,15 @@ public:
 
   void applyPaintTool(int x, int y, const MouseEvent& e);
 
+  void timerCallback() override
+  {
+      repaint();
+  }
+
 private:
   GATE12AudioProcessor& audioProcessor;
   double origTension = 0;
   int dragStartY = 0;
-  Point<int> start_mouse_pos;
 
   bool isSnapping(const MouseEvent& e);
   bool isCollinear(Segment seg);

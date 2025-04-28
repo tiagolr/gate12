@@ -28,7 +28,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", true),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 2, 32, 8),
         std::make_unique<juce::AudioParameterBool>("retrigger", "Retrigger", false),
-        std::make_unique<juce::AudioParameterChoice>("trigsync", "Trigger Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
+        std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
     })
 #endif
 {
