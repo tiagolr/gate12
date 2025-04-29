@@ -15,6 +15,7 @@
 #include "ui/CustomLookAndFeel.h"
 #include "ui/About.h"
 #include "ui/View.h"
+#include "ui/SettingsButton.h"
 
 using namespace globals;
 
@@ -48,6 +49,7 @@ private:
     Label patSyncLabel;
     ComboBox patSyncMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patSyncAttachment;
+    std::unique_ptr<SettingsButton> settingsButton;
     std::unique_ptr<Rotary> rate;
     std::unique_ptr<Rotary> phase;
     std::unique_ptr<Rotary> min;

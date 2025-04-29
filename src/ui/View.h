@@ -51,7 +51,7 @@ public:
   void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
   void parameterChanged (const juce::String& parameterID, float newValue) override;
-  void showRightMouseMenu(int x, int y);
+  void showPointContextMenu(const juce::MouseEvent& event);
 
   void applyPaintTool(int x, int y, const MouseEvent& e);
 

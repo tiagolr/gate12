@@ -67,7 +67,7 @@ void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) cons
 
 void View::drawGrid(Graphics& g)
 {
-    int grid = audioProcessor.gridSegs;
+    int grid = audioProcessor.grid;
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
 
@@ -238,7 +238,7 @@ void View::mouseDown(const juce::MouseEvent& e)
     else if (e.mods.isRightButtonDown()) {
         rmousePoint = getHoveredPoint(x, y);
         if (rmousePoint > -1) {
-            // showRightMouseMenu((int)x, (int)y);
+            showPointContextMenu(e);
         }
         else {
             applyPaintTool(x, y, e);
@@ -289,7 +289,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
 
     auto& points = audioProcessor.pattern->points;
-    double grid = (double)audioProcessor.gridSegs;
+    double grid = (double)audioProcessor.grid;
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
     double xx = (double)x;
@@ -359,7 +359,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         double px = (double)x;
         double py = (double)y;
         if (isSnapping(e)) {
-            double grid = (double)audioProcessor.gridSegs;
+            double grid = (double)audioProcessor.grid;
             double gridx = double(winw) / grid;
             double gridy = double(winh) / grid;
             px = std::round(double(px - winx) / gridx) * gridx + winx;
@@ -379,45 +379,38 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
     (void)event;
-    int grid = audioProcessor.gridSegs;
+    int grid = audioProcessor.grid;
     auto param = audioProcessor.params.getParameter("grid");
     param->beginChangeGesture();
     param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0 ? 1.0f : -1.0f)));
     param->endChangeGesture();
 }
 
-void View::showRightMouseMenu(int x, int y)
+void View::showPointContextMenu(const juce::MouseEvent& event)
 {
-    (void)x;
-    (void)y;
-    
-  //IPopupMenu* menu = new IPopupMenu();
-  //menu->AddItem("Hold");
-  //menu->AddItem("Curve");
-  //menu->AddItem("S-Curve");
-  //menu->AddItem("Pulse");
-  //menu->AddItem("Wave");
-  //menu->AddItem("Triangle");
-  //menu->AddItem("Stairs");
-  //menu->AddItem("Smooth stairs");
-  //
-  //GetUI()->CreatePopupMenu(*this, *menu, IRECT(x,y,x,y));
+    int type = audioProcessor.pattern->points[rmousePoint].type;
+    PopupMenu menu;
+    menu.addItem(1, "Hold", true, type == 0);
+    menu.addItem(2, "Curve", true, type == 1);
+    menu.addItem(3, "S-Curve", true, type == 2);
+    menu.addItem(4, "Pulse", true, type == 3);
+    menu.addItem(5, "Wave", true, type == 4);
+    menu.addItem(6, "Triangle", true, type == 5);
+    menu.addItem(7, "Stairs", true, type == 6);
+    menu.addItem(8, "Smooth stairs", true, type == 7);
+    menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this](int result) {
+        if (result > 0) {
+            audioProcessor.pattern->points[rmousePoint].type = result - 1;
+            audioProcessor.pattern->buildSegments();
+        }
+    });
 }
-
-//void View::OnPopupMenuSelection(IPopupMenu* pSelectedMenu, int valIdx)
-//{
-//  if (pSelectedMenu == nullptr)
-//    return;
-//
-//  gate.pattern->points[rmousePoint].type = pSelectedMenu->GetChosenItemIdx();
-//  gate.pattern->buildSegments();
-//}
 
 void View::applyPaintTool(int x, int y, const MouseEvent& e)
 {
     double mousex = std::min(std::max(double(x - winx) / (double)winw, 0.), 0.9999999);
     double mousey = std::min(std::max(double(y - winy) / (double)winh, 0.), 1.);
-    double gridsegs = (double)audioProcessor.gridSegs;
+    double gridsegs = (double)audioProcessor.grid;
     if (isSnapping(e)) {
         mousey = std::round(mousey * gridsegs) / gridsegs;
     }

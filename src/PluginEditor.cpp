@@ -11,7 +11,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("trigger", this);
 
-    setSize (660, 640);
+    setSize (globals::PLUG_WIDTH, globals::PLUG_HEIGHT);
     setScaleFactor(audioProcessor.scale);
     auto col = 10;
     auto row = 10;
@@ -94,6 +94,14 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         showAudioKnobs = !showAudioKnobs;
         toggleUIComponents();
     };
+
+    col = getWidth() - 10 - 25;
+    settingsButton = std::make_unique<SettingsButton>(p);
+    addAndMakeVisible(*settingsButton);
+    settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
+    settingsButton->toggleUIComponents = [this]() { toggleUIComponents(); };
+    settingsButton->toggleAbout = [this]() { about.get()->setVisible(true); };
+    settingsButton->setBounds(col,row,25,25);
 
     // SECOND ROW
 

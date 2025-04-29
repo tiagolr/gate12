@@ -65,6 +65,8 @@ source_group(Source\\ui
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/View.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/src/ui/About.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/About.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SettingsButton.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SettingsButton.cpp
 )
 
 source_group(Source\\dsp

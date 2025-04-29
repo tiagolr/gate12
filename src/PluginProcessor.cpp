@@ -25,7 +25,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("tension", "Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
-        std::make_unique<juce::AudioParameterBool>("snap", "Snap", true),
+        std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 2, 32, 8),
         std::make_unique<juce::AudioParameterBool>("retrigger", "Retrigger", false),
         std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
@@ -55,8 +55,8 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         patterns[i]->buildSegments();
     }
     pattern = patterns[0];
-    preSamples.resize(1000, 0); // samples array size must be >= viewport width 
-    postSamples.resize(1000, 0); // samples array size must be >= viewport width
+    preSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= viewport width 
+    postSamples.resize(globals::PLUG_WIDTH, 0);
 
     loadSettings();
 }
@@ -238,7 +238,7 @@ void GATE12AudioProcessor::onSlider()
     // auto grid = (int)params.getRawParameterValue("grid")->load();
     // auto retrigger = (bool)params.getRawParameterValue("retrigger")->load();
     // auto patsync = (int)params.getRawParameterValue("patsync")->load();
-    gridSegs = (int)params.getRawParameterValue("grid")->load();
+    grid = (int)params.getRawParameterValue("grid")->load();
 
     //tension = (double)params.getRawParameterValue("tension")->load();
 }

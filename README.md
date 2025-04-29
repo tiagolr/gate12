@@ -57,7 +57,6 @@ The reason for this port is mainly to support Linux and macOS, the previous vers
 
 ## Tips
 
-  * Click the `?` button to show help screen with tips
   * Ctrl for fine adjustments
   * Double click to reset sliders
   * Shift to toggle snap on/off

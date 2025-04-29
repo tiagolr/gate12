@@ -26,18 +26,24 @@ struct MIDIMsg {
 class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener
 {
 public:
-    Pattern* pattern; // current pattern
-    float scale = 1.0f; // UI scale
-    int currentProgram = -1;
+    // Global settings
+    float scale = 1.0f; // UI scale factor
+
+    // Settings
     bool alwaysPlaying = false;
+    bool drawWave = true;
+    bool linkEdgePoints = false;
+    bool dualSmooth = true; // use either single smooth or attack and release
+    int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
+    int grid = 8; // grid divisions
+
+    // State
+    Pattern* pattern; // current pattern
     bool isPlaying = false;
-    bool drawWave = false; // option
-    bool linkEdgePoints = false; // option
+    int currentProgram = -1;
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
-    int gridSegs = 1; // grid size, same as grid param but for fast access
     std::vector<double> preSamples; // used by view to draw pre audio
     std::vector<double> postSamples; // used by view to draw post audio
-    bool dualSmooth = false; // use either single smooth or attack and release
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
 
@@ -96,7 +102,7 @@ private:
     Pattern* patterns[12];
     bool paramChanged = false; // flag that triggers on any param change
     juce::ApplicationProperties settings;
-    std::vector<MIDIMsg> midi;
+    std::vector<MIDIMsg> midi; // midi buffer used to process midi messages offset
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GATE12AudioProcessor)
