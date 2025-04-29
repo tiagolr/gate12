@@ -48,6 +48,7 @@ public:
   void drawMidPoints(Graphics& g);
   void drawPoints(Graphics& g);
   void drawSelection(Graphics& g);
+  void drawSelectionHandles(Graphics& g);
   void drawSeek(Graphics& g);
   std::vector<double> View::getMidpointXY(Segment seg);
   int getHoveredPoint(int x, int y);
@@ -75,13 +76,16 @@ private:
   double origTension = 0;
   int dragStartY = 0;
 
+  // Multi-select
   Point<int> selectionStart = Point(-1,-1);
   Point<int> selectionEnd = Point(-1,-1);
   Rectangle<int> selectionArea = Rectangle<int>();
+  Rectangle<int> selectionAreaStart = Rectangle<int>(); // used to drag or scale selection area
   std::vector<SelPoint> selectionPoints;
-
+  int selectionDragHover = -1; // flag for hovering selection drag handles, 1 top left corner, 2 top center etc..
   void createSelection();
   void clearSelection();
+  void dragSelection(const MouseEvent& e);
   void resizeMultiSelection(int x, int y, int w, int h);
 
   bool isSnapping(const MouseEvent& e);

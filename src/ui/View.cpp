@@ -10,6 +10,7 @@
 #include "View.h"
 #include "../PluginProcessor.h"
 #include "../Globals.h"
+#include <utility>
 
 View::View(GATE12AudioProcessor& p) : audioProcessor(p)
 {
@@ -27,6 +28,9 @@ void View::parameterChanged (const juce::String& parameterID, float newValue)
     (void)parameterID;
     (void)newValue;
     if (parameterID == "pattern") {
+        selectionStart = Point<int>(-1,-1);
+        selectedMidpoint = -1;
+        selectedPoint = -1;
         clearSelection();
     }
 };
@@ -54,6 +58,8 @@ void View::paint(Graphics& g) {
     if (audioProcessor.xpos > 0.0) {
         drawSeek(g);
     }
+    // TODO - IF IS PATTERN CHANGE PENDING
+    // PREVENT MOUSE EVENTS AND DRAW WHITE OVERLAY
 }
 
 void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) const
@@ -159,11 +165,48 @@ void View::drawSelection(Graphics& g)
     }
 
     if (selectionPoints.size() > 0) {
-        g.setColour(Colour(globals::COLOR_ACTIVE));
-        g.drawRect(selectionArea.expanded(MSEL_PADDING));
-        g.setColour(Colour(globals::COLOR_ACTIVE).withAlpha(0.5f));
+        g.setColour(Colour(globals::COLOR_MIDI).withAlpha(0.5f));
         g.fillRect(selectionArea.expanded(MSEL_PADDING));
+        g.setColour(Colour(globals::COLOR_MIDI));
+        g.drawRect(selectionArea.expanded(MSEL_PADDING));
+
+        if (selectionPoints.size() > 1) {
+            drawSelectionHandles(g);
+        }
     }
+}
+
+void View::drawSelectionHandles(Graphics& g)
+{
+    auto area = selectionArea.expanded(MSEL_PADDING);
+    Point tl = area.getTopLeft(); // top left
+    Point tr = area.getTopRight();
+    Point bl = area.getBottomLeft();
+    Point br = area.getBottomRight();
+    Point ml = tl.withY((tl.getY() + bl.getY()) / 2); // middle left
+    Point mr = ml.withX(br.getX()); // middle right
+    Point tm = tl.withX((tl.getX() + tr.getX()) / 2);// top middle
+    Point bm = tm.withY(br.getY());
+    auto tlRect = Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3);
+    auto trRect = Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3);
+    auto blRect = Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3);
+    auto brRect = Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3);
+    auto mlRect = Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3);
+    auto mrRect = Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3);
+    auto tmRect = Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3);
+    auto bmRect = Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3);
+    g.setColour(Colour(globals::COLOR_MIDI));
+    g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
+    g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
+    g.setColour(Colours::white);
+    if (selectionDragHover == 1) g.fillRect(tlRect);
+    if (selectionDragHover == 2) g.fillRect(tmRect);
+    if (selectionDragHover == 3) g.fillRect(trRect);
+    if (selectionDragHover == 4) g.fillRect(mlRect);
+    if (selectionDragHover == 5) g.fillRect(mrRect);
+    if (selectionDragHover == 6) g.fillRect(blRect);
+    if (selectionDragHover == 7) g.fillRect(bmRect);
+    if (selectionDragHover == 8) g.fillRect(brRect); 
 }
 
 std::vector<double> View::getMidpointXY(Segment seg)
@@ -249,6 +292,11 @@ void View::mouseDown(const juce::MouseEvent& e)
     int y = pos.y;
 
     if (e.mods.isLeftButtonDown()) {
+        if (selectionDragHover > -1) {
+            selectionAreaStart = selectionArea.expanded(0);
+            return;
+        }
+
         selectedPoint = getHoveredPoint(x, y);
         if (selectedPoint == -1)
             selectedMidpoint = getHoveredMidpoint(x, y);
@@ -271,6 +319,9 @@ void View::mouseDown(const juce::MouseEvent& e)
         }
     }
     else if (e.mods.isRightButtonDown()) {
+        if (selectionDragHover > -1) {
+            return;
+        }
         rmousePoint = getHoveredPoint(x, y);
         if (rmousePoint > -1) {
             showPointContextMenu(e);
@@ -360,12 +411,40 @@ void View::clearSelection()
 
 void View::mouseMove(const juce::MouseEvent& e)
 {
+    auto pos = e.getPosition();
+    hoverPoint = -1;
+    hoverMidpoint = -1;
+    selectionDragHover = -1;
+
+    // if currently dragging a point ignore mouse over events
     if (selectedPoint > -1 || selectedMidpoint > -1) {
         return;
     }
 
-    int x = e.getPosition().x;
-    int y = e.getPosition().y;
+    // multi selection mouse over
+    if (selectionPoints.size() > 0 && selectionArea.expanded(MSEL_PADDING + 3).contains(e.getPosition())) {
+        selectionDragHover = 0;
+        Point tl = selectionArea.expanded(MSEL_PADDING).getTopLeft(); // top left
+        Point tr = selectionArea.expanded(MSEL_PADDING).getTopRight();
+        Point bl = selectionArea.expanded(MSEL_PADDING).getBottomLeft();
+        Point br = selectionArea.expanded(MSEL_PADDING).getBottomRight();
+        Point ml = tl.withY((tl.getY() + bl.getY()) / 2); // middle left
+        Point mr = ml.withX(br.getX()); // middle right
+        Point tm = tl.withX((tl.getX() + tr.getX()) / 2);// top middle
+        Point bm = tm.withY(br.getY());
+        if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 1; // mouse over top left drag handle
+        if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 2; 
+        if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 3; 
+        if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 4; 
+        if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 5; 
+        if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 6; 
+        if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 7; 
+        if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 8;
+        return;
+    }
+
+    int x = pos.x;
+    int y = pos.y;
 
     hoverPoint = getHoveredPoint(x , y);
     if (hoverPoint == -1)
@@ -374,8 +453,14 @@ void View::mouseMove(const juce::MouseEvent& e)
 
 void View::mouseDrag(const juce::MouseEvent& e)
 {
-    int x = e.getPosition().x;
-    int y = e.getPosition().y;
+    Point pos = e.getPosition();
+    int x = pos.x;
+    int y = pos.y;
+
+    if (selectionDragHover > -1 && e.mods.isLeftButtonDown()) {
+        dragSelection(e);
+        return;
+    }
 
     if (rmousePoint == -1 && e.mods.isRightButtonDown()) {
         applyPaintTool(x, y, e);
@@ -438,6 +523,102 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
 
     audioProcessor.pattern->buildSegments();
+}
+
+void View::dragSelection(const MouseEvent& e)
+{
+    auto mouse = e.getPosition();
+    auto mouseDown = e.getMouseDownPosition();
+
+    selectionArea = selectionAreaStart.expanded(0,0);
+    int dx = mouse.x - mouseDown.x;
+    int dy = mouse.y - mouseDown.y;
+    int left = selectionArea.getX();
+    int right = selectionArea.getRight();
+    int top = selectionArea.getY();
+    int bottom = selectionArea.getBottom();
+
+    if (selectionDragHover == 0) { // area drag
+        left += dx;
+        right += dx;
+        top += dy;
+        bottom += dy;
+    }
+    else if (selectionDragHover == 1) { // top left corner
+        left += dx;
+        top += dy;
+        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx : 0);
+        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
+    }
+    else if (selectionDragHover == 2) { // top middle corner
+        top += dy;
+        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
+    }
+    else if (selectionDragHover == 3) { // top right
+        right += dx;
+        top += dy;
+        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx : 0);
+        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
+    }
+    else if (selectionDragHover == 4) { // mid left
+        left += dx;
+        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx : 0);
+    }
+    else if (selectionDragHover == 5) { // mid right
+        right += dx;
+        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx : 0);
+    }
+    else if (selectionDragHover == 6) { // bottom left
+        left += dx;
+        bottom += dy;
+        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx : 0);
+        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
+    }
+    else if (selectionDragHover == 7) { // bottom mid
+        bottom += dy;
+        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
+    }
+    else if (selectionDragHover == 8) { // bottom right
+        right += dx;
+        bottom += dy;
+        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx : 0);
+        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
+    }
+
+    if (right < left) 
+        std::swap(left, right);
+    if (top > bottom)
+        std::swap(top, bottom);
+
+    if (left < winx) {
+        right = right - left + winx;
+        left = winx;
+    }
+    if (right > winx + winw) {
+        left = winx + winw + left - right;
+        right = winx + winw;
+    }
+    if (top < winy) {
+        bottom = bottom - top + winy;
+        top = winy;
+    }
+    if (bottom > winy + winh) {
+        top = winy + winh + top - bottom;
+        bottom = winy + winh;
+    }
+
+    selectionArea.setX(left);
+    selectionArea.setRight(right);
+    selectionArea.setY(top);
+    selectionArea.setBottom(bottom);
+    if (selectionArea.getWidth() > winw) {
+        selectionArea.setX(winx);
+        selectionArea.setWidth(winw);
+    }
+    if (selectionArea.getHeight() > winh) {
+        selectionArea.setY(winy);
+        selectionArea.setHeight(winh);
+    }
 }
 
 void View::mouseDoubleClick(const juce::MouseEvent& e)
