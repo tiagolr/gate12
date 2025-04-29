@@ -387,6 +387,7 @@ void View::createSelection()
         return;
     }
 
+    // calculate selection area based on points positions
     int minx = globals::PLUG_WIDTH;
     int maxx = -1;
     int miny = globals::PLUG_HEIGHT;
@@ -401,6 +402,15 @@ void View::createSelection()
         if (y > maxy) maxy = y;
     }
     selectionArea = Rectangle<int>(minx, miny, maxx - minx, maxy - miny);
+
+    // calculate points positios relative to area
+    for (size_t i = 0; i < selectionPoints.size(); ++i) {
+        auto& p = selectionPoints[i];
+        double x = p.x * winw + winx;
+        double y = p.y * winh + winy;
+        p.areax = std::max(0.0, std::min(1.0, (x - selectionArea.getX()) / (double)selectionArea.getWidth()));
+        p.areay = std::max(0.0, std::min(1.0, (y - selectionArea.getY()) / (double)selectionArea.getHeight()));
+    }
 }
 
 void View::clearSelection()
@@ -530,6 +540,16 @@ void View::dragSelection(const MouseEvent& e)
     auto mouse = e.getPosition();
     auto mouseDown = e.getMouseDownPosition();
 
+    if (isSnapping(e)) {
+        double grid = (double)audioProcessor.grid;
+        double gridx = double(winw) / grid;
+        double gridy = double(winh) / grid;
+        mouse.x = (int)(std::round((mouse.x - winx) / gridx) * gridx + winx);
+        mouse.y = (int)(std::round((mouse.y - winy) / gridy) * gridy + winy);
+        mouseDown.x = (int)(std::round((mouseDown.x - winx) / gridx) * gridx + winx);
+        mouseDown.y = (int)(std::round((mouseDown.y - winy) / gridy) * gridy + winy);
+    }
+
     selectionArea = selectionAreaStart.expanded(0,0);
     int dx = mouse.x - mouseDown.x;
     int dy = mouse.y - mouseDown.y;
@@ -585,10 +605,17 @@ void View::dragSelection(const MouseEvent& e)
         top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
     }
 
-    if (right < left) 
+    bool invertx = false;
+    bool inverty = false;
+
+    if (right < left) {
+        invertx = true;
         std::swap(left, right);
-    if (top > bottom)
+    }
+    if (top > bottom) {
+        inverty = true;
         std::swap(top, bottom);
+    }
 
     if (left < winx) {
         right = right - left + winx;
@@ -607,6 +634,7 @@ void View::dragSelection(const MouseEvent& e)
         bottom = winy + winh;
     }
 
+    auto p = selectionPoints;
     selectionArea.setX(left);
     selectionArea.setRight(right);
     selectionArea.setY(top);
@@ -619,6 +647,49 @@ void View::dragSelection(const MouseEvent& e)
         selectionArea.setY(winy);
         selectionArea.setHeight(winh);
     }
+
+    updatePointsToSelection(invertx, inverty);
+}
+
+// updates points position to match the selection area
+// points have a position relative to area: xarea, yarea normalized from 0 to 1
+// xarea and yarea are used calculate the new points position on the view
+void View::updatePointsToSelection(bool invertx, bool inverty)
+{
+    for (size_t i = 0; i < selectionPoints.size(); ++i) {
+        auto& p = selectionPoints[i];
+        
+        double areax = invertx ? 1.0 - p.areax : p.areax;
+        double areay = inverty ? 1.0 - p.areay : p.areay;
+        double absx = selectionArea.getX() + (areax * selectionArea.getWidth());
+        double absy = selectionArea.getY() + (areay * selectionArea.getHeight());
+        double newx = (absx - winx) / (double)winw;
+        double newy = (absy - winy) / (double)winh;
+
+        if (newx <= 0.0) newx = 0.000001;
+        if (newx >= 1.0) newx = 1-0.000001;
+        if (newy <= 0.0) newy = 0.000001;
+        if (newy >= 1.0) newy = 1-0.000001;
+
+        // update selection point
+        p.x = newx;
+        p.y = newy;
+
+        // update pattern point
+        auto& points = audioProcessor.pattern->points;
+        for (size_t j = 0; j < points.size(); ++j) {
+            auto& pp = points[j];
+            if (pp.id == p.id) {
+                pp.x = newx;
+                pp.y = newy;
+                break;
+            }
+        }
+    }
+
+    // TODO sort points
+    audioProcessor.pattern->sortPoints();
+    audioProcessor.pattern->buildSegments();
 }
 
 void View::mouseDoubleClick(const juce::MouseEvent& e)

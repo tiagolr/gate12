@@ -86,6 +86,7 @@ private:
   void createSelection();
   void clearSelection();
   void dragSelection(const MouseEvent& e);
+  void updatePointsToSelection(bool invertx, bool inverty);
   void resizeMultiSelection(int x, int y, int w, int h);
 
   bool isSnapping(const MouseEvent& e);

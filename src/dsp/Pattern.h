@@ -43,6 +43,7 @@ public:
 
     Pattern(GATE12AudioProcessor&, int);
     int insertPoint(double x, double y, double tension, int type);
+    void sortPoints();
     void setTension(double t);
     void removePoint(double x, double y);
     void removePoint(int i);

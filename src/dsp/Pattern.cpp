@@ -9,6 +9,7 @@
 
 #include "Pattern.h"
 #include <cmath>
+#include <algorithm>
 #include "../PluginProcessor.h"
 
 std::vector<CPoint> Pattern::copy_pattern;
@@ -17,6 +18,13 @@ Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
 {
     index = i;
 };
+
+void Pattern::sortPoints()
+{
+    std::sort(points.begin(), points.end(), 
+        [](const CPoint& a, const CPoint& b) { return a.x < b.x; }
+    );
+}
 
 void Pattern::setTension(double t)
 {
