@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Globals.h"
+#include <ctime>
 
 GATE12AudioProcessor::GATE12AudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -32,6 +33,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     })
 #endif
 {
+    srand(static_cast<unsigned int>(time(nullptr))); // seed random generator
     juce::PropertiesFile::Options options{};
     options.applicationName = ProjectInfo::projectName;
     options.filenameSuffix = ".settings";

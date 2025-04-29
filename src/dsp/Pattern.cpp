@@ -26,7 +26,11 @@ void Pattern::setTension(double t)
 
 int Pattern::insertPoint(double x, double y, double tension, int type)
 {
-    const CPoint p = { x, y, tension, type };
+    // generate ID
+    char id[17];
+    snprintf(id, sizeof(id), "%04X%04X%04X%04X", rand(), rand(), rand(), rand());
+
+    const CPoint p = { std::string(id), x, y, tension, type };
     if (!points.size()) {
         points.push_back(p);
         return 0;

@@ -29,7 +29,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	options.addItem(32, "Draw wave", true, audioProcessor.drawWave);
 
 	PopupMenu load;
-	load.addItem(100, "Okay");
+	load.addItem(100, "Sine");
+	load.addItem(101, "Triangle");
+	load.addItem(102, "Random");
 
 	PopupMenu menu;
 	auto menuPos = localPointToGlobal(getLocalBounds().getBottomRight());
@@ -65,15 +67,37 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 				audioProcessor.drawWave = !audioProcessor.drawWave;
 			}
 			if (result == 50) {
-
+				audioProcessor.pattern->invert();
+				audioProcessor.pattern->buildSegments();
 			}
 			if (result == 51) {
-
+				audioProcessor.pattern->reverse();
+				audioProcessor.pattern->buildSegments();
+			}
+			if (result == 52) {
+				audioProcessor.pattern->clear();
+				audioProcessor.pattern->buildSegments();
 			}
 			if (result == 53) {
-
+				audioProcessor.pattern->copy();
 			}
 			if (result == 54) {
+				audioProcessor.pattern->paste();
+				audioProcessor.pattern->buildSegments();
+			}
+			if (result >= 100 && result <= 200) { // load
+				if (result == 100) { // load sine
+					audioProcessor.pattern->loadSine();
+					audioProcessor.pattern->buildSegments();
+				}
+				if (result == 101) { // load triangle
+					audioProcessor.pattern->loadTriangle();
+					audioProcessor.pattern->buildSegments();
+				}
+				if (result == 102) { // load random
+					audioProcessor.pattern->loadRandom(audioProcessor.grid);
+					audioProcessor.pattern->buildSegments();
+				}
 			}
 			if (result == 1000) {
 				toggleAbout();

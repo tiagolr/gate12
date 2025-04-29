@@ -73,6 +73,8 @@ source_group(Source\\dsp
     FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Pattern.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Pattern.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Filter.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Filter.cpp
 )
 
 # Make the SourceFiles buildable

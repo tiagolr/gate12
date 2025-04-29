@@ -14,6 +14,14 @@
 
 class GATE12AudioProcessor;
 
+struct SelPoint {
+    std::string id;
+    double x; // 0..1 in relation to viewport
+    double y;
+    double areax; // 0..1 in relation to selection area
+    double areay;
+};
+
 class View : public juce::Component, private juce::AudioProcessorValueTreeState::Listener, private juce::Timer
 {
 public:
@@ -28,6 +36,7 @@ public:
   int hoverMidpoint = -1;
   int rmousePoint = -1;
   const int HOVER_RADIUS = 8;
+  const int MSEL_PADDING = 8;
 
   View(GATE12AudioProcessor&);
   ~View() override;
@@ -38,6 +47,7 @@ public:
   void drawSegments(Graphics& g);
   void drawMidPoints(Graphics& g);
   void drawPoints(Graphics& g);
+  void drawSelection(Graphics& g);
   void drawSeek(Graphics& g);
   std::vector<double> View::getMidpointXY(Segment seg);
   int getHoveredPoint(int x, int y);
@@ -65,7 +75,17 @@ private:
   double origTension = 0;
   int dragStartY = 0;
 
+  Point<int> selectionStart = Point(-1,-1);
+  Point<int> selectionEnd = Point(-1,-1);
+  Rectangle<int> selectionArea = Rectangle<int>();
+  std::vector<SelPoint> selectionPoints;
+
+  void createSelection();
+  void clearSelection();
+  void resizeMultiSelection(int x, int y, int w, int h);
+
   bool isSnapping(const MouseEvent& e);
   bool isCollinear(Segment seg);
   bool pointInRect(int x, int y, int xx, int yy, int w, int h);
+  
 };

@@ -15,6 +15,7 @@
 class GATE12AudioProcessor;
 
 struct CPoint {
+    std::string id;
     double x;
     double y;
     double tension;

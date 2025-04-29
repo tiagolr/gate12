@@ -14,16 +14,21 @@
 View::View(GATE12AudioProcessor& p) : audioProcessor(p)
 {
     startTimerHz(60);
+    audioProcessor.params.addParameterListener("pattern", this);
 };
 
 View::~View()
 {
+    audioProcessor.params.removeParameterListener("pattern", this);
 };
 
 void View::parameterChanged (const juce::String& parameterID, float newValue) 
 {
     (void)parameterID;
     (void)newValue;
+    if (parameterID == "pattern") {
+        clearSelection();
+    }
 };
 
 void View::init() 
@@ -45,6 +50,7 @@ void View::paint(Graphics& g) {
     drawSegments(g);
     drawMidPoints(g);
     drawPoints(g);
+    drawSelection(g);
     if (audioProcessor.xpos > 0.0) {
         drawSeek(g);
     }
@@ -138,6 +144,28 @@ void View::drawPoints(Graphics& g)
     }
 }
 
+void View::drawSelection(Graphics& g)
+{
+    if (selectionStart.x > -1 && (selectionStart.x != selectionEnd.x || selectionStart.y != selectionEnd.x)) {
+        int x = std::min(selectionStart.x, selectionEnd.x);
+        int y = std::min(selectionStart.y, selectionEnd.y);
+        int w = std::abs(selectionStart.x - selectionEnd.x);
+        int h = std::abs(selectionStart.y - selectionEnd.y);
+        auto bounds = Rectangle<int>(x,y,w,h);
+        g.setColour(Colour(globals::COLOR_MIDI));
+        g.drawRect(bounds);
+        g.setColour(Colour(globals::COLOR_MIDI).withAlpha(0.5f));
+        g.fillRect(bounds);
+    }
+
+    if (selectionPoints.size() > 0) {
+        g.setColour(Colour(globals::COLOR_ACTIVE));
+        g.drawRect(selectionArea.expanded(MSEL_PADDING));
+        g.setColour(Colour(globals::COLOR_ACTIVE).withAlpha(0.5f));
+        g.fillRect(selectionArea.expanded(MSEL_PADDING));
+    }
+}
+
 std::vector<double> View::getMidpointXY(Segment seg)
 {
     double x = (seg.x1 + seg.x2) * 0.5;
@@ -216,12 +244,19 @@ int View::getHoveredMidpoint(int x, int y)
 
 void View::mouseDown(const juce::MouseEvent& e)
 {
-    int x = e.getMouseDownX();
-    int y = e.getMouseDownY();
+    Point pos = e.getPosition();
+    int x = pos.x;
+    int y = pos.y;
+
     if (e.mods.isLeftButtonDown()) {
         selectedPoint = getHoveredPoint(x, y);
         if (selectedPoint == -1)
             selectedMidpoint = getHoveredMidpoint(x, y);
+
+        if (selectedPoint == -1 && selectedMidpoint == -1) {
+            selectionStart = e.getPosition();
+            selectionEnd = e.getPosition();
+        }
 
         if (selectedPoint > -1 || selectedMidpoint > -1) {
             if (selectedPoint > -1) {
@@ -261,14 +296,73 @@ void View::mouseUp(const juce::MouseEvent& e)
         int y = (int)(audioProcessor.pattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
         Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
     }
+    else if (selectionStart.x > -1) {
+        createSelection();
+    }
+
+    selectionStart = Point<int>(-1,-1);
     selectedMidpoint = -1;
     selectedPoint = -1;
 }
 
+void View::createSelection()
+{
+    selectionPoints.clear();
+    selectionArea = Rectangle<int>();
+
+    Rectangle<int> selArea = Rectangle<int>(
+        std::min(selectionStart.x, selectionEnd.x),
+        std::min(selectionStart.y, selectionEnd.y),
+        std::abs(selectionStart.x - selectionEnd.x),
+        std::abs(selectionStart.y - selectionEnd.y)
+    );
+
+    
+    auto& points = audioProcessor.pattern->points;
+    for (size_t i = 0; i < points.size(); ++i) {
+        if (i == 0 || i == points.size() - 1)
+            continue;
+
+        auto& p = points[i];
+        int x = (int)(p.x * winw + winx);
+        int y = (int)(p.y * winh + winy);
+
+        if (selArea.contains(x, y)) {
+            selectionPoints.push_back({ p.id, p.x, p.y, 0., 0. });
+        }
+    }
+
+    if (selectionPoints.size() == 0) {
+        return;
+    }
+
+    int minx = globals::PLUG_WIDTH;
+    int maxx = -1;
+    int miny = globals::PLUG_HEIGHT;
+    int maxy = -1;
+    for (size_t i = 0; i < selectionPoints.size(); ++i) {
+        auto& p = selectionPoints[i];
+        int x = (int)(p.x * winw + winx);
+        int y = (int)(p.y * winh + winy);
+        if (x < minx) minx = x;
+        if (x > maxx) maxx = x;
+        if (y < miny) miny = y;
+        if (y > maxy) maxy = y;
+    }
+    selectionArea = Rectangle<int>(minx, miny, maxx - minx, maxy - miny);
+}
+
+void View::clearSelection()
+{
+    selectionArea = Rectangle<int>();
+    selectionPoints.clear();
+}
+
 void View::mouseMove(const juce::MouseEvent& e)
 {
-    if (selectedPoint > -1 || selectedMidpoint > -1) 
+    if (selectedPoint > -1 || selectedMidpoint > -1) {
         return;
+    }
 
     int x = e.getPosition().x;
     int y = e.getPosition().y;
@@ -339,6 +433,10 @@ void View::mouseDrag(const juce::MouseEvent& e)
         mpoint.tension = tension;
     }
 
+    else if (selectionStart.x > -1) {
+        selectionEnd = e.getPosition();
+    }
+
     audioProcessor.pattern->buildSegments();
 }
 
@@ -388,6 +486,7 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
 
 void View::showPointContextMenu(const juce::MouseEvent& event)
 {
+    (void)event;
     int type = audioProcessor.pattern->points[rmousePoint].type;
     PopupMenu menu;
     menu.addItem(1, "Hold", true, type == 0);
