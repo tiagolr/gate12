@@ -14,6 +14,7 @@
 
 View::View(GATE12AudioProcessor& p) : audioProcessor(p)
 {
+    setWantsKeyboardFocus(true);
     startTimerHz(60);
     audioProcessor.params.addParameterListener("pattern", this);
 };
@@ -126,27 +127,35 @@ void View::drawPoints(Graphics& g)
 {
     auto& points = audioProcessor.pattern->points;
 
+    g.setColour(Colours::white);
     for (auto pt = points.begin(); pt != points.end(); ++pt) {
         auto xx = pt->x * winw + winx;
         auto yy = pt->y * winh + winy;
-        g.setColour(Colours::white);
         g.fillEllipse((float)(xx - 4.0), (float)(yy - 4.0), 8.0f, 8.0f);
     }
 
+    g.setColour(Colours::white.withAlpha(0.5f));
     if (selectedPoint == -1 && selectedMidpoint == -1 && hoverPoint > -1)
     {
         auto xx = points[hoverPoint].x * winw + winx;
         auto yy = points[hoverPoint].y * winh + winy;
-        g.setColour(Colours::white.withAlpha(0.5f));
         g.fillEllipse((float)(xx - HOVER_RADIUS), (float)(yy - HOVER_RADIUS), (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
+    g.setColour(Colours::red.withAlpha(0.5f));
     if (selectedPoint != -1)
     {
         auto xx = points[selectedPoint].x * winw + winx;
         auto yy = points[selectedPoint].y * winh + winy;
-        g.setColour(Colours::red.withAlpha(0.5f));
         g.fillEllipse((float)(xx - 4.0), (float)(yy-4.0), 8.0f, 8.0f);
+    }
+
+    g.setColour(Colour(globals::COLOR_MIDI));
+    for (size_t i = 0; i < selectionPoints.size(); ++i) {
+        auto& p = selectionPoints[i];
+        auto xx = p.x * winw + winx;
+        auto yy = p.y * winh + winy;
+        g.drawEllipse((float)(xx - 4.0), (float)(yy - 4.0), 8.0f, 8.0f, 3.0f);
     }
 }
 
@@ -434,22 +443,24 @@ void View::mouseMove(const juce::MouseEvent& e)
     // multi selection mouse over
     if (selectionPoints.size() > 0 && selectionArea.expanded(MSEL_PADDING + 3).contains(e.getPosition())) {
         selectionDragHover = 0;
-        Point tl = selectionArea.expanded(MSEL_PADDING).getTopLeft(); // top left
-        Point tr = selectionArea.expanded(MSEL_PADDING).getTopRight();
-        Point bl = selectionArea.expanded(MSEL_PADDING).getBottomLeft();
-        Point br = selectionArea.expanded(MSEL_PADDING).getBottomRight();
-        Point ml = tl.withY((tl.getY() + bl.getY()) / 2); // middle left
-        Point mr = ml.withX(br.getX()); // middle right
-        Point tm = tl.withX((tl.getX() + tr.getX()) / 2);// top middle
-        Point bm = tm.withY(br.getY());
-        if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 1; // mouse over top left drag handle
-        if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 2; 
-        if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 3; 
-        if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 4; 
-        if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 5; 
-        if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 6; 
-        if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 7; 
-        if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 8;
+        if (selectionPoints.size() > 1) {
+            Point tl = selectionArea.expanded(MSEL_PADDING).getTopLeft(); // top left
+            Point tr = selectionArea.expanded(MSEL_PADDING).getTopRight();
+            Point bl = selectionArea.expanded(MSEL_PADDING).getBottomLeft();
+            Point br = selectionArea.expanded(MSEL_PADDING).getBottomRight();
+            Point ml = tl.withY((tl.getY() + bl.getY()) / 2); // middle left
+            Point mr = ml.withX(br.getX()); // middle right
+            Point tm = tl.withX((tl.getX() + tr.getX()) / 2);// top middle
+            Point bm = tm.withY(br.getY());
+            if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 1; // mouse over top left drag handle
+            if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 2; 
+            if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 3; 
+            if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 4; 
+            if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 5; 
+            if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 6; 
+            if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 7; 
+            if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) selectionDragHover = 8;
+        }
         return;
     }
 
@@ -734,6 +745,30 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
     param->beginChangeGesture();
     param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0 ? 1.0f : -1.0f)));
     param->endChangeGesture();
+}
+
+bool View::keyPressed(const juce::KeyPress& key) 
+{
+    // remove selected points
+    if (key == KeyPress::deleteKey)
+    {
+        for (size_t i = 0; i < selectionPoints.size(); ++i) {
+            auto& p = selectionPoints[i];
+            auto& points = audioProcessor.pattern->points;
+            for (size_t j = 0; j < points.size(); ++j) {
+                if (points[j].id == p.id) {
+                    audioProcessor.pattern->removePoint(static_cast<int>(j));
+                    break;
+                }
+            }
+        }
+        clearSelection();
+        audioProcessor.pattern->buildSegments();
+        return true;
+    }
+
+    // Let the parent class handle other keys (optional)
+    return Component::keyPressed(key);
 }
 
 void View::showPointContextMenu(const juce::MouseEvent& event)

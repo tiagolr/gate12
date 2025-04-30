@@ -61,6 +61,8 @@ public:
   void mouseDoubleClick(const juce::MouseEvent& e) override;
   void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
+  bool keyPressed(const juce::KeyPress& key) override;
+
   void parameterChanged (const juce::String& parameterID, float newValue) override;
   void showPointContextMenu(const juce::MouseEvent& event);
 
