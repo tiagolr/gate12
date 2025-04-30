@@ -39,10 +39,10 @@ void View::parameterChanged (const juce::String& parameterID, float newValue)
 void View::init() 
 {
     auto bounds = getLocalBounds();
-    winx = bounds.getX() + 10;
-    winy = bounds.getY() + 10;
-    winw = bounds.getWidth() - 20;
-    winh = bounds.getHeight() - 20;
+    winx = bounds.getX() + globals::PAD;
+    winy = bounds.getY() + globals::PAD;
+    winw = bounds.getWidth() - globals::PAD * 2;
+    winh = bounds.getHeight() - globals::PAD * 2;
     audioProcessor.viewW = winw;
 }
 
@@ -59,8 +59,6 @@ void View::paint(Graphics& g) {
     if (audioProcessor.xpos > 0.0) {
         drawSeek(g);
     }
-    // TODO - IF IS PATTERN CHANGE PENDING
-    // PREVENT MOUSE EVENTS AND DRAW WHITE OVERLAY
 }
 
 void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) const
@@ -343,10 +341,10 @@ void View::mouseDown(const juce::MouseEvent& e)
 
 void View::mouseUp(const juce::MouseEvent& e)
 {
-    if (selectedPoint > -1) {
+    if (selectedPoint > -1) { // finished dragging point
         setMouseCursor(MouseCursor::NormalCursor);
     }
-    else if (selectedMidpoint > -1) {
+    else if (selectedMidpoint > -1) { // finished dragging midpoint
         setMouseCursor(MouseCursor::NormalCursor);
         e.source.enableUnboundedMouseMovement(false);
         auto& mpoint = audioProcessor.pattern->points[selectedMidpoint];
@@ -356,8 +354,11 @@ void View::mouseUp(const juce::MouseEvent& e)
         int y = (int)(audioProcessor.pattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
         Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
     }
-    else if (selectionStart.x > -1) {
-        createSelection();
+    else if (selectionStart.x > -1) { // finished creating selection
+        createSelection(e);
+    }
+    else if (selectionPoints.size() > 0) { // finished dragging selection
+        recalcSelectionArea(); // FIX - points may have been inverted due to selection drag
     }
 
     selectionStart = Point<int>(-1,-1);
@@ -365,10 +366,12 @@ void View::mouseUp(const juce::MouseEvent& e)
     selectedPoint = -1;
 }
 
-void View::createSelection()
+void View::createSelection(const MouseEvent& e)
 {
-    selectionPoints.clear();
     selectionArea = Rectangle<int>();
+    if (!e.mods.isShiftDown() && !e.mods.isCtrlDown()) {
+        selectionPoints.clear();
+    }
 
     Rectangle<int> selArea = Rectangle<int>(
         std::min(selectionStart.x, selectionEnd.x),
@@ -384,11 +387,27 @@ void View::createSelection()
             continue;
 
         auto& p = points[i];
+        std::string id = p.id;
         int x = (int)(p.x * winw + winx);
         int y = (int)(p.y * winh + winy);
 
         if (selArea.contains(x, y)) {
-            selectionPoints.push_back({ p.id, p.x, p.y, 0., 0. });
+            // if ctrl is down remove point from selection
+            if (e.mods.isCtrlDown()) {
+                selectionPoints.erase(
+                    std::remove_if(
+                        selectionPoints.begin(),
+                        selectionPoints.end(),
+                        [id](const SelPoint& p) { return p.id == id; }
+                    ),
+                    selectionPoints.end()
+                );
+            } 
+            // if point is not on selection, add it
+            else if (!std::any_of(selectionPoints.begin(), selectionPoints.end(), 
+                [id](const SelPoint& p) { return p.id == id; })) {
+                selectionPoints.push_back({ p.id, p.x, p.y, 0., 0. });
+            }
         }
     }
 
@@ -396,6 +415,11 @@ void View::createSelection()
         return;
     }
 
+    recalcSelectionArea();
+}
+
+void View::recalcSelectionArea()
+{
     // calculate selection area based on points positions
     int minx = globals::PLUG_WIDTH;
     int maxx = -1;
@@ -412,7 +436,7 @@ void View::createSelection()
     }
     selectionArea = Rectangle<int>(minx, miny, maxx - minx, maxy - miny);
 
-    // calculate points positios relative to area
+    // calculate points positions relative to area
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
         double x = p.x * winw + winx;
@@ -551,6 +575,19 @@ void View::dragSelection(const MouseEvent& e)
     auto mouse = e.getPosition();
     auto mouseDown = e.getMouseDownPosition();
 
+    selectionArea = selectionAreaStart.expanded(0,0);
+    int left = selectionArea.getX();
+    int right = selectionArea.getRight();
+    int top = selectionArea.getY();
+    int bottom = selectionArea.getBottom();
+    
+    int distl = 0; // distance left to grid used for snapping
+    int distr = 0; // distance right
+    int distt = 0;
+    int distb = 0; 
+    int distcx = 0;
+    int distcy = 0;
+
     if (isSnapping(e)) {
         double grid = (double)audioProcessor.grid;
         double gridx = double(winw) / grid;
@@ -559,31 +596,32 @@ void View::dragSelection(const MouseEvent& e)
         mouse.y = (int)(std::round((mouse.y - winy) / gridy) * gridy + winy);
         mouseDown.x = (int)(std::round((mouseDown.x - winx) / gridx) * gridx + winx);
         mouseDown.y = (int)(std::round((mouseDown.y - winy) / gridy) * gridy + winy);
+        distl = (int)(std::round((left - winx) / gridx) * gridx + winx) - left;
+        distr = (int)(std::round((right - winx) / gridx) * gridx + winx) - right;
+        distt = (int)(std::round((top - winy) / gridy) * gridy + winy) - top;
+        distb = (int)(std::round((bottom - winy) / gridy) * gridy + winy) - bottom;
+        distcx = (int)(std::round((selectionArea.getCentreX() - winx) / gridx) * gridx + winx) - selectionArea.getCentreX();
+        distcy = (int)(std::round((selectionArea.getCentreY() - winy) / gridy) * gridy + winy) - selectionArea.getCentreY();
     }
 
-    selectionArea = selectionAreaStart.expanded(0,0);
     int dx = mouse.x - mouseDown.x;
     int dy = mouse.y - mouseDown.y;
-    int left = selectionArea.getX();
-    int right = selectionArea.getRight();
-    int top = selectionArea.getY();
-    int bottom = selectionArea.getBottom();
 
     if (selectionDragHover == 0) { // area drag
-        left += dx;
-        right += dx;
-        top += dy;
-        bottom += dy;
+        left += dx + distcx;
+        right += dx + distcx;
+        top += dy + distcy;
+        bottom += dy + distcy;
     }
     else if (selectionDragHover == 1) { // top left corner
-        left += dx;
-        top += dy;
-        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx : 0);
-        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
+        left += dx + distl;
+        top += dy + distt;
+        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx + distl : 0);
+        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy + distt : 0);
     }
     else if (selectionDragHover == 2) { // top middle corner
-        top += dy;
-        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
+        top += dy + distt;
+        bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy + distt : 0);
     }
     else if (selectionDragHover == 3) { // top right
         right += dx;
@@ -592,28 +630,28 @@ void View::dragSelection(const MouseEvent& e)
         bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
     }
     else if (selectionDragHover == 4) { // mid left
-        left += dx;
-        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx : 0);
+        left += dx + distl;
+        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx + distl : 0);
     }
     else if (selectionDragHover == 5) { // mid right
-        right += dx;
-        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx : 0);
+        right += dx + distr;
+        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx + distr : 0);
     }
     else if (selectionDragHover == 6) { // bottom left
-        left += dx;
-        bottom += dy;
-        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx : 0);
-        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
+        left += dx + distl;
+        bottom += dy + distb;
+        right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx + distl : 0);
+        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy + distb : 0);
     }
     else if (selectionDragHover == 7) { // bottom mid
-        bottom += dy;
-        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
+        bottom += dy + distb;
+        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy + distb : 0);
     }
     else if (selectionDragHover == 8) { // bottom right
-        right += dx;
-        bottom += dy;
-        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx : 0);
-        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy : 0);
+        right += dx + distr;
+        bottom += dy + distb;
+        left = selectionArea.getX() - (e.mods.isShiftDown() ? dx + distr : 0);
+        top = selectionArea.getY() - (e.mods.isShiftDown() ? dy + distb : 0);
     }
 
     bool invertx = false;

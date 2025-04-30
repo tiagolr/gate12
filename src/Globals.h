@@ -14,4 +14,5 @@ namespace globals {
 
 	inline const int PLUG_WIDTH = 660;
 	inline const int PLUG_HEIGHT = 640;
+	inline const int PAD = 10; // plugin sides padding
 };

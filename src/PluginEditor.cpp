@@ -13,8 +13,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     setSize (globals::PLUG_WIDTH, globals::PLUG_HEIGHT);
     setScaleFactor(audioProcessor.scale);
-    auto col = 10;
-    auto row = 10;
+    auto col = globals::PAD;
+    auto row = globals::PAD;
 
     // FIRST ROW
 
@@ -95,7 +95,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         toggleUIComponents();
     };
 
-    col = getWidth() - 10 - 25;
+    col = getWidth() - globals::PAD - 25;
     settingsButton = std::make_unique<SettingsButton>(p);
     addAndMakeVisible(*settingsButton);
     settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
@@ -106,7 +106,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // SECOND ROW
 
     row += 35;
-    col = 10;
+    col = globals::PAD;
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
 
@@ -151,7 +151,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // KNOBS
 
     row += 35;
-    col = 10;
+    col = globals::PAD;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hzFloat1);
     addAndMakeVisible(*rate);
     rate->setBounds(col,row,80,65);
@@ -225,7 +225,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
 
     // THIRD ROW
-    col = 10;
+    col = globals::PAD;
     row += 75;
     juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
     juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
@@ -301,7 +301,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     retriggerButton.setBounds(col, row, 25, 25);
 
     // THIRD ROW RIGHT
-    col = getWidth() - 10 - 60;
+    col = getWidth() - globals::PAD - 60;
 
     addAndMakeVisible(snapButton);
     snapButton.setTooltip("Snap to grid on/off");
