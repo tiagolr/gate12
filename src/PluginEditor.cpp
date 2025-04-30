@@ -10,6 +10,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 {
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("trigger", this);
+    audioProcessor.params.addParameterListener("pattern", this);
 
     setSize (globals::PLUG_WIDTH, globals::PLUG_HEIGHT);
     setScaleFactor(audioProcessor.scale);
@@ -122,8 +123,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
         btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
         btn->onClick = [i, this]() {
-            patterns[i].get()->setToggleState(true, dontSendNotification);
-            };
+            MessageManager::callAsync([i, this] {
+                auto param = audioProcessor.params.getParameter("pattern");
+                param->beginChangeGesture();
+                param->setValueNotifyingHost(param->convertTo0to1((float)(i + 1)));
+                param->endChangeGesture();
+            });
+        };
         addAndMakeVisible(*btn);
 
         patterns.push_back(std::move(btn));
@@ -343,12 +349,15 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
     delete customLookAndFeel;
     audioProcessor.params.removeParameterListener("sync", this);
     audioProcessor.params.removeParameterListener("trigger", this);
+    audioProcessor.params.removeParameterListener("pattern", this);
 }
 
 void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
 {
-    (void)parameterID;
-    (void)newValue;
+    if (parameterID == "pattern") {
+        patterns[(int)newValue - 1].get()->setToggleState(true, dontSendNotification);
+    }
+
     juce::MessageManager::callAsync([this] {
         toggleUIComponents();
     });

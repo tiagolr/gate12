@@ -32,6 +32,11 @@ void Pattern::setTension(double t)
     buildSegments();
 }
 
+double Pattern::getTension()
+{
+    return tensionMult.load();
+}
+
 int Pattern::insertPoint(double x, double y, double tension, int type)
 {
     // generate ID
@@ -168,7 +173,7 @@ double Pattern::get_y_curve(Segment seg, double x)
 {
     auto rise = seg.y1 > seg.y2;
     auto tmult = tensionMult.load();
-    auto ten = seg.tension + (rise ? -tmult / 100 : tmult / 100);
+    auto ten = seg.tension + (rise ? -tmult : tmult);
     if (ten > 1) ten = 1;
     if (ten < -1) ten = -1;
     auto pwr = pow(1.1, std::fabs(ten * 50));
@@ -187,7 +192,7 @@ double Pattern::get_y_scurve(Segment seg, double x)
 {
   auto rise = seg.y1 > seg.y2;
   auto tmult = tensionMult.load();
-  auto ten = seg.tension + (rise ? -tmult / 100 : tmult / 100);
+  auto ten = seg.tension + (rise ? -tmult : tmult);
   if (ten > 1) ten = 1;
   if (ten < -1) ten = -1;
   auto pwr = pow(1.1, std::fabs(ten * 50));

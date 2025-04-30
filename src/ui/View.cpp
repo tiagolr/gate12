@@ -148,7 +148,7 @@ void View::drawPoints(Graphics& g)
         g.fillEllipse((float)(xx - 4.0), (float)(yy-4.0), 8.0f, 8.0f);
     }
 
-    g.setColour(Colour(globals::COLOR_MIDI));
+    g.setColour(Colour(globals::COLOR_SELECTION));
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
         auto xx = p.x * winw + winx;
@@ -165,16 +165,16 @@ void View::drawSelection(Graphics& g)
         int w = std::abs(selectionStart.x - selectionEnd.x);
         int h = std::abs(selectionStart.y - selectionEnd.y);
         auto bounds = Rectangle<int>(x,y,w,h);
-        g.setColour(Colour(globals::COLOR_MIDI));
+        g.setColour(Colour(globals::COLOR_SELECTION));
         g.drawRect(bounds);
-        g.setColour(Colour(globals::COLOR_MIDI).withAlpha(0.5f));
+        g.setColour(Colour(globals::COLOR_SELECTION).withAlpha(0.5f));
         g.fillRect(bounds);
     }
 
     if (selectionPoints.size() > 0) {
-        g.setColour(Colour(globals::COLOR_MIDI).withAlpha(0.5f));
+        g.setColour(Colour(globals::COLOR_SELECTION).withAlpha(0.5f));
         g.fillRect(selectionArea.expanded(MSEL_PADDING));
-        g.setColour(Colour(globals::COLOR_MIDI));
+        g.setColour(Colour(globals::COLOR_SELECTION));
         g.drawRect(selectionArea.expanded(MSEL_PADDING));
 
         if (selectionPoints.size() > 1) {
@@ -202,7 +202,7 @@ void View::drawSelectionHandles(Graphics& g)
     auto mrRect = Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3);
     auto tmRect = Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3);
     auto bmRect = Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3);
-    g.setColour(Colour(globals::COLOR_MIDI));
+    g.setColour(Colour(globals::COLOR_SELECTION));
     g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
     g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
     g.setColour(Colours::white);
@@ -231,7 +231,7 @@ std::vector<double> View::getMidpointXY(Segment seg)
 
 void View::drawMidPoints(Graphics& g)
 {
-    auto& segs = audioProcessor.pattern->segments;
+    auto segs = audioProcessor.pattern->segments;
 
     g.setColour(Colour(globals::COLOR_ACTIVE));
     for (auto seg = segs.begin(); seg != segs.end(); ++seg) {
@@ -268,7 +268,7 @@ void View::drawSeek(Graphics& g)
 
 int View::getHoveredPoint(int x, int y)
 {
-    auto& points = audioProcessor.pattern->points;
+    auto points = audioProcessor.pattern->points;
     for (auto i = 0; i < points.size(); ++i) {
         auto xx = (int)(points[i].x * winw + winx);
         auto yy = (int)(points[i].y * winh + winy);
@@ -281,7 +281,7 @@ int View::getHoveredPoint(int x, int y)
 
 int View::getHoveredMidpoint(int x, int y)
 {
-    auto& segs = audioProcessor.pattern->segments;
+    auto segs = audioProcessor.pattern->segments;
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);
@@ -347,8 +347,8 @@ void View::mouseUp(const juce::MouseEvent& e)
     else if (selectedMidpoint > -1) { // finished dragging midpoint
         setMouseCursor(MouseCursor::NormalCursor);
         e.source.enableUnboundedMouseMovement(false);
-        auto& mpoint = audioProcessor.pattern->points[selectedMidpoint];
-        auto& next = audioProcessor.pattern->points[static_cast<size_t>(selectedMidpoint) + 1];
+        auto mpoint = audioProcessor.pattern->points[selectedMidpoint];
+        auto next = audioProcessor.pattern->points[static_cast<size_t>(selectedMidpoint) + 1];
         double midx = (mpoint.x + next.x) / 2.;
         int x = (int)(midx * winw + winx) + getScreenPosition().x;
         int y = (int)(audioProcessor.pattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
@@ -381,7 +381,7 @@ void View::createSelection(const MouseEvent& e)
     );
 
     
-    auto& points = audioProcessor.pattern->points;
+    auto points = audioProcessor.pattern->points;
     for (size_t i = 0; i < points.size(); ++i) {
         if (i == 0 || i == points.size() - 1)
             continue;

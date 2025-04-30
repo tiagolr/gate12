@@ -56,6 +56,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         patterns[i]->insertPoint(1, 1, 0, 1);
         patterns[i]->buildSegments();
     }
+
     pattern = patterns[0];
     preSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= viewport width 
     postSamples.resize(globals::PLUG_WIDTH, 0);
@@ -63,10 +64,14 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     loadSettings();
 }
 
+GATE12AudioProcessor::~GATE12AudioProcessor()
+{
+}
+
 void GATE12AudioProcessor::parameterValueChanged (int parameterIndex, float newValue)
 {
-    (void)parameterIndex; // suppress unused warnings
     (void)newValue;
+    (void)parameterIndex;
     paramChanged = true;
 }
 
@@ -74,10 +79,6 @@ void GATE12AudioProcessor::parameterGestureChanged (int parameterIndex, bool ges
 {
     (void)parameterIndex;
     (void)gestureIsStarting;
-}
-
-GATE12AudioProcessor::~GATE12AudioProcessor()
-{
 }
 
 void GATE12AudioProcessor::loadSettings ()
@@ -226,8 +227,10 @@ bool GATE12AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
 
 void GATE12AudioProcessor::onSlider()
 {
-    // auto srate = getSampleRate();
-    // auto pattern = (int)params.getRawParameterValue("pattern")->load();
+    int pat = (int)params.getRawParameterValue("pattern")->load();
+    if (pat != pattern->index - 1) {
+        queuedPattern = pat;
+    }
     // auto sync = (int)params.getRawParameterValue("sync")->load();
     // auto min = (double)params.getRawParameterValue("min")->load();
     // auto max = (double)params.getRawParameterValue("max")->load();
@@ -241,8 +244,9 @@ void GATE12AudioProcessor::onSlider()
     // auto retrigger = (bool)params.getRawParameterValue("retrigger")->load();
     // auto patsync = (int)params.getRawParameterValue("patsync")->load();
     grid = (int)params.getRawParameterValue("grid")->load();
-
-    //tension = (double)params.getRawParameterValue("tension")->load();
+    auto tension = (double)params.getRawParameterValue("tension")->load();
+    if (pattern->getTension() != tension) 
+        pattern->setTension(tension);
 }
 
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
@@ -300,6 +304,14 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     DBG("TODO");
             }
             msg.offset -= 1;
+        }
+
+        if (queuedPattern) {
+            pattern = patterns[queuedPattern - 1];
+            pattern->buildSegments();
+            auto tension = (double)params.getRawParameterValue("tension")->load();
+            pattern->setTension(tension);
+            queuedPattern = 0;
         }
     }
 }

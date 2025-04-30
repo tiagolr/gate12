@@ -10,7 +10,8 @@ namespace globals {
 	inline unsigned int COLOR_SEEK = 0xff80ffff;
 	inline unsigned int COLOR_KNOB = 0x11ffffff;
 	inline unsigned int COLOR_AUDIO = 0xffffd42a;
-	inline unsigned int COLOR_MIDI = 0xff3771c8;
+	inline unsigned int COLOR_MIDI = 0xff50a9ff;
+	inline unsigned int COLOR_SELECTION = 0xff50a9ff;
 
 	inline const int PLUG_WIDTH = 660;
 	inline const int PLUG_HEIGHT = 640;

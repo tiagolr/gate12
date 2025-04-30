@@ -39,6 +39,7 @@ public:
 
     // State
     Pattern* pattern; // current pattern
+    int queuedPattern = 0; // queued pat index, 0 = off
     bool isPlaying = false;
     int currentProgram = -1;
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
