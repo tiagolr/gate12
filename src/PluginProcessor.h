@@ -20,6 +20,36 @@ struct MIDIMsg {
     int channel;
 };
 
+/*
+    RC lowpass filter with two resitances a or b
+    Used for attack release smooth or single smooth of ypos
+*/
+class SmoothParam
+{
+public:
+    double a; // resistance a
+    double b; // resistance b
+    double lp; // last value
+    double smooth; // latest value
+
+    void rcSet2(double rca, double rcb, double srate)
+    {
+        a = 1 / (rca * srate + 1);
+        b = 1 / (rcb * srate + 1);
+    }
+
+    double rcLP2(double s, bool ab)
+    {
+        return lp += ab ? a * (s - lp) : b * (s - lp);
+    }
+
+    double smooth2(double s, bool ab)
+    {
+        lp = smooth;
+        return smooth = rcLP2(s, ab);
+    }
+};
+
 //==============================================================================
 /**
 */
@@ -47,10 +77,17 @@ public:
     std::vector<double> postSamples; // used by view to draw post audio
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
+    double syncQN = 0.0; // sync quarter notes
+    bool midiTrigger = false; // flag midi has triggered envelope
+    SmoothParam* value;
+    double beatPos = 0.0;
+    double ppqPosition = 0.0;
+    double beatsPerSample = 4.0;
 
     //==============================================================================
     GATE12AudioProcessor();
     ~GATE12AudioProcessor() override;
+    void setSmooth();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -64,6 +101,8 @@ public:
    #endif
 
     void onSlider ();
+    void onPlay ();
+    double getY(double x, double min, double max);
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     template <typename FloatType>

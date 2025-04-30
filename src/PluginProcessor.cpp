@@ -60,12 +60,26 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     pattern = patterns[0];
     preSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= viewport width 
     postSamples.resize(globals::PLUG_WIDTH, 0);
+    value = new SmoothParam();
 
     loadSettings();
 }
 
 GATE12AudioProcessor::~GATE12AudioProcessor()
 {
+}
+
+void GATE12AudioProcessor::setSmooth() 
+{
+    if (dualSmooth) {
+        float attack = params.getRawParameterValue("attack")->load();
+        float release = params.getRawParameterValue("release")->load();
+        value->rcSet2(attack * 0.25, release * 0.25, getSampleRate());
+    }
+    else {
+        float lfosmooth = params.getRawParameterValue("smooth")->load();
+        value->rcSet2(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
+    }
 }
 
 void GATE12AudioProcessor::parameterValueChanged (int parameterIndex, float newValue)
@@ -97,9 +111,9 @@ void GATE12AudioProcessor::saveSettings ()
 }
 
 // Set UI scale factor
-void GATE12AudioProcessor::setScale(float value)
+void GATE12AudioProcessor::setScale(float s)
 {
-    scale = value;
+    scale = s;
     saveSettings();
 }
 
@@ -227,6 +241,8 @@ bool GATE12AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
 
 void GATE12AudioProcessor::onSlider()
 {
+    setSmooth();
+
     int pat = (int)params.getRawParameterValue("pattern")->load();
     if (pat != pattern->index - 1) {
         queuedPattern = pat;
@@ -247,6 +263,55 @@ void GATE12AudioProcessor::onSlider()
     auto tension = (double)params.getRawParameterValue("tension")->load();
     if (pattern->getTension() != tension) 
         pattern->setTension(tension);
+
+    auto sync = (int)params.getRawParameterValue("sync")->load();
+    if (sync == 0) syncQN = 0;
+    else if (sync == 1) syncQN = 1./4.; // 1/16
+    else if (sync == 2) syncQN = 1./2.; // 1/8
+    else if (sync == 3) syncQN = 1/1; // 1/4
+    else if (sync == 4) syncQN = 1*2; // 1/2
+    else if (sync == 5) syncQN = 1*4; // 1bar
+    else if (sync == 6) syncQN = 1*8; // 2bar
+    else if (sync == 7) syncQN = 1*16; // 4bar
+    else if (sync == 8) syncQN = 1./6.; // 1/16t
+    else if (sync == 9) syncQN = 1./3.; // 1/8t
+    else if (sync == 10) syncQN = 2./3.; // 1/4t
+    else if (sync == 11) syncQN = 4./3.; // 1/2t
+    else if (sync == 12) syncQN = 8./3.; // 1/1t
+    else if (sync == 13) syncQN = 1./4.*1.5; // 1/16.
+    else if (sync == 14) syncQN = 1./2.*1.5; // 1/8.
+    else if (sync == 15) syncQN = 1./1.*1.5; // 1/4.
+    else if (sync == 16) syncQN = 2./1.*1.5; // 1/2.
+    else if (sync == 17) syncQN = 4./1.*1.5; // 1/1.
+
+}
+
+void GATE12AudioProcessor::onPlay()
+{
+    std::fill(preSamples.begin(), preSamples.end(), 0.0);
+    std::fill(postSamples.begin(), postSamples.end(), 0.0);
+    bool sync = (int)params.getRawParameterValue("sync")->load();
+    int trigger = (int)params.getRawParameterValue("trigger")->load();
+    double phase = (double)params.getRawParameterValue("phase")->load();
+    double min = (double)params.getRawParameterValue("min")->load();
+    double max = (double)params.getRawParameterValue("max")->load();
+
+    // reset value.smooth on play
+    if (sync) {
+        double x = ppqPosition / syncQN + phase;
+        x -= std::floor(x);
+        value->smooth = getY(x, min, max); 
+    }
+
+    // reset beatPos on play in Hz mode
+    if (trigger == 0 && !sync) {
+        beatPos = 0; 
+    }
+}
+
+double inline GATE12AudioProcessor::getY(double x, double min, double max)
+{
+    return min + (max - min) * (1 - pattern->get_y_at(x));
 }
 
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
@@ -268,9 +333,34 @@ template <typename FloatType>
 void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals disableDenormals;
+    double srate = getSampleRate();
+    
+    if (auto* phead = getPlayHead()) {
+        if (auto pos = phead->getPosition()) {
+            if (auto ppq = pos->getPpqPosition()) 
+                ppqPosition = *ppq;
+            if (auto tempo = pos->getBpm()) 
+                beatsPerSample = *tempo / (60. * srate);
+            if (!isPlaying && pos->getIsPlaying()) // play turned on
+                onPlay();
+            isPlaying = pos->getIsPlaying();
+        }
+    }
+
     //auto totalNumOutputChannels = getTotalNumOutputChannels();
     //auto totalNumInputChannels = getTotalNumInputChannels();
-    auto numSamples = buffer.getNumSamples();
+    int trigger = (int)params.getRawParameterValue("trigger")->load();
+    int sync = (int)params.getRawParameterValue("sync")->load();
+    double min = (double)params.getRawParameterValue("min")->load();
+    double max = (double)params.getRawParameterValue("max")->load();
+    double rate = (double)params.getRawParameterValue("rate")->load();
+    double phase = (double)params.getRawParameterValue("phase")->load();
+    int numSamples = buffer.getNumSamples();
+
+    // update beatpos only in tempo sync mode during playback
+    if (trigger == 0 && isPlaying && sync > 0) {
+        beatPos = ppqPosition;
+    }
 
     // remove midi messages that have been processed
     midi.erase(std::remove_if(midi.begin(), midi.end(), [](const MIDIMsg& msg) {
@@ -286,7 +376,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     keyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
     for (const auto metadata : midiMessages) {
         juce::MidiMessage message = metadata.getMessage();
-        if (message.isNoteOn() || message.isNoteOff())
+        if (message.isNoteOn() || message.isNoteOff()) {
             midi.push_back({ // queue midi message
                 metadata.samplePosition,
                 message.isNoteOn(),
@@ -294,6 +384,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 message.getVelocity(),
                 message.getChannel()
             });
+        }
     }
 
     for (int sample = 0; sample < numSamples; ++sample) {
@@ -320,6 +411,27 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             auto tension = (double)params.getRawParameterValue("tension")->load();
             pattern->setTension(tension);
             queuedPattern = 0;
+        }
+
+        if (trigger == 0 && (isPlaying || alwaysPlaying)) { // Sync trigger mode
+            if (sync > 0 && syncQN > 0) { // syncQN > 0 avoids crash where user changes rate mid processBlock
+                beatPos += beatsPerSample;
+                xpos = beatPos / syncQN + phase;
+            }
+            else {
+                beatPos += 1 / srate * rate;
+                xpos = beatPos + phase;
+            }
+            xpos -= std::floor(xpos);
+            
+            double nextValue = getY(xpos, min, max);
+            ypos = value->smooth2(nextValue, nextValue > ypos);
+            
+            //for (int c = 0; c < nChans; ++c) {
+            //    outputs[c][s] = inputs[c][s] * ypos;
+            //}
+            
+            //processDisplaySamples(s);
         }
     }
 }
