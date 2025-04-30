@@ -41,6 +41,7 @@ public:
   View(GATE12AudioProcessor&);
   ~View() override;
   void init();
+  void timerCallback() override;
   void paint(Graphics& g) override;
   void drawWave(Graphics& g, std::vector<double> samples, Colour color) const;
   void drawGrid(Graphics& g);
@@ -68,15 +69,11 @@ public:
 
   void applyPaintTool(int x, int y, const MouseEvent& e);
 
-  void timerCallback() override
-  {
-      repaint();
-  }
-
 private:
   GATE12AudioProcessor& audioProcessor;
   double origTension = 0;
   int dragStartY = 0;
+  int pattern = -1; // used to detect pattern changes
 
   // Multi-select
   Point<int> selectionStart = Point(-1,-1);

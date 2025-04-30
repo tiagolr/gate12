@@ -300,8 +300,16 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         // process midi queue
         for (auto& msg : midi) {
             if (msg.offset == 0) {
-                if (msg.isNoteon)
-                    DBG("TODO");
+                if (msg.isNoteon) {
+                    if (msg.channel == triggerChn || triggerChn == 16) {
+                        auto patidx = msg.note % 12 + 1;
+                        queuedPattern = patidx;
+                        auto param = params.getParameter("pattern");
+                        param->beginChangeGesture();
+                        param->setValueNotifyingHost(param->convertTo0to1((float)(patidx)));
+                        param->endChangeGesture();
+                    }
+                }
             }
             msg.offset -= 1;
         }

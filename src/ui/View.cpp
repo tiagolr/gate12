@@ -24,15 +24,32 @@ View::~View()
     audioProcessor.params.removeParameterListener("pattern", this);
 };
 
+void View::timerCallback()
+{
+    if (pattern != audioProcessor.pattern->index) {
+        selectionStart = Point<int>(-1,-1);
+        selectedMidpoint = -1;
+        selectedPoint = -1;
+        clearSelection();
+        pattern = audioProcessor.pattern->index;
+    }
+    if (audioProcessor.queuedPattern && isEnabled()) {
+        setAlpha(0.5f);
+        setEnabled(false);
+    }
+    else if (!audioProcessor.queuedPattern && !isEnabled()) {
+        setAlpha(1.f);
+        setEnabled(true);
+    }
+    repaint();
+}
+
 void View::parameterChanged (const juce::String& parameterID, float newValue) 
 {
     (void)parameterID;
     (void)newValue;
     if (parameterID == "pattern") {
-        selectionStart = Point<int>(-1,-1);
-        selectedMidpoint = -1;
-        selectedPoint = -1;
-        clearSelection();
+        
     }
 };
 
@@ -294,6 +311,9 @@ int View::getHoveredMidpoint(int x, int y)
 
 void View::mouseDown(const juce::MouseEvent& e)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     Point pos = e.getPosition();
     int x = pos.x;
     int y = pos.y;
@@ -341,6 +361,9 @@ void View::mouseDown(const juce::MouseEvent& e)
 
 void View::mouseUp(const juce::MouseEvent& e)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     if (selectedPoint > -1) { // finished dragging point
         setMouseCursor(MouseCursor::NormalCursor);
     }
@@ -454,6 +477,9 @@ void View::clearSelection()
 
 void View::mouseMove(const juce::MouseEvent& e)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     auto pos = e.getPosition();
     hoverPoint = -1;
     hoverMidpoint = -1;
@@ -498,6 +524,9 @@ void View::mouseMove(const juce::MouseEvent& e)
 
 void View::mouseDrag(const juce::MouseEvent& e)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     Point pos = e.getPosition();
     int x = pos.x;
     int y = pos.y;
@@ -572,6 +601,9 @@ void View::mouseDrag(const juce::MouseEvent& e)
 
 void View::dragSelection(const MouseEvent& e)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     auto mouse = e.getPosition();
     auto mouseDown = e.getMouseDownPosition();
 
@@ -743,6 +775,9 @@ void View::updatePointsToSelection(bool invertx, bool inverty)
 
 void View::mouseDoubleClick(const juce::MouseEvent& e)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     int x = e.getPosition().x;
     int y = e.getPosition().y;
     auto& points = audioProcessor.pattern->points;
@@ -777,6 +812,9 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 
 void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return;
+
     (void)event;
     int grid = audioProcessor.grid;
     auto param = audioProcessor.params.getParameter("grid");
@@ -787,6 +825,9 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
 
 bool View::keyPressed(const juce::KeyPress& key) 
 {
+    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+        return false;
+
     // remove selected points
     if (key == KeyPress::deleteKey)
     {
