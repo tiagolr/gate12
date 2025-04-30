@@ -20,6 +20,12 @@ struct MIDIMsg {
     int channel;
 };
 
+enum Trigger {
+    Sync,
+    MIDI,
+    Audio
+};
+
 /*
     RC lowpass filter with two resitances a or b
     Used for attack release smooth or single smooth of ypos
@@ -64,6 +70,7 @@ public:
     bool drawWave = true;
     bool linkEdgePoints = false;
     bool dualSmooth = true; // use either single smooth or attack and release
+    bool holdEnvelopeTail = true; // MIDI and Audio trigger: keep processing last position after envelope finishes
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
     int grid = 8; // grid divisions
 
@@ -77,12 +84,15 @@ public:
     std::vector<double> postSamples; // used by view to draw post audio
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
-    double syncQN = 0.0; // sync quarter notes
+    double syncQN = 1.0; // sync quarter notes
     bool midiTrigger = false; // flag midi has triggered envelope
+    bool audioTrigger = false; // flag audio has triggered envelope
     SmoothParam* value;
     double beatPos = 0.0;
     double ppqPosition = 0.0;
     double beatsPerSample = 4.0;
+    int winpos = 0;
+    int lwinpos = 0;
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -102,7 +112,9 @@ public:
 
     void onSlider ();
     void onPlay ();
+    void onStop ();
     double getY(double x, double min, double max);
+    void retriggerEnvelope();
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     template <typename FloatType>

@@ -73,7 +73,7 @@ void View::paint(Graphics& g) {
     drawMidPoints(g);
     drawPoints(g);
     drawSelection(g);
-    if (audioProcessor.xpos > 0.0) {
+    if (audioProcessor.xpos != 0.0) {
         drawSeek(g);
     }
 }
@@ -280,7 +280,7 @@ void View::drawSeek(Graphics& g)
     g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
     g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));
     g.setColour(Colour(globals::COLOR_SEEK));
-    g.drawEllipse((float)(xpos * winw + winx - 5), (float)((1 - ypos) * winh + winy - 5), 10.0f, 10.0f, 1.0f);
+    g.drawEllipse((float)(xpos * winw + winx - 5.f), (float)((1 - ypos) * winh + winy - 5.f), 10.0f, 10.0f, 1.0f);
 }
 
 int View::getHoveredPoint(int x, int y)
