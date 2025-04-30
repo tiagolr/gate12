@@ -29,6 +29,7 @@ void About::paint(Graphics& g)
 	g.drawText("- Right click points to change point type.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Right click view to use paint tool.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Alt + Right click to erase points.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Click drag to select multiple points.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Check the github link for more info and new versions.", bounds.removeFromTop(22), Justification::centredLeft);
 
 };

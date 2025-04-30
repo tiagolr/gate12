@@ -58,6 +58,8 @@ private:
     std::unique_ptr<Rotary> attack;
     std::unique_ptr<Rotary> release;
     std::unique_ptr<Rotary> tension;
+    TextButton nudgeRightButton;
+    TextButton nudgeLeftButton;
     ImageButton paintLogo;
     ComboBox paintMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> paintAttachment;

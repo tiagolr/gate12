@@ -192,7 +192,37 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tension->setBounds(col,row,80,65);
     col += 75;
 
-    
+    addAndMakeVisible(nudgeLeftButton);
+    nudgeLeftButton.setTooltip("Nudge phase left by grid size\nHas the same effect as rotating the pattern");
+    nudgeLeftButton.setAlpha(0.f);
+    nudgeLeftButton.setBounds(phase->getX(), phase->getBottom()-10, 10, 10);
+    nudgeLeftButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            auto param = audioProcessor.params.getParameter("phase");
+            auto ph = param->getValue();
+            ph -= 1.f / (float)audioProcessor.grid;
+            if (ph < 0.f) ph += 1.f;
+            param->beginChangeGesture();
+            param->setValueNotifyingHost(ph);
+            param->endChangeGesture();
+        });
+    };
+
+    addAndMakeVisible(nudgeRightButton);
+    nudgeRightButton.setTooltip("Nudge phase right by grid size\nHas the same effect as rotating the pattern");
+    nudgeRightButton.setAlpha(0.f);
+    nudgeRightButton.setBounds(phase->getRight()-10, phase->getBottom() - 10, 10, 10);
+    nudgeRightButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            auto param = audioProcessor.params.getParameter("phase");
+            auto ph = param->getValue();
+            ph += 1.f / (float)audioProcessor.grid;
+            if (ph > 1.f) ph -= 1.f;
+            param->beginChangeGesture();
+            param->setValueNotifyingHost(ph);
+            param->endChangeGesture();
+        });
+    };
 
     // THIRD ROW
     col = 10;
@@ -362,8 +392,8 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(globals::COLOR_BG));
 
-    // draw loop play button
     g.setColour(Colour(globals::COLOR_ACTIVE));
+    // draw loop play button
     if (audioProcessor.alwaysPlaying) {
         auto loopBounds = loopButton.getBounds().expanded(-5);
         g.fillRect(loopBounds);
@@ -378,10 +408,26 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
         g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
 
     }
+    // draw audio settings button outline
     if (audioSettingsLogo.isVisible() && showAudioKnobs) {
         g.setColour(Colour(globals::COLOR_AUDIO));
         g.fillRoundedRectangle(audioSettingsLogo.getBounds().expanded(4,4).toFloat(), 3.0f);
     }
+    // draw phase nudge buttons
+    g.setColour(Colour(globals::COLOR_ACTIVE));
+    juce::Path nudgeLeftTriangle;
+    nudgeLeftTriangle.startNewSubPath(0.0f, nudgeLeftButton.getHeight() / 2.f);    
+    nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), 0.f);            
+    nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), (float)nudgeLeftButton.getHeight());
+    nudgeLeftTriangle.closeSubPath();
+    g.fillPath(nudgeLeftTriangle, AffineTransform::translation((float)nudgeLeftButton.getX(), (float)nudgeLeftButton.getY()));
+
+    juce::Path nudgeRightTriangle;
+    nudgeRightTriangle.startNewSubPath(0.0f, 0.0f);    
+    nudgeRightTriangle.lineTo((float)nudgeRightButton.getWidth(), nudgeRightButton.getHeight()/2.f);            
+    nudgeRightTriangle.lineTo(0.0f, (float)nudgeRightButton.getHeight());
+    nudgeRightTriangle.closeSubPath();
+    g.fillPath(nudgeRightTriangle, AffineTransform::translation((float)nudgeRightButton.getX(), (float)nudgeRightButton.getY()));
 }
 
 void GATE12AudioProcessorEditor::resized()
