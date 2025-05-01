@@ -73,7 +73,7 @@ void View::paint(Graphics& g) {
     drawMidPoints(g);
     drawPoints(g);
     drawSelection(g);
-    if (audioProcessor.xpos != 0.0) {
+    if (audioProcessor.xenv.load() != 0.0) {
         drawSeek(g);
     }
 }
@@ -275,8 +275,8 @@ void View::drawMidPoints(Graphics& g)
 
 void View::drawSeek(Graphics& g)
 {
-    auto xpos = audioProcessor.xpos;
-    auto ypos = audioProcessor.ypos;
+    auto xpos = audioProcessor.xenv.load();
+    auto ypos = audioProcessor.yenv.load();
     g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
     g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));
     g.setColour(Colour(globals::COLOR_SEEK));

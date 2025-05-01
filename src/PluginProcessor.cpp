@@ -244,25 +244,16 @@ void GATE12AudioProcessor::onSlider()
     setSmooth();
 
     int pat = (int)params.getRawParameterValue("pattern")->load();
-    if (pat != pattern->index - 1) {
-        queuedPattern = pat;
+    if (pat != pattern->index + 1) {
+        queuePattern(pat);
     }
-    // auto sync = (int)params.getRawParameterValue("sync")->load();
-    // auto min = (double)params.getRawParameterValue("min")->load();
-    // auto max = (double)params.getRawParameterValue("max")->load();
-    // auto smooth = (double)params.getRawParameterValue("smooth")->load();
-    // auto attack = (double)params.getRawParameterValue("attack")->load();
-    // auto release = (double)params.getRawParameterValue("release")->load();
-    // auto paint = (int)params.getRawParameterValue("paint")->load();
-    // auto point = (int)params.getRawParameterValue("point")->load();
-    // auto snap = (bool)params.getRawParameterValue("snap")->load();
-    // auto grid = (int)params.getRawParameterValue("grid")->load();
-    // auto retrigger = (bool)params.getRawParameterValue("retrigger")->load();
-    // auto patsync = (int)params.getRawParameterValue("patsync")->load();
+
     grid = (int)params.getRawParameterValue("grid")->load();
     auto tension = (double)params.getRawParameterValue("tension")->load();
-    if (pattern->getTension() != tension) 
+    if (pattern->getTension() != tension) {
         pattern->setTension(tension);
+        pattern->buildSegments();
+    }
 
     auto sync = (int)params.getRawParameterValue("sync")->load();
     if (sync == 0) syncQN = 1.; // not used
@@ -347,6 +338,31 @@ void GATE12AudioProcessor::retriggerEnvelope()
         beatPos = -phase;
 }
 
+void GATE12AudioProcessor::queuePattern(int patidx)
+{
+    queuedPattern = patidx;
+    queuedPatternCounter = 0;
+    int patsync = (int)params.getRawParameterValue("patsync")->load();
+
+    if (isPlaying && patsync != PatSync::Off) {
+        int interval = samplesPerBeat;
+        if (patsync == PatSync::QuarterBeat) 
+            interval = interval / 4;
+        else if (patsync == PatSync::HalfBeat)
+            interval = interval / 2;
+        else if (patsync == PatSync::Beat_x2)
+            interval = interval * 2;
+        else if (patsync == PatSync::Beat_x4)
+            interval = interval * 4;
+        queuedPatternCounter = (interval - timeInSamples % interval) % interval;
+    }
+
+    auto param = params.getParameter("pattern");
+    param->beginChangeGesture();
+    param->setValueNotifyingHost(param->convertTo0to1((float)(patidx)));
+    param->endChangeGesture();
+}
+
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
 {
     return true;
@@ -372,14 +388,22 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         if (auto pos = phead->getPosition()) {
             if (auto ppq = pos->getPpqPosition()) 
                 ppqPosition = *ppq;
-            if (auto tempo = pos->getBpm()) 
-                beatsPerSample = *tempo / (60. * srate);
+            if (auto tempo = pos->getBpm()) {
+                beatsPerSample = *tempo / (60.0 * srate);
+                samplesPerBeat = (int)((60.0 / *tempo) * srate);
+            }
             auto play = pos->getIsPlaying();
             if (!isPlaying && play) // playback started
                 onPlay();
             else if (isPlaying && !play) // playback stopped
                 onStop();
+            
             isPlaying = play;
+            if (isPlaying) {
+                if (auto samples = pos->getTimeInSamples()) {
+                    timeInSamples = *samples;
+                }
+            }
         }
     }
 
@@ -454,7 +478,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 message.isNoteOn(),
                 message.getNoteNumber(),
                 message.getVelocity(),
-                message.getChannel()
+                message.getChannel() - 1
             });
         }
     }
@@ -465,12 +489,12 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             if (msg.offset == 0) {
                 if (msg.isNoteon) {
                     if (msg.channel == triggerChn || triggerChn == 16) {
-                        auto patidx = msg.note % 12 + 1;
-                        queuedPattern = patidx;
-                        auto param = params.getParameter("pattern");
-                        param->beginChangeGesture();
-                        param->setValueNotifyingHost(param->convertTo0to1((float)(patidx)));
-                        param->endChangeGesture();
+                        auto patidx = msg.note % 12;
+                        queuePattern(patidx + 1);
+                    }
+                    else if (trigger == Trigger::MIDI) {
+                        midiTrigger = true;
+                        xpos = phase;
                     }
                 }
             }
@@ -478,11 +502,16 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         if (queuedPattern) {
-            pattern = patterns[queuedPattern - 1];
-            pattern->buildSegments();
-            auto tension = (double)params.getRawParameterValue("tension")->load();
-            pattern->setTension(tension);
-            queuedPattern = 0;
+            if (!isPlaying || queuedPatternCounter == 0) {
+                pattern = patterns[queuedPattern - 1];
+                auto tension = (double)params.getRawParameterValue("tension")->load();
+                pattern->setTension(tension);
+                pattern->buildSegments();
+                queuedPattern = 0;
+            }
+            if (queuedPatternCounter > 0) {
+                queuedPatternCounter -= 1;
+            }
         }
 
         if (trigger == Trigger::Sync && (isPlaying || alwaysPlaying)) { // Sync trigger mode
@@ -536,6 +565,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         else if (trigger == Trigger::Audio && !audioTrigger && !alwaysPlaying) {
 
         }
+
+        xenv.store(xpos);
+        yenv.store(ypos);
+        if (isPlaying)
+            timeInSamples += 1;
     }
 }
 

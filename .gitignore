@@ -4,6 +4,7 @@
 # Reaper project test
 *.rpp
 *.rpp-bak
+*.wav
 
 # Compiled Object files
 *.slo

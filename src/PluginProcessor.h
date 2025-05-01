@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include <vector>
 #include "dsp/Pattern.h"
+#include <atomic>
 
 struct MIDIMsg {
     int offset;
@@ -24,6 +25,15 @@ enum Trigger {
     Sync,
     MIDI,
     Audio
+};
+
+enum PatSync {
+    Off,
+    QuarterBeat,
+    HalfBeat,
+    Beat_x1,
+    Beat_x2,
+    Beat_x4
 };
 
 /*
@@ -77,6 +87,8 @@ public:
     // State
     Pattern* pattern; // current pattern
     int queuedPattern = 0; // queued pat index, 0 = off
+    int64_t timeInSamples = 0;
+    int64_t queuedPatternCounter = 0; // when this counter reaches 0 the queued pattern is applied
     bool isPlaying = false;
     int currentProgram = -1;
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
@@ -84,6 +96,8 @@ public:
     std::vector<double> postSamples; // used by view to draw post audio
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
+    std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
+    std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     double syncQN = 1.0; // sync quarter notes
     bool midiTrigger = false; // flag midi has triggered envelope
     bool audioTrigger = false; // flag audio has triggered envelope
@@ -91,6 +105,7 @@ public:
     double beatPos = 0.0;
     double ppqPosition = 0.0;
     double beatsPerSample = 4.0;
+    int samplesPerBeat = 44100;
     int winpos = 0;
     int lwinpos = 0;
 
@@ -115,6 +130,8 @@ public:
     void onStop ();
     double getY(double x, double min, double max);
     void retriggerEnvelope();
+    void queuePattern(int patidx);
+
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     template <typename FloatType>

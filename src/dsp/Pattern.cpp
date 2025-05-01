@@ -28,8 +28,7 @@ void Pattern::sortPoints()
 
 void Pattern::setTension(double t)
 {
-    tensionMult = t;
-    buildSegments();
+    tensionMult.store(t);
 }
 
 double Pattern::getTension()
