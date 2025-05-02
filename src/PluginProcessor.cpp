@@ -294,11 +294,7 @@ void GATE12AudioProcessor::onPlay()
 {
     clearDrawBuffers();
     clearLookaheadBuffers();
-    //int trigger = (int)params.getRawParameterValue("trigger")->load();
-    bool sync = (int)params.getRawParameterValue("sync")->load();
-    double phase = (double)params.getRawParameterValue("phase")->load();
-    double min = (double)params.getRawParameterValue("min")->load();
-    double max = (double)params.getRawParameterValue("max")->load();
+    int trigger = (int)params.getRawParameterValue("trigger")->load();
     double ratehz = (double)params.getRawParameterValue("rate")->load();
 
     midiTrigger = false;
@@ -307,12 +303,29 @@ void GATE12AudioProcessor::onPlay()
     beatPos = ppqPosition;
     ratePos = beatPos * secondsPerBeat * ratehz;
 
-    // reset smooth
-    if (sync) {
-        double x = (sync ? (ppqPosition / syncQN) : ratePos) + phase;
-        x -= std::floor(x);
-        value->smooth = getY(x, min, max);
+    if (trigger == 0 || alwaysPlaying) {
+        restartEnv(false);
     }
+}
+
+void GATE12AudioProcessor::restartEnv(bool fromZero)
+{
+    int sync = (int)params.getRawParameterValue("sync")->load();
+    double min = (double)params.getRawParameterValue("min")->load();
+    double max = (double)params.getRawParameterValue("max")->load();
+    double phase = (double)params.getRawParameterValue("phase")->load();
+
+    if (fromZero) {
+        xpos = phase;
+    }
+    else {
+        xpos = sync > 0 
+            ? beatPos / syncQN + phase
+            : ratePos + phase;
+        xpos -= std::floor(xpos);
+    }
+
+    value->smooth = getY(xpos, min, max); // reset smooth
 }
 
 void GATE12AudioProcessor::onStop()
@@ -516,7 +529,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     else if (trigger == Trigger::MIDI) {
                         clearDrawBuffers();
                         midiTrigger = true;
-                        xpos = phase;
+                        trigpos = 0.0;
+                        restartEnv(true);
                     }
                 }
             }
@@ -551,37 +565,44 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // MIDI mode
-        else if (trigger == Trigger::MIDI && (alwaysPlaying || midiTrigger)) {
-            if (alwaysPlaying && midiTrigger) { // reset phase on midiTrigger
-                xpos = phase;
-                midiTrigger = false;
-            }
-            xpos += sync > 0
-                ? beatsPerSample / syncQN
-                : 1 / srate * ratehz;
-            if (!alwaysPlaying && xpos >= 1) {
-                midiTrigger = false;
-                if (MIDIHoldEnvelopeTail) {
-                    xpos = 1.0; // keep processing last envelope position
+        else if (trigger == Trigger::MIDI) {
+            bool skipDrawing = false;
+            if (alwaysPlaying) {
+                if (midiTrigger) { // reset envelope on midi triggger
+                    midiTrigger = false;
+                    xpos = phase;
                 }
                 else {
-                    xpos = 0.0; // stop drawing seek
-                    clearDrawBuffers();
+                    xpos += sync > 0
+                        ? beatsPerSample / syncQN
+                        : 1 / srate * ratehz;
+                    xpos -= std::floor(xpos);
                 }
-                
             }
             else {
-                xpos -= std::floor(xpos);
+                if (midiTrigger) {
+                    auto inc = sync > 0
+                        ? beatsPerSample / syncQN
+                        : 1 / srate * ratehz;
+                    xpos += inc;
+                    xpos -= std::floor(xpos);
+                    trigpos += inc;
+
+                    if (trigpos >= 1.0) {
+                        midiTrigger = false;
+                        xpos = phase ? phase : 1.0;
+                    }
+                }
+                else {
+                    // envelope is stopped, hold last position
+                    xpos = phase ? phase : 1.0; 
+                    skipDrawing = true;
+                }
             }
+
             double nextValue = getY(xpos, min, max);
             ypos = value->smooth2(nextValue, nextValue > ypos);    
-
-            applyGain(sample, ypos);
-        }
-
-        // MIDI mode - hold last position after envelope finishes
-        else if (trigger == Trigger::MIDI && !alwaysPlaying && !midiTrigger && xpos == 1.0 && MIDIHoldEnvelopeTail) {
-            applyGain(sample, getY(xpos, min, max), false);
+            applyGain(sample, ypos, !skipDrawing);
         }
 
         // Audio mode

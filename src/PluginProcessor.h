@@ -95,6 +95,7 @@ public:
     std::vector<double> postSamples; // used by view to draw post audio
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
+    double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play
     std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     double syncQN = 1.0; // sync quarter notes
@@ -142,6 +143,7 @@ public:
     void onSlider ();
     void onPlay ();
     void onStop ();
+    void restartEnv (bool fromZero = false);
     void clearDrawBuffers();
     void clearLookaheadBuffers();
     double getY(double x, double min, double max);

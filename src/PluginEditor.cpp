@@ -285,7 +285,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 100;
 
     addAndMakeVisible(loopButton);
-    loopButton.setTooltip("Toggle always playing");
+    loopButton.setTooltip("Toggle loop play mode");
     loopButton.setColour(TextButton::buttonColourId, Colours::transparentWhite);
     loopButton.setColour(ComboBox::outlineColourId, Colours::transparentWhite);
     loopButton.setBounds(col, row, 25, 25);
@@ -380,6 +380,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
             );
         }
     }
+    loopButton.setVisible(trigger > 0);
 
     // layout knobs
 
