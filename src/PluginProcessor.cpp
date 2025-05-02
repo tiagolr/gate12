@@ -566,26 +566,21 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
         // MIDI mode
         else if (trigger == Trigger::MIDI) {
+            auto inc = sync > 0
+                ? beatsPerSample / syncQN
+                : 1 / srate * ratehz;
+            xpos += inc;
+            trigpos += inc;
+            xpos -= std::floor(xpos);
+
             if (alwaysPlaying) {
                 if (midiTrigger) { // reset envelope on midi triggger
+                    clearDrawBuffers();
                     midiTrigger = false;
                     xpos = phase;
                 }
-                else {
-                    xpos += sync > 0
-                        ? beatsPerSample / syncQN
-                        : 1 / srate * ratehz;
-                    xpos -= std::floor(xpos);
-                }
             }
             else {
-                auto inc = sync > 0
-                    ? beatsPerSample / syncQN
-                    : 1 / srate * ratehz;
-                xpos += inc;
-                trigpos += inc;
-                xpos -= std::floor(xpos);
-
                 if (midiTrigger) {
                     if (trigpos >= 1.0) {
                         midiTrigger = false;
@@ -603,7 +598,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
             applyGain(sample, ypos, lsample, rsample);
-            double viewx = alwaysPlaying ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
+            double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
         }
 
