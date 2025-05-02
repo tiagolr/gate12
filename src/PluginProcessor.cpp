@@ -296,6 +296,7 @@ void GATE12AudioProcessor::onPlay()
     clearLookaheadBuffers();
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     double ratehz = (double)params.getRawParameterValue("rate")->load();
+    double phase = (double)params.getRawParameterValue("phase")->load();
 
     midiTrigger = false;
     audioTrigger = false;
@@ -303,6 +304,7 @@ void GATE12AudioProcessor::onPlay()
     beatPos = ppqPosition;
     ratePos = beatPos * secondsPerBeat * ratehz;
     trigpos = 0.0;
+    trigphase = phase;
 
     if (trigger == 0 || alwaysPlaying) {
         restartEnv(false);
@@ -316,10 +318,10 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
     double max = (double)params.getRawParameterValue("max")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
 
-    if (fromZero) {
+    if (fromZero) { // restart from env start
         xpos = phase;
     }
-    else {
+    else { // restart from beat pos 
         xpos = sync > 0 
             ? beatPos / syncQN + phase
             : ratePos + phase;
@@ -524,6 +526,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         clearDrawBuffers();
                         midiTrigger = true;
                         trigpos = 0.0;
+                        trigphase = phase;
                         restartEnv(true);
                     }
                 }
@@ -580,8 +583,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     ? beatsPerSample / syncQN
                     : 1 / srate * ratehz;
                 xpos += inc;
-                xpos -= std::floor(xpos);
                 trigpos += inc;
+                xpos -= std::floor(xpos);
 
                 if (midiTrigger) {
                     if (trigpos >= 1.0) {
@@ -590,8 +593,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     }
                 }
                 else {
-                    // envelope is stopped, hold last position
-                    xpos = phase ? phase : 1.0; 
+                    xpos = phase ? phase : 1.0; // envelope is stopped, hold last position
                 }
             }
 
@@ -601,7 +603,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
             applyGain(sample, ypos, lsample, rsample);
-            double viewx = alwaysPlaying ? xpos : (trigpos + phase) - std::floor(trigpos + phase);
+            double viewx = alwaysPlaying ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
         }
 

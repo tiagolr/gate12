@@ -199,7 +199,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 75;
 
     addAndMakeVisible(nudgeLeftButton);
-    nudgeLeftButton.setTooltip("Nudge phase left by grid size\nHas the same effect as rotating the pattern");
+    //nudgeLeftButton.setTooltip("Nudge phase left by grid size");
     nudgeLeftButton.setAlpha(0.f);
     nudgeLeftButton.setBounds(phase->getX(), phase->getBottom()-10, 10, 10);
     nudgeLeftButton.onClick = [this]() {
@@ -215,7 +215,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
 
     addAndMakeVisible(nudgeRightButton);
-    nudgeRightButton.setTooltip("Nudge phase right by grid size\nHas the same effect as rotating the pattern");
+    //nudgeRightButton.setTooltip("Nudge phase right by grid size");
     nudgeRightButton.setAlpha(0.f);
     nudgeRightButton.setBounds(phase->getRight()-10, phase->getBottom() - 10, 10, 10);
     nudgeRightButton.onClick = [this]() {

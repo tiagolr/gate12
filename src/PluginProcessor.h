@@ -96,6 +96,7 @@ public:
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
     double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play
+    double trigphase = 0.0; // phase when trigger occurs, used to sync the background wave draw
     std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     double syncQN = 1.0; // sync quarter notes
