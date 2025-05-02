@@ -9,6 +9,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
          .withInput("Input", juce::AudioChannelSet::stereo(), true)
+         .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)
          .withOutput("Output", juce::AudioChannelSet::stereo(), true)
      )
     , settings{}
@@ -202,8 +203,12 @@ void GATE12AudioProcessor::changeProgramName (int index, const juce::String& new
 //==============================================================================
 void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    (void)sampleRate;
     (void)samplesPerBlock;
+    int trigger = (int)params.getRawParameterValue("trigger")->load();
+    setLatencySamples(trigger == Trigger::Audio 
+        ? static_cast<int>(sampleRate * 0.004) 
+        : 0
+    );
     onSlider();
 }
 
@@ -243,6 +248,16 @@ void GATE12AudioProcessor::onSlider()
 {
     setSmooth();
 
+    int trigger = (int)params.getRawParameterValue("trigger")->load();
+    if (trigger != ltrigger) {
+        setLatencySamples(trigger == Trigger::Audio 
+            ? static_cast<int>(getSampleRate() * 0.004) 
+            : 0
+        );
+        clearLookaheadBuffers();
+        ltrigger = trigger;
+    }
+
     int pat = (int)params.getRawParameterValue("pattern")->load();
     if (pat != pattern->index + 1) {
         queuePattern(pat);
@@ -278,42 +293,54 @@ void GATE12AudioProcessor::onSlider()
 
 void GATE12AudioProcessor::onPlay()
 {
-    std::fill(preSamples.begin(), preSamples.end(), 0.0);
-    std::fill(postSamples.begin(), postSamples.end(), 0.0);
+    clearDrawBuffers();
+    clearLookaheadBuffers();
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     bool sync = (int)params.getRawParameterValue("sync")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
     double min = (double)params.getRawParameterValue("min")->load();
     double max = (double)params.getRawParameterValue("max")->load();
+    double ratehz = (double)params.getRawParameterValue("rate")->load();
 
     midiTrigger = false;
     audioTrigger = false;
 
-    // reset value.smooth on play
+    beatPos = ppqPosition;
+    ratePos = beatPos * secondsPerBeat * ratehz;
+
+    // reset smooth
     if (sync) {
-        double x = ppqPosition / syncQN + phase;
+        double x = (sync ? (ppqPosition / syncQN) : ratePos) + phase;
         x -= std::floor(x);
         value->smooth = getY(x, min, max);
-    }
-
-    // reset beatPos on play in Hz mode
-    if (trigger == Trigger::Sync && !sync) {
-        xpos = 0.0;
-        beatPos = 0.0; 
     }
 }
 
 void GATE12AudioProcessor::onStop()
 {
-    std::fill(preSamples.begin(), preSamples.end(), 0.0);
-    std::fill(postSamples.begin(), postSamples.end(), 0.0);
-
+    clearLookaheadBuffers();
     midiTrigger = false;
     audioTrigger = false;
 
     if (!alwaysPlaying) {
         xpos = 0.0; // stops envelope seek draw
     }
+}
+
+void GATE12AudioProcessor::clearDrawBuffers()
+{
+    std::fill(preSamples.begin(), preSamples.end(), 0.0);
+    std::fill(postSamples.begin(), postSamples.end(), 0.0);
+}
+
+void GATE12AudioProcessor::clearLookaheadBuffers()
+{
+    auto latency = getLatencySamples();
+    laBufferL.resize(latency, 0.0);
+    laBufferR.resize(latency, 0.0);
+    laBufferSideL.resize(latency, 0.0);
+    laBufferSideR.resize(latency, 0.0);
+    lapos = 0;
 }
 
 double inline GATE12AudioProcessor::getY(double x, double min, double max)
@@ -326,16 +353,16 @@ void GATE12AudioProcessor::retriggerEnvelope()
     if (!alwaysPlaying)
         return // retrigger should only work in this mode
 
-    std::fill(preSamples.begin(), preSamples.end(), 0.0);
-    std::fill(postSamples.begin(), postSamples.end(), 0.0);
+    clearDrawBuffers();
+    ratePos = 0.0;
 
-    double phase = (double)params.getRawParameterValue("phase")->load();
-    int sync = (int)params.getRawParameterValue("sync")->load();
-
-    if (sync != 0)
-        beatPos = -phase * syncQN;
-    else 
-        beatPos = -phase;
+    //double phase = (double)params.getRawParameterValue("phase")->load();
+    //int sync = (int)params.getRawParameterValue("sync")->load();
+    //
+    //if (sync > 0)
+    //    beatPos = -phase * syncQN;
+    //else
+    //    beatPos = -phase;
 }
 
 void GATE12AudioProcessor::queuePattern(int patidx)
@@ -372,32 +399,41 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 {
     processBlockByType(buffer, midiMessages);
 }
-
 void GATE12AudioProcessor::processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midiMessages)
 {
     processBlockByType(buffer, midiMessages);
 }
-
 template <typename FloatType>
 void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals disableDenormals;
     double srate = getSampleRate();
-    
+    bool looping = false;
+    double loopStart = 0.0;
+    double loopEnd = 0.0;
+
+    // Get playhead info
     if (auto* phead = getPlayHead()) {
         if (auto pos = phead->getPosition()) {
             if (auto ppq = pos->getPpqPosition()) 
                 ppqPosition = *ppq;
             if (auto tempo = pos->getBpm()) {
+                beatsPerSecond = *tempo / 60.0;
                 beatsPerSample = *tempo / (60.0 * srate);
                 samplesPerBeat = (int)((60.0 / *tempo) * srate);
+                secondsPerBeat = 60.0 / *tempo;
+            }
+            looping = pos->getIsLooping();
+            if (auto loopPoints = pos->getLoopPoints()) {
+                loopStart = loopPoints->ppqStart;
+                loopEnd = loopPoints->ppqEnd;
             }
             auto play = pos->getIsPlaying();
             if (!isPlaying && play) // playback started
                 onPlay();
             else if (isPlaying && !play) // playback stopped
                 onStop();
-            
+
             isPlaying = play;
             if (isPlaying) {
                 if (auto samples = pos->getTimeInSamples()) {
@@ -407,7 +443,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
     }
 
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    int inputBusCount = getBusCount(true);
+    int audioOutputs = getTotalNumOutputChannels();
+    int audioInputs = inputBusCount > 0 ? getChannelCountOfBus(true, 0) : 0;
+    int sideInputs = inputBusCount > 1 ? getChannelCountOfBus(true, 1) : 0;
+
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     bool retrigger = (bool)params.getRawParameterValue("retrigger")->load();
     int sync = (int)params.getRawParameterValue("sync")->load();
@@ -415,16 +455,13 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     double max = (double)params.getRawParameterValue("max")->load();
     double ratehz = (double)params.getRawParameterValue("rate")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
+    bool useSideChain = false;
+    //bool monitorSideChain = false;
+
+    //double ppqLatency = (double)laBufferL.size() / srate * beatsPerSecond;
     int numSamples = buffer.getNumSamples();
 
-    if (retrigger) {
-        retriggerEnvelope();
-        auto param = params.getParameter("retrigger");
-        param->beginChangeGesture();
-        param->setValueNotifyingHost(0.0f);
-        param->endChangeGesture();
-    }
-
+    // processes draw wave samples
     auto processDisplaySample = [&](double amplitude, double env) {
         winpos = (int)std::floor(xpos * viewW);
         if (lwinpos != winpos) {
@@ -440,11 +477,15 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             postSamples[winpos] = postsample;
     };
 
+    // applies envelope to a sample index
     auto applyGain = [&](int sampIdx, double env, bool processDisplay = true) {
+        if (!audioInputs || !audioOutputs) 
+            return;
+
         double maxAmp = 0.0;
-        for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
-            auto s = buffer.getSample(channel, sampIdx);
-            maxAmp = std::fmax(std::fabs(maxAmp), (double)s);
+        for (int channel = 0; channel < audioOutputs; ++channel) {
+            double s = (double)buffer.getSample(channel % audioInputs, sampIdx);
+            maxAmp = std::fmax(maxAmp, std::fabs(s));
             buffer.setSample(channel, sampIdx, static_cast<FloatType>(s * env));
         }
 
@@ -453,10 +494,19 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
     };
 
-    // update beatpos only in tempo sync mode during playback
-    if (trigger == 0 && isPlaying && sync > 0) {
-        beatPos = ppqPosition;
+    // retrigger envelope
+    if (retrigger) {
+        retriggerEnvelope();
+        auto param = params.getParameter("retrigger");
+        param->beginChangeGesture();
+        param->setValueNotifyingHost(0.0f);
+        param->endChangeGesture();
     }
+
+    // update beatpos to song position
+    // if (isPlaying) {
+    //     beatPos = ppqPosition;
+    // }
 
     // remove midi messages that have been processed
     midi.erase(std::remove_if(midi.begin(), midi.end(), [](const MIDIMsg& msg) {
@@ -469,7 +519,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     }
 
     // Process new MIDI messages
-    keyboardState.processNextMidiBuffer(midiMessages, 0, buffer.getNumSamples(), true);
     for (const auto metadata : midiMessages) {
         juce::MidiMessage message = metadata.getMessage();
         if (message.isNoteOn() || message.isNoteOff()) {
@@ -484,6 +533,12 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     }
 
     for (int sample = 0; sample < numSamples; ++sample) {
+        if (isPlaying && looping && beatPos >= loopEnd) {
+            beatPos = loopStart + (beatPos - loopEnd);
+            ratePos = beatPos * secondsPerBeat * ratehz;
+        }
+
+
         // process midi queue
         for (auto& msg : midi) {
             if (msg.offset == 0) {
@@ -493,6 +548,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         queuePattern(patidx + 1);
                     }
                     else if (trigger == Trigger::MIDI) {
+                        clearDrawBuffers();
                         midiTrigger = true;
                         xpos = phase;
                     }
@@ -501,6 +557,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             msg.offset -= 1;
         }
 
+        // process queued pattern
         if (queuedPattern) {
             if (!isPlaying || queuedPatternCounter == 0) {
                 pattern = patterns[queuedPattern - 1];
@@ -514,23 +571,20 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             }
         }
 
+        // Sync mode
         if (trigger == Trigger::Sync && (isPlaying || alwaysPlaying)) { // Sync trigger mode
-            if (sync > 0) {
-                beatPos += beatsPerSample;
-                xpos = beatPos / syncQN + phase;
-            }
-            else {
-                beatPos += 1 / srate * ratehz;
-                xpos = beatPos + phase;
-            }
+            xpos = sync > 0 
+                ? beatPos / syncQN + phase;
+                : ratePos + phase;
             xpos -= std::floor(xpos);
             
-            double nextValue = getY(xpos, min, max);
-            ypos = value->smooth2(nextValue, nextValue > ypos);
+            double newypos = getY(xpos, min, max);
+            ypos = value->smooth2(newypos, newypos > ypos);
             
             applyGain(sample, ypos);
         }
 
+        // MIDI mode
         else if (trigger == Trigger::MIDI && (alwaysPlaying || midiTrigger)) {
             if (alwaysPlaying && midiTrigger) { // reset phase on midiTrigger
                 xpos = phase;
@@ -541,7 +595,14 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 : 1 / srate * ratehz;
             if (!alwaysPlaying && xpos >= 1) {
                 midiTrigger = false;
-                xpos = holdEnvelopeTail ? 1.0 : 0.0; // 0.0 stops drawing seek, 1.0 keeps processing last envelope position on finish
+                if (MIDIHoldEnvelopeTail) {
+                    xpos = 1.0; // keep processing last envelope position
+                }
+                else {
+                    xpos = 0.0; // stop drawing seek
+                    clearDrawBuffers();
+                }
+                
             }
             else {
                 xpos -= std::floor(xpos);
@@ -552,22 +613,80 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             applyGain(sample, ypos);
         }
 
-        // keep applying last state after MIDI envelope finishes
-        else if (trigger == Trigger::MIDI && !alwaysPlaying && !midiTrigger && xpos == 1.0 && holdEnvelopeTail) {
+        // MIDI mode - hold last position after envelope finishes
+        else if (trigger == Trigger::MIDI && !alwaysPlaying && !midiTrigger && xpos == 1.0 && MIDIHoldEnvelopeTail) {
             applyGain(sample, getY(xpos, min, max), false);
         }
 
-        else if (trigger == Trigger::Audio && (audioTrigger || alwaysPlaying)) {
+        // Audio mode
+        else if (trigger == Trigger::Audio && audioInputs && audioOutputs) {
+            int latency = (int)laBufferL.size();
+            
+            // read audio samples
+            double lsample = (double)buffer.getSample(0, sample);
+            double rsample = (double)buffer.getSample(audioInputs > 1 ? 1 : 0, sample);
+            laBufferL[lapos] = lsample;
+            laBufferR[lapos] = rsample;
 
-        }
-        
-        // AUDIO detect transients to trigger audio envelope
-        else if (trigger == Trigger::Audio && !audioTrigger && !alwaysPlaying) {
+            // read sidechain samples
+            double lsidesample = 0.0;
+            double rsidesample = 0.0;
+            if (useSideChain && sideInputs) {
+                lsidesample = (double)buffer.getSample(audioInputs, sample);
+                rsidesample = (double)buffer.getSample(sideInputs > 1 ? audioInputs + 1 : audioInputs, sample);
+            }
+            laBufferSideL[lapos] = lsidesample;
+            laBufferSideR[lapos] = rsidesample;
 
+            // Lookahead: read the sample 'latency' samples ago
+            int readPos = (lapos + latency - 1) % latency;
+            lsample = laBufferL[readPos];
+            rsample = laBufferR[readPos];
+
+            // write delayed sample into the buffer
+            for (int channel = 0; channel < audioOutputs; ++channel) {
+                buffer.setSample(channel, sample, static_cast<FloatType>(channel % 2 ? rsample : lsample));
+            }
+            /*
+            if (audioTrigger) {
+                if (beatPos < 0.0) {
+                    beatPos += sync > 0 
+                        ? beatsPerSample 
+                        : 1 / srate * ratehz;
+                }
+                else {
+                    if (sync > 0) {
+                        beatPos += beatsPerSample;
+                        xpos = beatPos / syncQN + phase;
+                    }
+                    else {
+                        beatPos += 1 / srate * ratehz;
+                        xpos = beatPos + phase;
+                    }
+                    xpos -= std::floor(xpos);
+
+                    double nextValue = getY(xpos, min, max);
+                    ypos = value->smooth2(nextValue, nextValue > ypos);
+
+                    double maxAmp = 0.0;
+                    for (int channel = 0; channel < audioOutputs; ++channel) {
+                        double s = channel % 2 ? rsample : lsample;
+                        maxAmp = std::fmax(maxAmp, std::fabs(s));
+                        buffer.setSample(channel, sample, static_cast<FloatType>(s * env));
+                    }
+
+                    // processDisplaySample(maxAmp, env);
+                    
+                }
+            }
+            */
+            lapos = (lapos + 1) % latency;
         }
 
         xenv.store(xpos);
         yenv.store(ypos);
+        beatPos += beatsPerSample;
+        ratePos += 1 / srate * ratehz;
         if (isPlaying)
             timeInSamples += 1;
     }

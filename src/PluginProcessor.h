@@ -72,24 +72,23 @@ public:
 class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener
 {
 public:
-    // Global settings
+    // Plugin settings
     float scale = 1.0f; // UI scale factor
 
-    // Settings
+    // Instance Settings
     bool alwaysPlaying = false;
     bool drawWave = true;
     bool linkEdgePoints = false;
     bool dualSmooth = true; // use either single smooth or attack and release
-    bool holdEnvelopeTail = true; // MIDI and Audio trigger: keep processing last position after envelope finishes
+    bool MIDIHoldEnvelopeTail = true; // MIDI trigger - keep processing last position after envelope finishes
+    bool AudioHoldEnvelopeTail = false; // Audio trigger - keep processing last position after envelope finishes
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
     int grid = 8; // grid divisions
 
     // State
     Pattern* pattern; // current pattern
     int queuedPattern = 0; // queued pat index, 0 = off
-    int64_t timeInSamples = 0;
-    int64_t queuedPatternCounter = 0; // when this counter reaches 0 the queued pattern is applied
-    bool isPlaying = false;
+    int64_t queuedPatternCounter = 0; // samples counter until queued pattern is applied
     int currentProgram = -1;
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
     std::vector<double> preSamples; // used by view to draw pre audio
@@ -99,15 +98,30 @@ public:
     std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     double syncQN = 1.0; // sync quarter notes
+    int ltrigger = -1; // last trigger mode
     bool midiTrigger = false; // flag midi has triggered envelope
-    bool audioTrigger = false; // flag audio has triggered envelope
-    SmoothParam* value;
-    double beatPos = 0.0;
-    double ppqPosition = 0.0;
-    double beatsPerSample = 4.0;
-    int samplesPerBeat = 44100;
     int winpos = 0;
     int lwinpos = 0;
+    SmoothParam* value; // smooths envelope value
+
+    // Audio mode state
+    bool audioTrigger = false; // flag audio has triggered envelope
+    std::vector<double> laBufferL; // lookahead buffer left
+    std::vector<double> laBufferR; // lookahead buffer right
+    std::vector<double> laBufferSideL; // lookahead buffer left
+    std::vector<double> laBufferSideR; // lookahead buffer right
+    int lapos = 0; // lookahead buffer pos
+    
+    // PlayHead state
+    bool isPlaying = false;
+    int64_t timeInSamples = 0;
+    double beatPos = 0.0; // position in quarter notes
+    double ratePos = 0.0; // position in hertz
+    double ppqPosition = 0.0;
+    double beatsPerSample = 1.0;
+    double beatsPerSecond = 1.0;
+    int samplesPerBeat = 44100;
+    double secondsPerBeat = 0.1;
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -128,6 +142,8 @@ public:
     void onSlider ();
     void onPlay ();
     void onStop ();
+    void clearDrawBuffers();
+    void clearLookaheadBuffers();
     double getY(double x, double min, double max);
     void retriggerEnvelope();
     void queuePattern(int patidx);
@@ -163,7 +179,6 @@ public:
     void saveSettings();
     void setScale(float value);
 
-    juce::MidiKeyboardState keyboardState;
     juce::AudioProcessorValueTreeState params;
     juce::UndoManager undoManager;
 
