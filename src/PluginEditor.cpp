@@ -199,34 +199,38 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 75;
 
     addAndMakeVisible(nudgeLeftButton);
-    //nudgeLeftButton.setTooltip("Nudge phase left by grid size");
     nudgeLeftButton.setAlpha(0.f);
     nudgeLeftButton.setBounds(phase->getX(), phase->getBottom()-10, 10, 10);
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            auto param = audioProcessor.params.getParameter("phase");
-            auto ph = param->getValue();
-            ph -= 1.f / (float)audioProcessor.grid;
-            if (ph < 0.f) ph += 1.f;
-            param->beginChangeGesture();
-            param->setValueNotifyingHost(ph);
-            param->endChangeGesture();
+            auto phase = audioProcessor.params.getParameter("phase");
+            auto grid = audioProcessor.params.getRawParameterValue("grid")->load();
+            auto gridSize = 1.f / grid;
+            auto value = phase->getValue();
+            value = std::ceil(value * grid) * gridSize - gridSize;
+            if (value < 0.f)
+                value = 1.0f;
+            phase->beginChangeGesture();
+            phase->setValueNotifyingHost(value);
+            phase->endChangeGesture();
         });
     };
 
     addAndMakeVisible(nudgeRightButton);
-    //nudgeRightButton.setTooltip("Nudge phase right by grid size");
     nudgeRightButton.setAlpha(0.f);
     nudgeRightButton.setBounds(phase->getRight()-10, phase->getBottom() - 10, 10, 10);
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            auto param = audioProcessor.params.getParameter("phase");
-            auto ph = param->getValue();
-            ph += 1.f / (float)audioProcessor.grid;
-            if (ph > 1.f) ph -= 1.f;
-            param->beginChangeGesture();
-            param->setValueNotifyingHost(ph);
-            param->endChangeGesture();
+            auto phase = audioProcessor.params.getParameter("phase");
+            auto grid = audioProcessor.params.getRawParameterValue("grid")->load();
+            auto gridSize = 1.f / grid;
+            auto value = phase->getValue();
+            value = std::floor(value * grid) * gridSize + gridSize;
+            if (value > 1.f)
+                value = 0.0f;
+            phase->beginChangeGesture();
+            phase->setValueNotifyingHost(value);
+            phase->endChangeGesture();
         });
     };
 

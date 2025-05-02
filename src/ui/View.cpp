@@ -71,9 +71,7 @@ void View::paint(Graphics& g) {
     drawMidPoints(g);
     drawPoints(g);
     drawSelection(g);
-    if (audioProcessor.xenv.load() != 0.0) {
-        drawSeek(g);
-    }
+    drawSeek(g);
 }
 
 void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) const
@@ -93,7 +91,7 @@ void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) cons
 
 void View::drawGrid(Graphics& g)
 {
-    int grid = audioProcessor.grid;
+    int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
 
@@ -275,8 +273,11 @@ void View::drawSeek(Graphics& g)
 {
     auto xpos = audioProcessor.xenv.load();
     auto ypos = audioProcessor.yenv.load();
-    g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
-    g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));
+    bool drawSeek = audioProcessor.drawSeek.load();
+    if (drawSeek) {
+        g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
+        g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));
+    }
     g.setColour(Colour(globals::COLOR_SEEK));
     g.drawEllipse((float)(xpos * winw + winx - 5.f), (float)((1 - ypos) * winh + winy - 5.f), 10.0f, 10.0f, 1.0f);
 }
@@ -540,7 +541,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
 
     auto& points = audioProcessor.pattern->points;
-    double grid = (double)audioProcessor.grid;
+    double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
     double xx = (double)x;
@@ -619,7 +620,7 @@ void View::dragSelection(const MouseEvent& e)
     int distcy = 0;
 
     if (isSnapping(e)) {
-        double grid = (double)audioProcessor.grid;
+        double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
         double gridx = double(winw) / grid;
         double gridy = double(winh) / grid;
         mouse.x = (int)(std::round((mouse.x - winx) / gridx) * gridx + winx);
@@ -791,7 +792,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         double px = (double)x;
         double py = (double)y;
         if (isSnapping(e)) {
-            double grid = (double)audioProcessor.grid;
+            double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
             double gridx = double(winw) / grid;
             double gridy = double(winh) / grid;
             px = std::round(double(px - winx) / gridx) * gridx + winx;
@@ -814,7 +815,7 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
         return;
 
     (void)event;
-    int grid = audioProcessor.grid;
+    int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
     auto param = audioProcessor.params.getParameter("grid");
     param->beginChangeGesture();
     param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0 ? 1.0f : -1.0f)));
@@ -873,7 +874,7 @@ void View::applyPaintTool(int x, int y, const MouseEvent& e)
 {
     double mousex = std::min(std::max(double(x - winx) / (double)winw, 0.), 0.9999999);
     double mousey = std::min(std::max(double(y - winy) / (double)winh, 0.), 1.);
-    double gridsegs = (double)audioProcessor.grid;
+    double gridsegs = (double)audioProcessor.params.getRawParameterValue("grid")->load();
     if (isSnapping(e)) {
         mousey = std::round(mousey * gridsegs) / gridsegs;
     }

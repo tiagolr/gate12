@@ -28,7 +28,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
-        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 2, 32, 8),
+        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 1, 32, 8),
         std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
     })
 #endif
@@ -256,13 +256,20 @@ void GATE12AudioProcessor::onSlider()
         clearLookaheadBuffers();
         ltrigger = trigger;
     }
+    if (trigger == Trigger::Sync && alwaysPlaying) 
+        alwaysPlaying = false; // force alwaysPlaying off when trigger is not MIDI or Audio
+
+    if (trigger != Trigger::MIDI && midiTrigger)
+        midiTrigger = false;
+
+    if (trigger != Trigger::Audio && audioTrigger)
+        audioTrigger = false;
 
     int pat = (int)params.getRawParameterValue("pattern")->load();
     if (pat != pattern->index + 1) {
         queuePattern(pat);
     }
 
-    grid = (int)params.getRawParameterValue("grid")->load();
     auto tension = (double)params.getRawParameterValue("tension")->load();
     if (pattern->getTension() != tension) {
         pattern->setTension(tension);
@@ -524,7 +531,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     }
                     else if (trigger == Trigger::MIDI) {
                         clearDrawBuffers();
-                        midiTrigger = true;
+                        midiTrigger = !alwaysPlaying;
                         trigpos = 0.0;
                         trigphase = phase;
                         restartEnv(true);
@@ -573,22 +580,15 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             trigpos += inc;
             xpos -= std::floor(xpos);
 
-            if (alwaysPlaying) {
-                if (midiTrigger) { // reset envelope on midi triggger
-                    clearDrawBuffers();
-                    midiTrigger = false;
-                    xpos = phase;
-                }
-            }
-            else {
+            if (!alwaysPlaying) {
                 if (midiTrigger) {
-                    if (trigpos >= 1.0) {
+                    if (trigpos >= 1.0) { // envelope finished, stop midiTrigger
                         midiTrigger = false;
                         xpos = phase ? phase : 1.0;
                     }
                 }
                 else {
-                    xpos = phase ? phase : 1.0; // envelope is stopped, hold last position
+                    xpos = phase ? phase : 1.0; // midiTrigger is stopped, hold last position
                 }
             }
 
@@ -674,6 +674,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         if (playing)
             timeInSamples += 1;
     }
+
+    drawSeek.store(playing && (trigger == Trigger::Sync || midiTrigger || audioTrigger));
 }
 
 //==============================================================================
