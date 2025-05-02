@@ -67,7 +67,6 @@ private:
     ComboBox pointMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
     TextButton loopButton;
-    TextButton retriggerButton;
     Label triggerLabel;
     ComboBox triggerMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> triggerAttachment;

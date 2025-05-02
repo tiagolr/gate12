@@ -21,8 +21,6 @@
 
 GATE-12 is an open-source and cross-platform envelope generator for gate/volume control inspired by plugins like GrossBeat and ShaperBox. It is a port of [GATE-1](https://github.com/tiagolr/gate1) to _JUCE_ framework which in turn is a port of [GATE-1 JSFX](https://github.com/tiagolr/tilr_jsfx?tab=readme-ov-file#gate-1) for the Reaper DAW.
 
-The reason for this port is mainly to support Linux and macOS, the previous version was built using on custom version of iPlug2 which made the development difficult. This version aims to support all major OS and to simplify the tooling and build processes, it may also include new features.
-
 <div align="center">
 
 ![Screenshot](./doc/gate12.png)
@@ -34,8 +32,8 @@ The reason for this port is mainly to support Linux and macOS, the previous vers
   * **Cross-platform** available on Windows, macOS and Linux
   * **Presets** included
   * **Built with JUCE**
-  * **Audio trigger** use incomming audio to trigger the envelope
-  * **Pattern sync** sync pattern changes to song tempo
+  * **Audio trigger** use audio transients to trigger the envelope
+  * **Pattern sync** sync pattern changes to beat position
 
 ## Features
 
@@ -65,6 +63,10 @@ The reason for this port is mainly to support Linux and macOS, the previous vers
   * Ctrl + right click view to erase points
   * Right click view to paint using paint tool
   * Alt + Right click to erase points
+
+## About
+
+With version 2 this plugin was rebuilt from scratch using JUCE for its cross-platforms capabilities and overall development tools/processes.
 
 ## MacOS
 

@@ -17,7 +17,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio" }, 0),
         std::make_unique<juce::AudioParameterInt>("pattern", "Pattern", 1, 12, 1),
         std::make_unique<juce::AudioParameterChoice>("sync", "Sync", StringArray { "Rate Hz", "1/16", "1/8", "1/4", "1/2", "1/1", "2/1", "4/1", "1/16t", "1/8t", "1/4t", "1/2t", "1/1t", "1/16.", "1/8.", "1/4.", "1/2.", "1/1." }, 5),
-        std::make_unique<juce::AudioParameterFloat>("rate", "Rate", juce::NormalisableRange<float>(0.01f, 140.0f, 0.01f, 0.3f), 1.0f),
+        std::make_unique<juce::AudioParameterFloat>("rate", "Rate", juce::NormalisableRange<float>(0.01f, 5000.0f, 0.01f, 0.2f), 1.0f),
         std::make_unique<juce::AudioParameterFloat>("phase", "Phase", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
         std::make_unique<juce::AudioParameterFloat>("min", "Min", 0.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("max", "Max", 0.0f, 1.0f, 1.0f),
@@ -29,7 +29,6 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 2, 32, 8),
-        std::make_unique<juce::AudioParameterBool>("retrigger", "Retrigger", false),
         std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
     })
 #endif
@@ -295,7 +294,7 @@ void GATE12AudioProcessor::onPlay()
 {
     clearDrawBuffers();
     clearLookaheadBuffers();
-    int trigger = (int)params.getRawParameterValue("trigger")->load();
+    //int trigger = (int)params.getRawParameterValue("trigger")->load();
     bool sync = (int)params.getRawParameterValue("sync")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
     double min = (double)params.getRawParameterValue("min")->load();
@@ -348,30 +347,13 @@ double inline GATE12AudioProcessor::getY(double x, double min, double max)
     return min + (max - min) * (1 - pattern->get_y_at(x));
 }
 
-void GATE12AudioProcessor::retriggerEnvelope()
-{
-    if (!alwaysPlaying)
-        return // retrigger should only work in this mode
-
-    clearDrawBuffers();
-    ratePos = 0.0;
-
-    //double phase = (double)params.getRawParameterValue("phase")->load();
-    //int sync = (int)params.getRawParameterValue("sync")->load();
-    //
-    //if (sync > 0)
-    //    beatPos = -phase * syncQN;
-    //else
-    //    beatPos = -phase;
-}
-
 void GATE12AudioProcessor::queuePattern(int patidx)
 {
     queuedPattern = patidx;
     queuedPatternCounter = 0;
     int patsync = (int)params.getRawParameterValue("patsync")->load();
 
-    if (isPlaying && patsync != PatSync::Off) {
+    if (playing && patsync != PatSync::Off) {
         int interval = samplesPerBeat;
         if (patsync == PatSync::QuarterBeat) 
             interval = interval / 4;
@@ -429,13 +411,13 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 loopEnd = loopPoints->ppqEnd;
             }
             auto play = pos->getIsPlaying();
-            if (!isPlaying && play) // playback started
+            if (!playing && play) // playback started
                 onPlay();
-            else if (isPlaying && !play) // playback stopped
+            else if (playing && !play) // playback stopped
                 onStop();
 
-            isPlaying = play;
-            if (isPlaying) {
+            playing = play;
+            if (playing) {
                 if (auto samples = pos->getTimeInSamples()) {
                     timeInSamples = *samples;
                 }
@@ -449,7 +431,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     int sideInputs = inputBusCount > 1 ? getChannelCountOfBus(true, 1) : 0;
 
     int trigger = (int)params.getRawParameterValue("trigger")->load();
-    bool retrigger = (bool)params.getRawParameterValue("retrigger")->load();
     int sync = (int)params.getRawParameterValue("sync")->load();
     double min = (double)params.getRawParameterValue("min")->load();
     double max = (double)params.getRawParameterValue("max")->load();
@@ -494,20 +475,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
     };
 
-    // retrigger envelope
-    if (retrigger) {
-        retriggerEnvelope();
-        auto param = params.getParameter("retrigger");
-        param->beginChangeGesture();
-        param->setValueNotifyingHost(0.0f);
-        param->endChangeGesture();
-    }
-
-    // update beatpos to song position
-    // if (isPlaying) {
-    //     beatPos = ppqPosition;
-    // }
-
     // remove midi messages that have been processed
     midi.erase(std::remove_if(midi.begin(), midi.end(), [](const MIDIMsg& msg) {
         return msg.offset < 0;
@@ -533,11 +500,10 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     }
 
     for (int sample = 0; sample < numSamples; ++sample) {
-        if (isPlaying && looping && beatPos >= loopEnd) {
+        if (playing && looping && beatPos >= loopEnd) {
             beatPos = loopStart + (beatPos - loopEnd);
             ratePos = beatPos * secondsPerBeat * ratehz;
         }
-
 
         // process midi queue
         for (auto& msg : midi) {
@@ -559,7 +525,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
         // process queued pattern
         if (queuedPattern) {
-            if (!isPlaying || queuedPatternCounter == 0) {
+            if (!playing || queuedPatternCounter == 0) {
                 pattern = patterns[queuedPattern - 1];
                 auto tension = (double)params.getRawParameterValue("tension")->load();
                 pattern->setTension(tension);
@@ -572,9 +538,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // Sync mode
-        if (trigger == Trigger::Sync && (isPlaying || alwaysPlaying)) { // Sync trigger mode
+        if (trigger == Trigger::Sync) {
             xpos = sync > 0 
-                ? beatPos / syncQN + phase;
+                ? beatPos / syncQN + phase
                 : ratePos + phase;
             xpos -= std::floor(xpos);
             
@@ -687,7 +653,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         yenv.store(ypos);
         beatPos += beatsPerSample;
         ratePos += 1 / srate * ratehz;
-        if (isPlaying)
+        if (playing)
             timeInSamples += 1;
     }
 }

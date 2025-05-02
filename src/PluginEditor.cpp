@@ -292,28 +292,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     loopButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             audioProcessor.alwaysPlaying = !audioProcessor.alwaysPlaying;
-            audioProcessor.retriggerEnvelope();
-            retriggerButton.setVisible(audioProcessor.alwaysPlaying);
             repaint();
         });
     };
     col += 35;
-
-    addAndMakeVisible(retriggerButton);
-    retriggerButton.setTooltip("Restart envelope");
-    retriggerButton.setButtonText("R");
-    retriggerButton.setComponentID("button");
-    retriggerButton.setColour(TextButton::buttonColourId, Colour(globals::COLOR_ACTIVE));
-    retriggerButton.setVisible(audioProcessor.alwaysPlaying);
-    retriggerButton.setBounds(col, row, 25, 25);
-    retriggerButton.onClick = [this]() {
-        MessageManager::callAsync([this] {
-            auto param = audioProcessor.params.getParameter("retrigger");
-            param->beginChangeGesture();
-            param->setValueNotifyingHost(1.0f);
-            param->endChangeGesture();
-        });
-    };
 
     // THIRD ROW RIGHT
     col = getWidth() - globals::PAD - 60;

@@ -108,17 +108,17 @@ public:
     bool audioTrigger = false; // flag audio has triggered envelope
     std::vector<double> laBufferL; // lookahead buffer left
     std::vector<double> laBufferR; // lookahead buffer right
-    std::vector<double> laBufferSideL; // lookahead buffer left
-    std::vector<double> laBufferSideR; // lookahead buffer right
+    std::vector<double> laBufferSideL; // sidechain lookahead buffer left
+    std::vector<double> laBufferSideR; // sidechain lookahead buffer right
     int lapos = 0; // lookahead buffer pos
     
     // PlayHead state
-    bool isPlaying = false;
+    bool playing = false;
     int64_t timeInSamples = 0;
     double beatPos = 0.0; // position in quarter notes
     double ratePos = 0.0; // position in hertz
     double ppqPosition = 0.0;
-    double beatsPerSample = 1.0;
+    double beatsPerSample = 0.00005;
     double beatsPerSecond = 1.0;
     int samplesPerBeat = 44100;
     double secondsPerBeat = 0.1;
@@ -145,7 +145,6 @@ public:
     void clearDrawBuffers();
     void clearLookaheadBuffers();
     double getY(double x, double min, double max);
-    void retriggerEnvelope();
     void queuePattern(int patidx);
 
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;

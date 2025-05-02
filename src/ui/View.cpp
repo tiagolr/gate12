@@ -64,7 +64,7 @@ void View::init()
 }
 
 void View::paint(Graphics& g) {
-    if (audioProcessor.drawWave && (audioProcessor.alwaysPlaying || audioProcessor.isPlaying)) {
+    if (audioProcessor.drawWave && (audioProcessor.alwaysPlaying || audioProcessor.playing)) {
         drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
         drawWave(g, audioProcessor.postSamples, Colour(globals::COLOR_ACTIVE));
     }
