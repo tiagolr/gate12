@@ -80,6 +80,17 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     triggerAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigger", triggerMenu);
     col += 90;
 
+    addAndMakeVisible(algoMenu);
+    algoMenu.setTooltip("Algorithm used for transient detection");
+    algoMenu.addItem("Simple", 1);
+    algoMenu.addItem("Drums", 2);
+    algoMenu.setBounds(col,row,90,25);
+    algoMenu.setColour(ComboBox::arrowColourId, Colour(globals::COLOR_AUDIO));
+    algoMenu.setColour(ComboBox::textColourId, Colour(globals::COLOR_AUDIO));
+    algoMenu.setColour(ComboBox::outlineColourId, Colour(globals::COLOR_AUDIO));
+    algoAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "algo", algoMenu);
+    col += 100;
+
     juce::MemoryInputStream audioInputStream(BinaryData::gear_png, BinaryData::gear_pngSize, false);
     juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
     if (audioImage.isValid()) {
@@ -96,16 +107,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         toggleUIComponents();
     };
     col += 35;
-    
-    addAndMakeVisible(algoMenu);
-    algoMenu.setTooltip("Algorithm used for transient detection");
-    algoMenu.addItem("Simple", 1);
-    algoMenu.addItem("Drums", 2);
-    algoMenu.setBounds(col,row,90,25);
-    algoMenu.setColour(ComboBox::arrowColourId, Colour(globals::COLOR_AUDIO));
-    algoMenu.setColour(ComboBox::textColourId, Colour(globals::COLOR_AUDIO));
-    algoMenu.setColour(ComboBox::outlineColourId, Colour(globals::COLOR_AUDIO));
-    algoAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "algo", algoMenu);
 
     col = getWidth() - globals::PAD - 25;
     settingsButton = std::make_unique<SettingsButton>(p);
@@ -153,7 +154,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 75;
 
     addAndMakeVisible(patSyncMenu);
-    patSyncMenu.setTooltip("Pattern sync - changes pattern in sync with song position during playback");
+    patSyncMenu.setTooltip("Changes pattern in sync with song position during playback");
     patSyncMenu.addItem("Off", 1);
     patSyncMenu.addItem("1/4 Beat", 2);
     patSyncMenu.addItem("1/2 Beat", 3);
@@ -163,8 +164,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     patSyncMenu.setBounds(col, row, 90, 25);
     patSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "patsync", patSyncMenu);
 
-    // KNOBS
-
+    // KNOBS ROW
     row += 35;
     col = globals::PAD;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hzFloat1);
@@ -271,6 +271,46 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     offset->setBounds(col,row,80,65);
     col += 75;
 
+    audioDisplay = std::make_unique<AudioDisplay>(p);
+    addAndMakeVisible(*audioDisplay);
+    audioDisplay->setBounds(col,row,getWidth() - col - globals::PAD - 80 - 10, 65);
+    MessageManager::callAsync([this] {
+        audioProcessor.monW = audioDisplay->getWidth();
+    });
+
+    col = getWidth() - globals::PAD - 80;
+    addAndMakeVisible(useSidechain);
+    useSidechain.setTooltip("Use sidechain for transient detection");
+    useSidechain.setButtonText("Sidechain");
+    useSidechain.setComponentID("button");
+    useSidechain.setColour(TextButton::buttonColourId, Colour(globals::COLOR_AUDIO));
+    useSidechain.setColour(TextButton::buttonOnColourId, Colour(globals::COLOR_AUDIO));
+    useSidechain.setColour(TextButton::textColourOnId, Colour(globals::COLOR_BG));
+    useSidechain.setColour(TextButton::textColourOffId, Colour(globals::COLOR_AUDIO));
+    useSidechain.setBounds(col,row,80,25);
+    useSidechain.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            audioProcessor.useSidechain = !audioProcessor.useSidechain;
+            toggleUIComponents();
+        });
+    };
+
+    addAndMakeVisible(useMonitor);
+    useMonitor.setTooltip("Monitor signal used for transient detection");
+    useMonitor.setButtonText("Monitor");
+    useMonitor.setComponentID("button");
+    useMonitor.setColour(TextButton::buttonColourId, Colour(globals::COLOR_AUDIO));
+    useMonitor.setColour(TextButton::buttonOnColourId, Colour(globals::COLOR_AUDIO));
+    useMonitor.setColour(TextButton::textColourOnId, Colour(globals::COLOR_BG));
+    useMonitor.setColour(TextButton::textColourOffId, Colour(globals::COLOR_AUDIO));
+    useMonitor.setBounds(col,row+35,80,25);
+    useMonitor.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            audioProcessor.useMonitor = !audioProcessor.useMonitor;
+            toggleUIComponents();
+        });
+    };
+
     // THIRD ROW
     col = globals::PAD;
     row += 75;
@@ -362,6 +402,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(*view);
     view->setBounds(col,row,getWidth(), getHeight() - row);
     view->init();
+    MessageManager::callAsync([this] {
+        audioProcessor.viewW = view->winw;
+    });
 
     // ABOUT
     about = std::make_unique<About>();
@@ -443,6 +486,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     lowcut->setVisible(showAudioKnobs);
     highcut->setVisible(showAudioKnobs);
     offset->setVisible(showAudioKnobs);
+    audioDisplay->setVisible(showAudioKnobs);
 
     if (!showAudioKnobs) {
         auto col = globals::PAD;
@@ -475,6 +519,11 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
         }
         tension->setTopLeftPosition(col, row);
     }
+
+    useSidechain.setVisible(showAudioKnobs);
+    useMonitor.setVisible(showAudioKnobs);
+    useSidechain.setToggleState(audioProcessor.useSidechain, dontSendNotification);
+    useMonitor.setToggleState(audioProcessor.useMonitor, dontSendNotification);
 
     repaint();
 }

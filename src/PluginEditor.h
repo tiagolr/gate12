@@ -16,6 +16,7 @@
 #include "ui/About.h"
 #include "ui/View.h"
 #include "ui/SettingsButton.h"
+#include "ui/AudioDisplay.h"
 
 using namespace globals;
 
@@ -73,6 +74,7 @@ private:
     TextButton nudgeLeftButton;
     ImageButton paintLogo;
     ComboBox paintMenu;
+    std::unique_ptr<AudioDisplay> audioDisplay;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> paintAttachment;
     ImageButton pointLogo;
     ComboBox pointMenu;

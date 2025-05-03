@@ -12,6 +12,7 @@
 #include <vector>
 #include "dsp/Pattern.h"
 #include "dsp/Filter.h"
+#include "dsp/Transient.h"
 #include <atomic>
 #include <deque>
 
@@ -92,9 +93,6 @@ public:
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
     int currentProgram = -1;
-    int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
-    std::vector<double> preSamples; // used by view to draw pre audio
-    std::vector<double> postSamples; // used by view to draw post audio
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
     double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play
@@ -119,7 +117,6 @@ public:
     Filter lpFilterR{};
     Filter hpFilterL{};
     Filter hpFilterR{};
-    std::deque<double> monitor; // monitor samples to draw on view
     
     // PlayHead state
     bool playing = false;
@@ -133,9 +130,16 @@ public:
     double secondsPerBeat = 0.1;
 
     // UI State
+    std::vector<double> preSamples; // used by view to draw pre audio
+    std::vector<double> postSamples; // used by view to draw post audio
+    int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
     std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<bool> drawSeek = false;
+    std::vector<double> monSamples; // monitor samples to draw on view
+    std::atomic<double> monIdx = 0.0; // write index of monitor circular buf
+    int lmonIdx = 0; // last index
+    int monW = 1; // audio monitor width used to rotate monitor samples buffer
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -202,6 +206,8 @@ public:
 
 private:
     Pattern* patterns[12];
+    Transient transDetectorL;
+    Transient transDetectorR;
     bool paramChanged = false; // flag that triggers on any param change
     juce::ApplicationProperties settings;
     std::vector<MIDIMsg> midi; // midi buffer used to process midi messages offset

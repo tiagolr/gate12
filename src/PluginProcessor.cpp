@@ -1,4 +1,4 @@
-// Copyright 2025 tilr
+ // Copyright 2025 tilr
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
@@ -67,6 +67,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     pattern = patterns[0];
     preSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= viewport width 
     postSamples.resize(globals::PLUG_WIDTH, 0);
+    monSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
     value = new SmoothParam();
 
     loadSettings();
@@ -206,7 +207,8 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     lpFilterR.clear(0.0);
     hpFilterL.clear(0.0);
     hpFilterR.clear(0.0);
-    monitor.resize((int)sampleRate * 3, 0.0);
+    std::fill(monSamples.begin(), monSamples.end(), 0.0);
+    audioTriggerCooldown = 0;
     onSlider();
 }
 
@@ -320,6 +322,9 @@ void GATE12AudioProcessor::onPlay()
     trigpos = 0.0;
     trigphase = phase;
 
+    audioTriggerCountdown = -1;
+    audioTriggerCooldown = 0;
+
     if (trigger == 0 || alwaysPlaying) {
         restartEnv(false);
     }
@@ -370,7 +375,6 @@ void GATE12AudioProcessor::clearLatencyBuffers()
 void GATE12AudioProcessor::toggleUseSidechain()
 {
     useSidechain = !useSidechain;
-    monitor.resize(monitor.size(), 0.0);
     hpFilterL.clear(0.0);
     hpFilterR.clear(0.0);
     lpFilterL.clear(0.0);
@@ -380,7 +384,6 @@ void GATE12AudioProcessor::toggleUseSidechain()
 void GATE12AudioProcessor::toggleMonitorSidechain()
 {
     useMonitor = !useMonitor;
-    monitor.resize(monitor.size(), 0.0);
     hpFilterL.clear(0.0);
     hpFilterR.clear(0.0);
     lpFilterL.clear(0.0);
@@ -499,6 +502,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     double phase = (double)params.getRawParameterValue("phase")->load();
     double lowcut = (double)params.getRawParameterValue("lowcut")->load();
     double highcut = (double)params.getRawParameterValue("highcut")->load();
+    int algo = (int)params.getRawParameterValue("algo")->load();
+    double threshold = (double)params.getRawParameterValue("threshold")->load();
+    double sense = (double)params.getRawParameterValue("sense")->load();
     int numSamples = buffer.getNumSamples();
 
     // processes draw wave samples
@@ -515,6 +521,24 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             preSamples[winpos] = preamp;
         if (postSamples[winpos] < postamp)
             postSamples[winpos] = postamp;
+    };
+
+    double monIncrementPerSample = 1.0 / ((srate * 3.0) / monW); // 3 seconds divided by the buffer size
+    auto processMonitorSample = [&](double lsamp, double rsamp, bool hit) {
+        double indexd = monIdx.load();
+        indexd += monIncrementPerSample;
+
+        if (indexd >= monW)
+            indexd -= monW;
+
+        int index = (int)indexd;
+        if (lmonIdx != index)
+            monSamples[index] = 0.0;
+        lmonIdx = index;
+
+        double maxamp = std::max(std::fabs(lsamp), std::fabs(rsamp)) + (hit ? 10.0 : 0.0); // encode trigger hits by incrementing amp 10 units
+        monSamples[index] = std::max(monSamples[index], maxamp);
+        monIdx.store(indexd);
     };
 
     // applies envelope to a sample index
@@ -572,7 +596,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     else if (trigger == Trigger::Audio) {
                         int offset = (int)(params.getRawParameterValue("offset")->load() * globals::LATENCY_MILLIS / 1000.f * srate);
                         audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
-                        DBG(audioTriggerCountdown);
                     }
                 }
             }
@@ -667,11 +690,19 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             }
             if (highcut < 20000.0) {
                 monSampleL = lpFilterL.df1(monSampleL);
-                monSampleR = hpFilterR.df1(monSampleR);
+                monSampleR = lpFilterR.df1(monSampleR);
             }
             latMonitorBufferL[latpos] = monSampleL;
             latMonitorBufferR[latpos] = monSampleR;
-            // DETECT HIT USING MON SAMPLE
+
+            if (audioTriggerCooldown == 0 && 
+                (transDetectorL.detect(algo, monSampleL, threshold, sense) || 
+                transDetectorR.detect(algo, monSampleR, threshold, sense))) 
+            {
+                audioTriggerCooldown = (int)(srate * 0.004); // 4 milliseconds cooldown
+                int offset = (int)(params.getRawParameterValue("offset")->load() * globals::LATENCY_MILLIS / 1000.f * srate);
+                audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
+            }
 
             // read the sample 'latency' samples ago
             int readPos = (latpos + latency - 1) % latency;
@@ -687,8 +718,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     ? (useMonitor ? monSampleR : rsample)
                     : (useMonitor ? monSampleL : lsample)));
             }
-            monitor.push_back(std::max(std::fabs(monSampleL), std::fabs(monSampleR)));
-            monitor.pop_front();
+            auto hit = audioTriggerCountdown == 0; // there was an audio transient trigger in this sample
+            processMonitorSample(monSampleL, monSampleR, hit);
            
             // envelope processing
             auto inc = sync > 0
@@ -698,15 +729,12 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             trigpos += inc;
             xpos -= std::floor(xpos);
 
-            if (audioTriggerCountdown == 0) {
+            if (hit) {
                 clearDrawBuffers();
                 audioTrigger = !alwaysPlaying;
                 trigpos = 0.0;
                 trigphase = phase;
                 restartEnv(true);
-            }
-            if (audioTriggerCountdown > -1) {
-                audioTriggerCountdown = -1;
             }
 
             if (!alwaysPlaying) {
@@ -729,6 +757,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             double viewx = (alwaysPlaying || audioTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
             latpos = (latpos + 1) % latency;
+
+            if (audioTriggerCountdown > -1)
+                audioTriggerCountdown -= 1;
+            if (audioTriggerCooldown > 0)
+                audioTriggerCooldown -= 1;
         }
 
         xenv.store(xpos);

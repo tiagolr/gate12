@@ -67,6 +67,8 @@ source_group(Source\\ui
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/About.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SettingsButton.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SettingsButton.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/AudioDisplay.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/AudioDisplay.cpp
 )
 
 source_group(Source\\dsp
@@ -75,6 +77,8 @@ source_group(Source\\dsp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Pattern.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Filter.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Filter.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Transient.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/dsp/Transient.cpp
 )
 
 # Make the SourceFiles buildable

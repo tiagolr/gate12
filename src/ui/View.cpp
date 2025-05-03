@@ -60,7 +60,6 @@ void View::init()
     winy = bounds.getY() + globals::PAD;
     winw = bounds.getWidth() - globals::PAD * 2;
     winh = bounds.getHeight() - globals::PAD * 2;
-    audioProcessor.viewW = winw;
 }
 
 void View::paint(Graphics& g) {
@@ -74,7 +73,7 @@ void View::paint(Graphics& g) {
     drawSeek(g);
 }
 
-void View::drawWave(Graphics& g, std::vector<double> samples, Colour color) const
+void View::drawWave(Graphics& g, std::vector<double>& samples, Colour color) const
 {
     double lastX = winx;
     double lastY = winh - std::min(std::abs(samples[0]),1.) * winh + winy;

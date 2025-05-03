@@ -43,7 +43,7 @@ public:
   void init();
   void timerCallback() override;
   void paint(Graphics& g) override;
-  void drawWave(Graphics& g, std::vector<double> samples, Colour color) const;
+  void drawWave(Graphics& g, std::vector<double>& samples, Colour color) const;
   void drawGrid(Graphics& g);
   void drawSegments(Graphics& g);
   void drawMidPoints(Graphics& g);
