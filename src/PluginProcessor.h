@@ -13,6 +13,7 @@
 #include "dsp/Pattern.h"
 #include "dsp/Filter.h"
 #include <atomic>
+#include <deque>
 
 struct MIDIMsg {
     int offset;
@@ -78,12 +79,13 @@ public:
 
     // Instance Settings
     bool alwaysPlaying = false;
-    bool drawWave = true;
     bool linkEdgePoints = false;
     bool dualSmooth = true; // use either single smooth or attack and release
     bool MIDIHoldEnvelopeTail = true; // MIDI trigger - keep processing last position after envelope finishes
     bool AudioHoldEnvelopeTail = false; // Audio trigger - keep processing last position after envelope finishes
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
+    bool useMonitor = false; 
+    bool useSidechain = false;
 
     // State
     Pattern* pattern; // current pattern
@@ -110,11 +112,14 @@ public:
     int audioTriggerCooldown = -1; // samples until audio trigger can be retriggered
     std::vector<double> latBufferL; // latency buffer left
     std::vector<double> latBufferR; // latency buffer right
-    std::vector<double> latBufferSideL; // sidechain latency buffer left
-    std::vector<double> latBufferSideR; // sidechain latency buffer right
+    std::vector<double> latMonitorBufferL; // latency buffer left
+    std::vector<double> latMonitorBufferR; // latency buffer right
     int latpos = 0; // latency buffer pos
-    Filter lpFilter{};
-    Filter hpFilter{};
+    Filter lpFilterL{};
+    Filter lpFilterR{};
+    Filter hpFilterL{};
+    Filter hpFilterR{};
+    std::deque<double> monitor; // monitor samples to draw on view
     
     // PlayHead state
     bool playing = false;
@@ -155,6 +160,8 @@ public:
     void setSmooth();
     void clearDrawBuffers();
     void clearLatencyBuffers();
+    void toggleUseSidechain();
+    void toggleMonitorSidechain();
     double getY(double x, double min, double max);
     void queuePattern(int patidx);
     //==============================================================================

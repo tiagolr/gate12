@@ -34,6 +34,7 @@ GATE-12 is an open-source and cross-platform envelope generator for gate/volume 
   * **Built with JUCE**
   * **Audio trigger** use audio transients to trigger the envelope
   * **Pattern sync** sync pattern changes to beat position
+  * **Multi-point** selection and editting
 
 ## Features
 
@@ -45,7 +46,7 @@ GATE-12 is an open-source and cross-platform envelope generator for gate/volume 
   * Attack and release smooth
   * Pre and post waveform display
   * MIDI trigger mode
-  * Transient trigger mode
+  * Audio trigger mode
 
 ## Download
 

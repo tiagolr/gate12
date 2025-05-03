@@ -26,7 +26,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	options.addSubMenu("Trigger Channel", triggerChn);
 	options.addItem(30, "Dual smooth", true, audioProcessor.dualSmooth);
 	options.addItem(31, "Link edge points", true, audioProcessor.linkEdgePoints);
-	options.addItem(32, "Draw wave", true, audioProcessor.drawWave);
 
 	PopupMenu load;
 	load.addItem(100, "Sine");
@@ -62,9 +61,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			}
 			if (result == 31) { // Link edge points
 				audioProcessor.linkEdgePoints = !audioProcessor.linkEdgePoints;
-			}
-			if (result == 32) { // Draw wave
-				audioProcessor.drawWave = !audioProcessor.drawWave;
 			}
 			if (result == 50) {
 				audioProcessor.pattern->invert();

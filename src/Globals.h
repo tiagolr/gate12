@@ -13,7 +13,7 @@ namespace globals {
 	inline unsigned int COLOR_MIDI = 0xff50a9ff;
 	inline unsigned int COLOR_SELECTION = 0xff50a9ff;
 
-	inline const int PLUG_WIDTH = 660;
+	inline const int PLUG_WIDTH = 640;
 	inline const int PLUG_HEIGHT = 640;
 	inline const int PAD = 10; // plugin sides padding
 	inline const int LATENCY_MILLIS = 4;

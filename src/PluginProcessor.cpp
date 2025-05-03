@@ -202,8 +202,11 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
         ? static_cast<int>(sampleRate * 0.004) 
         : 0
     );
-    lpFilter.clear(0.0);
-    hpFilter.clear(0.0);
+    lpFilterL.clear(0.0);
+    lpFilterR.clear(0.0);
+    hpFilterL.clear(0.0);
+    hpFilterR.clear(0.0);
+    monitor.resize((int)sampleRate * 3, 0.0);
     onSlider();
 }
 
@@ -295,8 +298,10 @@ void GATE12AudioProcessor::onSlider()
 
     auto highcut = (double)params.getRawParameterValue("highcut")->load();
     auto lowcut = (double)params.getRawParameterValue("lowcut")->load();
-    lpFilter.lp(srate, highcut, 0.707);
-    hpFilter.hp(srate, lowcut, 0.707);
+    lpFilterL.lp(srate, highcut, 0.707);
+    lpFilterR.lp(srate, highcut, 0.707);
+    hpFilterL.hp(srate, lowcut, 0.707);
+    hpFilterR.hp(srate, lowcut, 0.707);
 }
 
 void GATE12AudioProcessor::onPlay()
@@ -357,9 +362,29 @@ void GATE12AudioProcessor::clearLatencyBuffers()
     auto latency = getLatencySamples();
     latBufferL.resize(latency, 0.0);
     latBufferR.resize(latency, 0.0);
-    latBufferSideL.resize(latency, 0.0);
-    latBufferSideR.resize(latency, 0.0);
+    latMonitorBufferL.resize(latency, 0.0);
+    latMonitorBufferR.resize(latency, 0.0);
     latpos = 0;
+}
+
+void GATE12AudioProcessor::toggleUseSidechain()
+{
+    useSidechain = !useSidechain;
+    monitor.resize(monitor.size(), 0.0);
+    hpFilterL.clear(0.0);
+    hpFilterR.clear(0.0);
+    lpFilterL.clear(0.0);
+    lpFilterR.clear(0.0);
+}
+
+void GATE12AudioProcessor::toggleMonitorSidechain()
+{
+    useMonitor = !useMonitor;
+    monitor.resize(monitor.size(), 0.0);
+    hpFilterL.clear(0.0);
+    hpFilterR.clear(0.0);
+    lpFilterL.clear(0.0);
+    lpFilterR.clear(0.0);
 }
 
 double inline GATE12AudioProcessor::getY(double x, double min, double max)
@@ -472,10 +497,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     double max = (double)params.getRawParameterValue("max")->load();
     double ratehz = (double)params.getRawParameterValue("rate")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
-    bool useSideChain = false;
-    //bool monitorSideChain = false;
-
-    //double ppqLatency = (double)laBufferL.size() / srate * beatsPerSecond;
+    double lowcut = (double)params.getRawParameterValue("lowcut")->load();
+    double highcut = (double)params.getRawParameterValue("highcut")->load();
     int numSamples = buffer.getNumSamples();
 
     // processes draw wave samples
@@ -630,26 +653,42 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             // read sidechain samples
             double lsidesample = 0.0;
             double rsidesample = 0.0;
-            if (useSideChain && sideInputs) {
+            if (useSidechain && sideInputs) {
                 lsidesample = (double)buffer.getSample(audioInputs, sample);
                 rsidesample = (double)buffer.getSample(sideInputs > 1 ? audioInputs + 1 : audioInputs, sample);
             }
-            latBufferSideL[latpos] = lsidesample;
-            latBufferSideR[latpos] = rsidesample;
 
-            // Detect audio trigger using prebuffer samples
-            // Apply trigger offset to Hit countdown
-            // 
+            // Detect audio transients
+            auto monSampleL = useSidechain ? lsidesample : lsample;
+            auto monSampleR = useSidechain ? rsidesample : rsample;
+            if (lowcut > 20.0) {
+                monSampleL = hpFilterL.df1(monSampleL);
+                monSampleR = hpFilterR.df1(monSampleR);
+            }
+            if (highcut < 20000.0) {
+                monSampleL = lpFilterL.df1(monSampleL);
+                monSampleR = hpFilterR.df1(monSampleR);
+            }
+            latMonitorBufferL[latpos] = monSampleL;
+            latMonitorBufferR[latpos] = monSampleR;
+            // DETECT HIT USING MON SAMPLE
 
             // read the sample 'latency' samples ago
             int readPos = (latpos + latency - 1) % latency;
             lsample = latBufferL[readPos];
             rsample = latBufferR[readPos];
+            monSampleL = latMonitorBufferL[readPos];
+            monSampleR = latMonitorBufferR[readPos];
 
-            // write delayed sample into the buffer
+            // write delayed monitoring samples into the output buffer 
+            // will be later rewritten with envelope processed ones
             for (int channel = 0; channel < audioOutputs; ++channel) {
-                buffer.setSample(channel, sample, static_cast<FloatType>(channel % 2 ? rsample : lsample));
+                buffer.setSample(channel, sample, static_cast<FloatType>(channel % 2 
+                    ? (useMonitor ? monSampleR : rsample)
+                    : (useMonitor ? monSampleL : lsample)));
             }
+            monitor.push_back(std::max(std::fabs(monSampleL), std::fabs(monSampleR)));
+            monitor.pop_front();
            
             // envelope processing
             auto inc = sync > 0
@@ -672,7 +711,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             if (!alwaysPlaying) {
                 if (audioTrigger) {
-                    if (trigpos >= 1.0) { // envelope finished, stop midiTrigger
+                    if (trigpos >= 1.0) { // envelope finished, stop trigger
                         audioTrigger = false;
                         xpos = phase ? phase : 1.0;
                     }
@@ -684,11 +723,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             double newypos = getY(xpos, min, max);
             ypos = value->smooth2(newypos, newypos > ypos);    
-
-            applyGain(sample, ypos, lsample, rsample);
-            double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
+            if (!useMonitor) {
+                applyGain(sample, ypos, lsample, rsample);
+            }
+            double viewx = (alwaysPlaying || audioTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
-
             latpos = (latpos + 1) % latency;
         }
 

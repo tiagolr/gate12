@@ -17,7 +17,7 @@ enum LabelFormat {
 
 class Rotary : public juce::SettableTooltipClient, public juce::Component, private juce::AudioProcessorValueTreeState::Listener {
 public:
-    Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name, LabelFormat format, bool isSymmetric = false);
+    Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name, LabelFormat format, bool isSymmetric = false, bool isAudioKnob = false);
     ~Rotary() override;
     void paint(juce::Graphics& g) override;
 
@@ -37,6 +37,7 @@ protected:
 
 private:
     bool isSymmetric;
+    bool isAudioKnob;
     float deg130 = 130.0f * juce::MathConstants<float>::pi / 180.0f;
     void draw_rotary_slider(juce::Graphics& g, float slider_pos);
     void draw_label_value(juce::Graphics& g, float slider_val);

@@ -50,6 +50,7 @@ private:
     ComboBox patSyncMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patSyncAttachment;
     std::unique_ptr<SettingsButton> settingsButton;
+
     std::unique_ptr<Rotary> rate;
     std::unique_ptr<Rotary> phase;
     std::unique_ptr<Rotary> min;
@@ -58,6 +59,16 @@ private:
     std::unique_ptr<Rotary> attack;
     std::unique_ptr<Rotary> release;
     std::unique_ptr<Rotary> tension;
+    std::unique_ptr<Rotary> threshold;
+    std::unique_ptr<Rotary> sense;
+    std::unique_ptr<Rotary> lowcut;
+    std::unique_ptr<Rotary> highcut;
+    std::unique_ptr<Rotary> offset;
+    
+    ComboBox algoMenu;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> algoAttachment;
+    TextButton useSidechain;
+    TextButton useMonitor;
     TextButton nudgeRightButton;
     TextButton nudgeLeftButton;
     ImageButton paintLogo;
