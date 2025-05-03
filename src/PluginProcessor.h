@@ -87,7 +87,7 @@ public:
     // State
     Pattern* pattern; // current pattern
     int queuedPattern = 0; // queued pat index, 0 = off
-    int64_t queuedPatternCounter = 0; // samples counter until queued pattern is applied
+    int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
     int currentProgram = -1;
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
     std::vector<double> preSamples; // used by view to draw pre audio
@@ -105,11 +105,13 @@ public:
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope
-    std::vector<double> laBufferL; // lookahead buffer left
-    std::vector<double> laBufferR; // lookahead buffer right
-    std::vector<double> laBufferSideL; // sidechain lookahead buffer left
-    std::vector<double> laBufferSideR; // sidechain lookahead buffer right
-    int lapos = 0; // lookahead buffer pos
+    int audioTriggerCountdown = -1; // samples until audio envelope starts
+    int audioTriggerCooldown = -1; // samples until audio trigger can be retriggered
+    std::vector<double> latBufferL; // latency buffer left
+    std::vector<double> latBufferR; // latency buffer right
+    std::vector<double> latBufferSideL; // sidechain latency buffer left
+    std::vector<double> latBufferSideR; // sidechain latency buffer right
+    int latpos = 0; // latency buffer pos
     
     // PlayHead state
     bool playing = false;
@@ -148,7 +150,7 @@ public:
     void onStop ();
     void restartEnv (bool fromZero = false);
     void clearDrawBuffers();
-    void clearLookaheadBuffers();
+    void clearLatencyBuffers();
     double getY(double x, double min, double max);
     void queuePattern(int patidx);
 

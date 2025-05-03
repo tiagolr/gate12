@@ -14,8 +14,9 @@ GATE12AudioProcessor::GATE12AudioProcessor()
      )
     , settings{}
     , params(*this, &undoManager, "PARAMETERS", {
-        std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio" }, 0),
         std::make_unique<juce::AudioParameterInt>("pattern", "Pattern", 1, 12, 1),
+        std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
+        std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio" }, 0),
         std::make_unique<juce::AudioParameterChoice>("sync", "Sync", StringArray { "Rate Hz", "1/16", "1/8", "1/4", "1/2", "1/1", "2/1", "4/1", "1/16t", "1/8t", "1/4t", "1/2t", "1/1t", "1/16.", "1/8.", "1/4.", "1/2.", "1/1." }, 5),
         std::make_unique<juce::AudioParameterFloat>("rate", "Rate", juce::NormalisableRange<float>(0.01f, 5000.0f, 0.01f, 0.2f), 1.0f),
         std::make_unique<juce::AudioParameterFloat>("phase", "Phase", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
@@ -29,7 +30,13 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 1, 32, 8),
-        std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
+        // audio trigger params
+        std::make_unique<juce::AudioParameterChoice>("algo", "Audio Algorithm", StringArray { "Simple", "Drums" }, 0),
+        std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", 0.0f, 1.0f, 0.5f),
+        std::make_unique<juce::AudioParameterFloat>("sense", "Audio Sensitivity", 0.0f, 1.0f, 0.5f),
+        std::make_unique<juce::AudioParameterFloat>("lowcut", "Audio LowCut", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f) , 20.f),
+        std::make_unique<juce::AudioParameterFloat>("highcut", "Audio HighCut", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f) , 20000.f),
+        std::make_unique<juce::AudioParameterFloat>("offset", "Audio Offset", -1.0f, 1.0f, 0.0f),
     })
 #endif
 {
@@ -250,10 +257,10 @@ void GATE12AudioProcessor::onSlider()
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger) {
         setLatencySamples(trigger == Trigger::Audio 
-            ? static_cast<int>(getSampleRate() * 0.004) 
+            ? static_cast<int>(getSampleRate() * globals::LATENCY_MILLIS / 1000.0) 
             : 0
         );
-        clearLookaheadBuffers();
+        clearLatencyBuffers();
         ltrigger = trigger;
     }
     if (trigger == Trigger::Sync && alwaysPlaying) 
@@ -300,7 +307,7 @@ void GATE12AudioProcessor::onSlider()
 void GATE12AudioProcessor::onPlay()
 {
     clearDrawBuffers();
-    clearLookaheadBuffers();
+    clearLatencyBuffers();
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     double ratehz = (double)params.getRawParameterValue("rate")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
@@ -325,11 +332,11 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
     double max = (double)params.getRawParameterValue("max")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
 
-    if (fromZero) { // restart from env start
+    if (fromZero) { // restart from phase
         xpos = phase;
     }
-    else { // restart from beat pos 
-        xpos = sync > 0 
+    else { // restart from beat pos
+        xpos = sync > 0
             ? beatPos / syncQN + phase
             : ratePos + phase;
         xpos -= std::floor(xpos);
@@ -340,13 +347,8 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
 
 void GATE12AudioProcessor::onStop()
 {
-    int trigger = (int)params.getRawParameterValue("trigger")->load();
     midiTrigger = false;
     audioTrigger = false;
-
-    if (trigger > 0 && !alwaysPlaying) {
-        xpos = 0.0; // stops envelope seek draw
-    }
 }
 
 void GATE12AudioProcessor::clearDrawBuffers()
@@ -355,14 +357,14 @@ void GATE12AudioProcessor::clearDrawBuffers()
     std::fill(postSamples.begin(), postSamples.end(), 0.0);
 }
 
-void GATE12AudioProcessor::clearLookaheadBuffers()
+void GATE12AudioProcessor::clearLatencyBuffers()
 {
     auto latency = getLatencySamples();
-    laBufferL.resize(latency, 0.0);
-    laBufferR.resize(latency, 0.0);
-    laBufferSideL.resize(latency, 0.0);
-    laBufferSideR.resize(latency, 0.0);
-    lapos = 0;
+    latBufferL.resize(latency, 0.0);
+    latBufferR.resize(latency, 0.0);
+    latBufferSideL.resize(latency, 0.0);
+    latBufferSideR.resize(latency, 0.0);
+    latpos = 0;
 }
 
 double inline GATE12AudioProcessor::getY(double x, double min, double max)
@@ -373,7 +375,7 @@ double inline GATE12AudioProcessor::getY(double x, double min, double max)
 void GATE12AudioProcessor::queuePattern(int patidx)
 {
     queuedPattern = patidx;
-    queuedPatternCounter = 0;
+    queuedPatternCountdown = 0;
     int patsync = (int)params.getRawParameterValue("patsync")->load();
 
     if (playing && patsync != PatSync::Off) {
@@ -386,7 +388,7 @@ void GATE12AudioProcessor::queuePattern(int patidx)
             interval = interval * 2;
         else if (patsync == PatSync::Beat_x4)
             interval = interval * 4;
-        queuedPatternCounter = (interval - timeInSamples % interval) % interval;
+        queuedPatternCountdown = (interval - timeInSamples % interval) % interval;
     }
 
     auto param = params.getParameter("pattern");
@@ -543,15 +545,15 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
         // process queued pattern
         if (queuedPattern) {
-            if (!playing || queuedPatternCounter == 0) {
+            if (!playing || queuedPatternCountdown == 0) {
                 pattern = patterns[queuedPattern - 1];
                 auto tension = (double)params.getRawParameterValue("tension")->load();
                 pattern->setTension(tension);
                 pattern->buildSegments();
                 queuedPattern = 0;
             }
-            if (queuedPatternCounter > 0) {
-                queuedPatternCounter -= 1;
+            if (queuedPatternCountdown > 0) {
+                queuedPatternCountdown -= 1;
             }
         }
 
@@ -603,14 +605,14 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // Audio mode
-        else if (trigger == Trigger::Audio && audioInputs && audioOutputs) {
-            int latency = (int)laBufferL.size();
+        else if (trigger == Trigger::Audio) {
+            int latency = (int)latBufferL.size();
             
             // read audio samples
             double lsample = (double)buffer.getSample(0, sample);
             double rsample = (double)buffer.getSample(audioInputs > 1 ? 1 : 0, sample);
-            laBufferL[lapos] = lsample;
-            laBufferR[lapos] = rsample;
+            latBufferL[latpos] = lsample;
+            latBufferR[latpos] = rsample;
 
             // read sidechain samples
             double lsidesample = 0.0;
@@ -619,52 +621,62 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 lsidesample = (double)buffer.getSample(audioInputs, sample);
                 rsidesample = (double)buffer.getSample(sideInputs > 1 ? audioInputs + 1 : audioInputs, sample);
             }
-            laBufferSideL[lapos] = lsidesample;
-            laBufferSideR[lapos] = rsidesample;
+            latBufferSideL[latpos] = lsidesample;
+            latBufferSideR[latpos] = rsidesample;
 
-            // Lookahead: read the sample 'latency' samples ago
-            int readPos = (lapos + latency - 1) % latency;
-            lsample = laBufferL[readPos];
-            rsample = laBufferR[readPos];
+            // Detect audio trigger using prebuffer samples
+            // Apply trigger offset to Hit countdown
+            // 
+
+            // read the sample 'latency' samples ago
+            int readPos = (latpos + latency - 1) % latency;
+            lsample = latBufferL[readPos];
+            rsample = latBufferR[readPos];
 
             // write delayed sample into the buffer
             for (int channel = 0; channel < audioOutputs; ++channel) {
                 buffer.setSample(channel, sample, static_cast<FloatType>(channel % 2 ? rsample : lsample));
             }
-            /*
-            if (audioTrigger) {
-                if (beatPos < 0.0) {
-                    beatPos += sync > 0 
-                        ? beatsPerSample 
-                        : 1 / srate * ratehz;
+           
+            //
+            auto inc = sync > 0
+                ? beatsPerSample / syncQN
+                : 1 / srate * ratehz;
+            xpos += inc;
+            trigpos += inc;
+            xpos -= std::floor(xpos);
+
+            if (audioTriggerCountdown == 0) {
+                // clearDrawBuffers();
+                // audioTrigger = !alwaysPlaying;
+                // trigpos = 0.0;
+                // trigphase = phase;
+                // restartEnv(true);
+            }
+            if (audioTriggerCountdown > -1) {
+                audioTriggerCountdown = -1;
+            }
+
+            if (!alwaysPlaying) {
+                if (audioTrigger) {
+                    if (trigpos >= 1.0) { // envelope finished, stop midiTrigger
+                        audioTrigger = false;
+                        xpos = phase ? phase : 1.0;
+                    }
                 }
                 else {
-                    if (sync > 0) {
-                        beatPos += beatsPerSample;
-                        xpos = beatPos / syncQN + phase;
-                    }
-                    else {
-                        beatPos += 1 / srate * ratehz;
-                        xpos = beatPos + phase;
-                    }
-                    xpos -= std::floor(xpos);
-
-                    double nextValue = getY(xpos, min, max);
-                    ypos = value->smooth2(nextValue, nextValue > ypos);
-
-                    double maxAmp = 0.0;
-                    for (int channel = 0; channel < audioOutputs; ++channel) {
-                        double s = channel % 2 ? rsample : lsample;
-                        maxAmp = std::fmax(maxAmp, std::fabs(s));
-                        buffer.setSample(channel, sample, static_cast<FloatType>(s * env));
-                    }
-
-                    // processDisplaySample(maxAmp, env);
-                    
+                    xpos = phase ? phase : 1.0; // audioTrigger is stopped, hold last position
                 }
             }
-            */
-            lapos = (lapos + 1) % latency;
+
+            double newypos = getY(xpos, min, max);
+            ypos = value->smooth2(newypos, newypos > ypos);    
+
+            applyGain(sample, ypos, lsample, rsample);
+            double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
+            processDisplaySample(viewx, ypos, lsample, rsample);
+
+            latpos = (latpos + 1) % latency;
         }
 
         xenv.store(xpos);
