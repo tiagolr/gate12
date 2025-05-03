@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include <vector>
 #include "dsp/Pattern.h"
+#include "dsp/Filter.h"
 #include <atomic>
 
 struct MIDIMsg {
@@ -112,6 +113,8 @@ public:
     std::vector<double> latBufferSideL; // sidechain latency buffer left
     std::vector<double> latBufferSideR; // sidechain latency buffer right
     int latpos = 0; // latency buffer pos
+    Filter lpFilter{};
+    Filter hpFilter{};
     
     // PlayHead state
     bool playing = false;
@@ -132,7 +135,6 @@ public:
     //==============================================================================
     GATE12AudioProcessor();
     ~GATE12AudioProcessor() override;
-    void setSmooth();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -145,14 +147,17 @@ public:
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
    #endif
 
+    //==============================================================================
     void onSlider ();
     void onPlay ();
     void onStop ();
     void restartEnv (bool fromZero = false);
+    void setSmooth();
     void clearDrawBuffers();
     void clearLatencyBuffers();
     double getY(double x, double min, double max);
     void queuePattern(int patidx);
+    //==============================================================================
 
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;

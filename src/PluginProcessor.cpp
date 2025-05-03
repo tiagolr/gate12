@@ -76,19 +76,6 @@ GATE12AudioProcessor::~GATE12AudioProcessor()
 {
 }
 
-void GATE12AudioProcessor::setSmooth() 
-{
-    if (dualSmooth) {
-        float attack = params.getRawParameterValue("attack")->load();
-        float release = params.getRawParameterValue("release")->load();
-        value->rcSet2(attack * 0.25, release * 0.25, getSampleRate());
-    }
-    else {
-        float lfosmooth = params.getRawParameterValue("smooth")->load();
-        value->rcSet2(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
-    }
-}
-
 void GATE12AudioProcessor::parameterValueChanged (int parameterIndex, float newValue)
 {
     (void)newValue;
@@ -215,6 +202,8 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
         ? static_cast<int>(sampleRate * 0.004) 
         : 0
     );
+    lpFilter.clear(0.0);
+    hpFilter.clear(0.0);
     onSlider();
 }
 
@@ -253,6 +242,7 @@ bool GATE12AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
 void GATE12AudioProcessor::onSlider()
 {
     setSmooth();
+    auto srate = getSampleRate();
 
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger) {
@@ -302,6 +292,11 @@ void GATE12AudioProcessor::onSlider()
     else if (sync == 15) syncQN = 1./1.*1.5; // 1/4.
     else if (sync == 16) syncQN = 2./1.*1.5; // 1/2.
     else if (sync == 17) syncQN = 4./1.*1.5; // 1/1.
+
+    auto highcut = (double)params.getRawParameterValue("highcut")->load();
+    auto lowcut = (double)params.getRawParameterValue("lowcut")->load();
+    lpFilter.lp(srate, highcut, 0.707);
+    hpFilter.hp(srate, lowcut, 0.707);
 }
 
 void GATE12AudioProcessor::onPlay()
@@ -370,6 +365,19 @@ void GATE12AudioProcessor::clearLatencyBuffers()
 double inline GATE12AudioProcessor::getY(double x, double min, double max)
 {
     return min + (max - min) * (1 - pattern->get_y_at(x));
+}
+
+void GATE12AudioProcessor::setSmooth() 
+{
+    if (dualSmooth) {
+        float attack = params.getRawParameterValue("attack")->load();
+        float release = params.getRawParameterValue("release")->load();
+        value->rcSet2(attack * 0.25, release * 0.25, getSampleRate());
+    }
+    else {
+        float lfosmooth = params.getRawParameterValue("smooth")->load();
+        value->rcSet2(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
+    }
 }
 
 void GATE12AudioProcessor::queuePattern(int patidx)
@@ -457,7 +465,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
     if (!audioInputs || !audioOutputs) 
         return;
-
+    
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     int sync = (int)params.getRawParameterValue("sync")->load();
     double min = (double)params.getRawParameterValue("min")->load();
@@ -537,6 +545,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         trigpos = 0.0;
                         trigphase = phase;
                         restartEnv(true);
+                    }
+                    else if (trigger == Trigger::Audio) {
+                        int offset = (int)(params.getRawParameterValue("offset")->load() * globals::LATENCY_MILLIS / 1000.f * srate);
+                        audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
+                        DBG(audioTriggerCountdown);
                     }
                 }
             }
@@ -638,7 +651,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 buffer.setSample(channel, sample, static_cast<FloatType>(channel % 2 ? rsample : lsample));
             }
            
-            //
+            // envelope processing
             auto inc = sync > 0
                 ? beatsPerSample / syncQN
                 : 1 / srate * ratehz;
@@ -647,11 +660,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             xpos -= std::floor(xpos);
 
             if (audioTriggerCountdown == 0) {
-                // clearDrawBuffers();
-                // audioTrigger = !alwaysPlaying;
-                // trigpos = 0.0;
-                // trigphase = phase;
-                // restartEnv(true);
+                clearDrawBuffers();
+                audioTrigger = !alwaysPlaying;
+                trigpos = 0.0;
+                trigphase = phase;
+                restartEnv(true);
             }
             if (audioTriggerCountdown > -1) {
                 audioTriggerCountdown = -1;
