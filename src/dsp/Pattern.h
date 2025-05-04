@@ -51,6 +51,7 @@ public:
     void removePointsInRange(double x1, double x2);
     void invert();
     void reverse();
+    void rotate(double x);
     void clear();
     void buildSegments();
     void loadSine();

@@ -571,31 +571,17 @@ void View::mouseDrag(const juce::MouseEvent& e)
     if (selectedPoint > -1) {
         auto& point = points[selectedPoint];
         point.y = yy;
-        
-
-        //if (selectedPoint == 0 && audioProcessor.linkEdgePoints) {
-        //    auto& next = points[points.size() - 1];
-        //    next.y = point.y;
-        //}
-
-        //if (selectedPoint == points.size() - 1 && audioProcessor.linkEdgePoints) {
-        //    auto& first = points[0];
-        //    first.y = point.y;
-        //}
-
-        //if (selectedPoint > 0 && selectedPoint < points.size() - 1) {
-            point.x = xx;
-            if (point.x > 1) point.x = 1;
-            if (point.x < 0) point.x = 0;
-            if (selectedPoint < points.size() - 1) {
-                auto& next = points[static_cast<size_t>(selectedPoint) + 1];
-                if (point.x > next.x) point.x = next.x;
-            }
-            if (selectedPoint > 0) {
-                auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
-                if (point.x < prev.x) point.x = prev.x;
-            }
-        //}
+        point.x = xx;
+        if (point.x > 1) point.x = 1;
+        if (point.x < 0) point.x = 0;
+        if (selectedPoint < points.size() - 1) {
+            auto& next = points[static_cast<size_t>(selectedPoint) + 1];
+            if (point.x > next.x) point.x = next.x;
+        }
+        if (selectedPoint > 0) {
+            auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
+            if (point.x < prev.x) point.x = prev.x;
+        }
     }
 
     else if (selectedMidpoint > -1) {

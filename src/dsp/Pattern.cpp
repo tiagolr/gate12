@@ -100,6 +100,17 @@ void Pattern::reverse()
     }
 };
 
+void Pattern::rotate(double x) {
+    if (x > 1.0) x = 1.0;
+    if (x < -1.0) x = -1.0;
+    for (auto p = points.begin(); p != points.end(); ++p) {
+        p->x += x;
+        if (p->x < 0.0) p->x += 1.0;
+        if (p->x > 1.0) p->x -= 1.0;
+    }
+    sortPoints();
+}
+
 void Pattern::clear()
 {
     points.clear();
@@ -136,11 +147,10 @@ void Pattern::buildSegments()
 
 void Pattern::loadSine() {
     points.clear();
-    insertPoint(0, 1, 0.33, 1);
-    insertPoint(0.25, 0.5, -0.33, 1);
-    insertPoint(0.5, 0, 0.33, 1);
-    insertPoint(0.75, 0.5, -0.33, 1);
-    insertPoint(1, 1, 0, 1);
+    insertPoint(0, 1, 0.33, 2);
+    insertPoint(0.5, 0, 0.33, 2);
+    insertPoint(1, 1, 0.33, 2);
+    rotate(0.25);
 }
 
 void Pattern::loadTriangle() {

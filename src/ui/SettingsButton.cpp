@@ -25,7 +25,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	options.addSeparator();
 	options.addSubMenu("Trigger Channel", triggerChn);
 	options.addItem(30, "Dual smooth", true, audioProcessor.dualSmooth);
-	options.addItem(31, "Link edge points", true, audioProcessor.linkEdgePoints);
 
 	PopupMenu load;
 	load.addItem(100, "Sine");
@@ -58,9 +57,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			if (result == 30) { // Dual smooth
 				audioProcessor.dualSmooth = !audioProcessor.dualSmooth;
 				toggleUIComponents();
-			}
-			if (result == 31) { // Link edge points
-				audioProcessor.linkEdgePoints = !audioProcessor.linkEdgePoints;
 			}
 			if (result == 50) {
 				audioProcessor.pattern->invert();

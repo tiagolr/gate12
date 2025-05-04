@@ -210,42 +210,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tension->setBounds(col,row,80,65);
     col += 75;
 
-    addAndMakeVisible(nudgeLeftButton);
-    nudgeLeftButton.setAlpha(0.f);
-    nudgeLeftButton.setBounds(phase->getX(), phase->getBottom()-10, 10, 10);
-    nudgeLeftButton.onClick = [this]() {
-        MessageManager::callAsync([this] {
-            auto phase = audioProcessor.params.getParameter("phase");
-            auto grid = audioProcessor.params.getRawParameterValue("grid")->load();
-            auto gridSize = 1.f / grid;
-            auto value = phase->getValue();
-            value = std::ceil(value * grid) * gridSize - gridSize;
-            if (value < 0.f)
-                value = 1.0f;
-            phase->beginChangeGesture();
-            phase->setValueNotifyingHost(value);
-            phase->endChangeGesture();
-        });
-    };
-
-    addAndMakeVisible(nudgeRightButton);
-    nudgeRightButton.setAlpha(0.f);
-    nudgeRightButton.setBounds(phase->getRight()-10, phase->getBottom() - 10, 10, 10);
-    nudgeRightButton.onClick = [this]() {
-        MessageManager::callAsync([this] {
-            auto phase = audioProcessor.params.getParameter("phase");
-            auto grid = audioProcessor.params.getRawParameterValue("grid")->load();
-            auto gridSize = 1.f / grid;
-            auto value = phase->getValue();
-            value = std::floor(value * grid) * gridSize + gridSize;
-            if (value > 1.f)
-                value = 0.0f;
-            phase->beginChangeGesture();
-            phase->setValueNotifyingHost(value);
-            phase->endChangeGesture();
-        });
-    };
-
     // AUDIO KNOBS
     col = globals::PAD;
 
@@ -398,6 +362,37 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(*gridSelector);
     gridSelector->setBounds(col,row,50,25);
 
+    col -= 10+10+5;
+    addAndMakeVisible(nudgeRightButton);
+    nudgeRightButton.setAlpha(0.f);
+    nudgeRightButton.setBounds(col, row+25/2-5, 10, 10);
+    nudgeRightButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+            audioProcessor.pattern->rotate(1.0/grid);
+            audioProcessor.pattern->buildSegments();
+        });
+    };
+
+    col -= 10+10;
+    addAndMakeVisible(nudgeLeftButton);
+    nudgeLeftButton.setAlpha(0.f);
+    nudgeLeftButton.setBounds(col, row+25/2-5, 10, 10);
+    nudgeLeftButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+            audioProcessor.pattern->rotate(-1.0/grid);
+            audioProcessor.pattern->buildSegments();
+        });
+    };
+
+    col -= 60;
+    addAndMakeVisible(nudgeLabel);
+    nudgeLabel.setText("Rotate", dontSendNotification);
+    nudgeLabel.setJustificationType(Justification::centredRight);
+    nudgeLabel.setColour(Label::textColourId, Colour(globals::COLOR_NEUTRAL));
+    nudgeLabel.setBounds(col, row, 50, 25);
+
     // VIEW
     row += 25;
     col = 0;
@@ -482,8 +477,6 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     attack->setVisible(!showAudioKnobs);
     release->setVisible(!showAudioKnobs);
     tension->setVisible(!showAudioKnobs);
-    nudgeLeftButton.setVisible(!showAudioKnobs);
-    nudgeRightButton.setVisible(!showAudioKnobs);
 
     threshold->setVisible(showAudioKnobs);
     sense->setVisible(showAudioKnobs);
@@ -522,8 +515,6 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
             col += 75;
         }
         tension->setTopLeftPosition(col, row);
-        nudgeLeftButton.setTopLeftPosition(phase->getX(), phase->getBottom() - 10);
-        nudgeRightButton.setTopRightPosition(phase->getX() + phase->getWidth(), phase->getBottom()-10);
     }
 
     useSidechain.setVisible(showAudioKnobs);

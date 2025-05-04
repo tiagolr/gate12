@@ -80,7 +80,6 @@ public:
 
     // Instance Settings
     bool alwaysPlaying = false;
-    bool linkEdgePoints = false;
     bool dualSmooth = true; // use either single smooth or attack and release
     bool MIDIHoldEnvelopeTail = true; // MIDI trigger - keep processing last position after envelope finishes
     bool AudioHoldEnvelopeTail = false; // Audio trigger - keep processing last position after envelope finishes

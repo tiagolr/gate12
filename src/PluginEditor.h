@@ -70,6 +70,7 @@ private:
     TextButton useSidechain;
     TextButton useMonitor;
     TextButton nudgeRightButton;
+    Label nudgeLabel;
     TextButton nudgeLeftButton;
     ImageButton paintLogo;
     ComboBox paintMenu;
