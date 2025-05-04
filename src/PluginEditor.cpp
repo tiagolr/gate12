@@ -530,16 +530,20 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(globals::COLOR_BG));
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+    
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
 
     // draw loop play button
     if (trigger != Trigger::Sync) {
         if (audioProcessor.alwaysPlaying) {
+            g.setColour(Colours::yellow);
             auto loopBounds = loopButton.getBounds().expanded(-5);
-            g.fillRect(loopBounds);
+            g.fillRect(loopBounds.removeFromLeft(5));
+            loopBounds = loopButton.getBounds().expanded(-5);
+            g.fillRect(loopBounds.removeFromRight(5));
         }
         else {
+            g.setColour(Colour(0xff00ff00));
             juce::Path triangle;
             auto loopBounds = loopButton.getBounds().expanded(-5);
             triangle.startNewSubPath(0.0f, 0.0f);    
@@ -550,6 +554,7 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 
         }
     }
+    g.setColour(Colour(globals::COLOR_ACTIVE));
     // draw audio settings button outline
     if (audioSettingsLogo.isVisible() && audioProcessor.showAudioKnobs) {
         g.setColour(Colour(globals::COLOR_AUDIO));
