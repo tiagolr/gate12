@@ -207,8 +207,9 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     lpFilterR.clear(0.0);
     hpFilterL.clear(0.0);
     hpFilterR.clear(0.0);
+    transDetectorL.clear(sampleRate);
+    transDetectorR.clear(sampleRate);
     std::fill(monSamples.begin(), monSamples.end(), 0.0);
-    audioTriggerCooldown = 0;
     onSlider();
 }
 
@@ -323,7 +324,9 @@ void GATE12AudioProcessor::onPlay()
     trigphase = phase;
 
     audioTriggerCountdown = -1;
-    audioTriggerCooldown = 0;
+    double srate = getSampleRate();
+    transDetectorL.clear(srate);
+    transDetectorR.clear(srate);
 
     if (trigger == 0 || alwaysPlaying) {
         restartEnv(false);
@@ -352,8 +355,6 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
 
 void GATE12AudioProcessor::onStop()
 {
-    midiTrigger = false;
-    audioTrigger = false;
 }
 
 void GATE12AudioProcessor::clearDrawBuffers()
@@ -504,7 +505,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     double highcut = (double)params.getRawParameterValue("highcut")->load();
     int algo = (int)params.getRawParameterValue("algo")->load();
     double threshold = (double)params.getRawParameterValue("threshold")->load();
-    double sense = (double)params.getRawParameterValue("sense")->load();
+    double sense = 1.0 - (double)params.getRawParameterValue("sense")->load();
+    sense = std::pow(sense, 2); // make sensitivity more responsive
     int numSamples = buffer.getNumSamples();
 
     // processes draw wave samples
@@ -523,22 +525,25 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             postSamples[winpos] = postamp;
     };
 
-    double monIncrementPerSample = 1.0 / ((srate * 3.0) / monW); // 3 seconds divided by the buffer size
+    double monIncrementPerSample = 1.0 / ((srate * 2) / monW); // 2 seconds of audio displayed on monitor
     auto processMonitorSample = [&](double lsamp, double rsamp, bool hit) {
-        double indexd = monIdx.load();
+        double indexd = monpos.load();
         indexd += monIncrementPerSample;
 
         if (indexd >= monW)
             indexd -= monW;
 
         int index = (int)indexd;
-        if (lmonIdx != index)
+        if (lmonpos != index)
             monSamples[index] = 0.0;
-        lmonIdx = index;
+        lmonpos = index;
 
-        double maxamp = std::max(std::fabs(lsamp), std::fabs(rsamp)) + (hit ? 10.0 : 0.0); // encode trigger hits by incrementing amp 10 units
+        double maxamp = std::max(std::fabs(lsamp), std::fabs(rsamp));
+        if (hit || monSamples[index] >= 10.0)
+            maxamp = std::max(maxamp + 10.0, hitamp + 10.0); // encode hits by adding +10 to amp
+
         monSamples[index] = std::max(monSamples[index], maxamp);
-        monIdx.store(indexd);
+        monpos.store(indexd);
     };
 
     // applies envelope to a sample index
@@ -592,10 +597,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         trigpos = 0.0;
                         trigphase = phase;
                         restartEnv(true);
-                    }
-                    else if (trigger == Trigger::Audio) {
-                        int offset = (int)(params.getRawParameterValue("offset")->load() * globals::LATENCY_MILLIS / 1000.f * srate);
-                        audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
                     }
                 }
             }
@@ -695,13 +696,14 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             latMonitorBufferL[latpos] = monSampleL;
             latMonitorBufferR[latpos] = monSampleR;
 
-            if (audioTriggerCooldown == 0 && 
-                (transDetectorL.detect(algo, monSampleL, threshold, sense) || 
-                transDetectorR.detect(algo, monSampleR, threshold, sense))) 
+            if (transDetectorL.detect(algo, monSampleL, threshold, sense) || 
+                transDetectorR.detect(algo, monSampleR, threshold, sense)) 
             {
-                audioTriggerCooldown = (int)(srate * 0.004); // 4 milliseconds cooldown
+                transDetectorL.startCooldown();
+                transDetectorR.startCooldown();
                 int offset = (int)(params.getRawParameterValue("offset")->load() * globals::LATENCY_MILLIS / 1000.f * srate);
                 audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
+                hitamp = std::max(std::fabs(monSampleL), std::fabs(monSampleR));
             }
 
             // read the sample 'latency' samples ago
@@ -760,8 +762,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             if (audioTriggerCountdown > -1)
                 audioTriggerCountdown -= 1;
-            if (audioTriggerCooldown > 0)
-                audioTriggerCooldown -= 1;
         }
 
         xenv.store(xpos);

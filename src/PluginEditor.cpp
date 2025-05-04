@@ -42,19 +42,23 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     addAndMakeVisible(syncMenu);
     syncMenu.setTooltip("Tempo sync");
+    syncMenu.addSectionHeading("Free");
     syncMenu.addItem("Rate Hz", 1);
+    syncMenu.addSectionHeading("Straight");
     syncMenu.addItem("1/16", 2);
     syncMenu.addItem("1/8", 3);
     syncMenu.addItem("1/4", 4);
     syncMenu.addItem("1/2", 5);
-    syncMenu.addItem("1/1", 6);
-    syncMenu.addItem("2/1", 7);
-    syncMenu.addItem("4/1", 8);
-    syncMenu.addItem("1/16t", 9);
-    syncMenu.addItem("1/8t", 10);
-    syncMenu.addItem("1/4t", 11);
-    syncMenu.addItem("1/2t", 12);
-    syncMenu.addItem("1/1t", 13);
+    syncMenu.addItem("1 Bar", 6);
+    syncMenu.addItem("2 Bars", 7);
+    syncMenu.addItem("4 Bars", 8);
+    syncMenu.addSectionHeading("Tripplet");
+    syncMenu.addItem("1/16T", 9);
+    syncMenu.addItem("1/8T", 10);
+    syncMenu.addItem("1/4T", 11);
+    syncMenu.addItem("1/2T", 12);
+    syncMenu.addItem("1/1T", 13);
+    syncMenu.addSectionHeading("Dotted");
     syncMenu.addItem("1/16.", 14);
     syncMenu.addItem("1/8.", 15);
     syncMenu.addItem("1/4.", 16);
@@ -103,7 +107,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(audioSettingsLogo);
     audioSettingsLogo.setBounds(col+4, row+4, 25-8, 25-8);
     audioSettingsLogo.onClick = [this]() {
-        showAudioKnobs = !showAudioKnobs;
+        audioProcessor.showAudioKnobs = !audioProcessor.showAudioKnobs;
         toggleUIComponents();
     };
     col += 35;
@@ -124,7 +128,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
         btn->setRadioGroupId (1337);
         btn->setToggleState(audioProcessor.pattern->index == i, dontSendNotification);
-        btn->setTooltip("Pattern selector");
         btn->setClickingTogglesState (false);
         btn->setColour (TextButton::textColourOffId,  Colour(globals::COLOR_BG));
         btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
@@ -382,7 +385,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col = getWidth() - globals::PAD - 60;
 
     addAndMakeVisible(snapButton);
-    snapButton.setTooltip("Snap to grid on/off");
+    snapButton.setTooltip("Toggle snap by using ctrl key");
     snapButton.setButtonText("Snap");
     snapButton.setComponentID("button");
     snapButton.setBounds(col, row, 60, 25);
@@ -448,12 +451,12 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     audioSettingsLogo.setVisible(trigger == Trigger::Audio);
     algoMenu.setVisible(trigger == Trigger::Audio);
     if (!audioSettingsLogo.isVisible()) {
-        showAudioKnobs = false;
+        audioProcessor.showAudioKnobs = false;
     }
     else {
         juce::MemoryInputStream audioInputStream(
-            showAudioKnobs ? BinaryData::geardark_png : BinaryData::gear_png, 
-            showAudioKnobs ? BinaryData::geardark_pngSize : BinaryData::gear_pngSize, 
+            audioProcessor.showAudioKnobs ? BinaryData::geardark_png : BinaryData::gear_png, 
+            audioProcessor.showAudioKnobs ? BinaryData::geardark_pngSize : BinaryData::gear_pngSize, 
             false
         );
         juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
@@ -467,7 +470,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     }
     loopButton.setVisible(trigger > 0);
 
-    auto sync = (int)audioProcessor.params.getRawParameterValue("sync")->load();
+    int sync = (int)audioProcessor.params.getRawParameterValue("sync")->load();
+    bool showAudioKnobs = audioProcessor.showAudioKnobs;
 
     // layout knobs
     rate->setVisible(!showAudioKnobs);
@@ -518,6 +522,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
             col += 75;
         }
         tension->setTopLeftPosition(col, row);
+        nudgeLeftButton.setTopLeftPosition(phase->getX(), phase->getBottom() - 10);
+        nudgeRightButton.setTopRightPosition(phase->getX() + phase->getWidth(), phase->getBottom()-10);
     }
 
     useSidechain.setVisible(showAudioKnobs);
@@ -551,12 +557,12 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 
     }
     // draw audio settings button outline
-    if (audioSettingsLogo.isVisible() && showAudioKnobs) {
+    if (audioSettingsLogo.isVisible() && audioProcessor.showAudioKnobs) {
         g.setColour(Colour(globals::COLOR_AUDIO));
         g.fillRoundedRectangle(audioSettingsLogo.getBounds().expanded(4,4).toFloat(), 3.0f);
     }
     // draw phase nudge buttons
-    if (!showAudioKnobs) {
+    if (!audioProcessor.showAudioKnobs) {
         g.setColour(Colour(globals::COLOR_ACTIVE));
         juce::Path nudgeLeftTriangle;
         nudgeLeftTriangle.startNewSubPath(0.0f, nudgeLeftButton.getHeight() / 2.f);    

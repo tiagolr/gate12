@@ -38,7 +38,6 @@ private:
     std::unique_ptr<About> about;
 
     std::vector<std::unique_ptr<TextButton>> patterns;
-    bool showAudioKnobs = false;
 
 #if defined(DEBUG)
     juce::TextButton presetExport;

@@ -273,6 +273,7 @@ void View::drawSeek(Graphics& g)
     auto xpos = audioProcessor.xenv.load();
     auto ypos = audioProcessor.yenv.load();
     bool drawSeek = audioProcessor.drawSeek.load();
+
     if (drawSeek) {
         g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
         g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));

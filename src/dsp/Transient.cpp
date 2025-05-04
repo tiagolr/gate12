@@ -1,15 +1,25 @@
 #include "Transient.h"
 #include <cmath>
 
-void Transient::clear(double srate)
+void Transient::clear(double sampleRate)
 {
-	double tau = 2.5 / 1000.0; // seconds
-	alpha = std::exp(-1.0 / (tau * srate));
+	srate = sampleRate;
+	double attTau = 0.1 / 1000.0; // milliseconds
+	double relTau = 100.0 / 1000.0; // milliseconds
+	attAlpha = std::exp(-1.0 / (attTau * srate));
+	relAlpha = std::exp(-1.0 / (relTau * srate));
 	envelope = 0.0;
 	prevEnvelope = 0.0;
-
+	cooldown = 0;
     drumsBuf.resize((int)(srate * 0.01), 0.0); // 10ms buffer
+	drumsBufIdx = 0;
+	energy = 0.0;
     prevEnergy = 0.0;
+}
+
+void Transient::startCooldown()
+{
+	cooldown = (int)(srate * globals::AUDIO_TRIG_COOLDOWN_MILLIS / 1000.0);
 }
 
 bool Transient::detect(int algo, double sample, double thres, double sense)
@@ -21,27 +31,37 @@ bool Transient::detect(int algo, double sample, double thres, double sense)
 
 bool Transient::detectSimple(double sample, double thres, double sense)
 {
-    envelope = alpha * envelope + (1.0 - alpha) * std::fabs(sample);
+	bool isAttack = std::fabs(sample) > envelope;
+    envelope = isAttack 
+		? attAlpha * envelope + (1.0 - attAlpha) * std::fabs(sample)
+		: relAlpha * envelope + (1.0 - relAlpha) * std::fabs(sample);
 
     double diff = envelope - prevEnvelope;
 	prevEnvelope = envelope;
 
-    return diff > sense && std::fabs(sample) > thres;
+	diff *= 10; // unscientific method to make diff more sensitive
+	if (cooldown)
+		cooldown -= 1; 
+
+    return !cooldown && diff > sense && std::fabs(sample) > thres;
 }
 
 bool Transient::detectDrums(double sample, double thres, double sense)
 {
-	drumsBuf.push_front(sample);
-	drumsBuf.pop_back();
+	double energySample = sample * sample;
 	const auto size = drumsBuf.size();
 
-	double e = 0.0;
-	for (int i = 0; i < size; ++i) {
-		e += drumsBuf[i] * drumsBuf[i];
-	}
-	e = std::sqrt(e / size); // RMS
-	double diff = e - prevEnergy;
-	prevEnergy = e;
+	energy += energySample - drumsBuf[drumsBufIdx];
+	drumsBuf[drumsBufIdx] = energySample;
+	drumsBufIdx = (drumsBufIdx + 1) % size;
 
-	return diff > sense && std::fabs(sample) > thres;
+	double totalEnergy = std::sqrt(energy / size); // RMS
+	double diff = totalEnergy - prevEnergy;
+	prevEnergy = totalEnergy;
+
+	diff *= 50;
+	if (cooldown)
+		cooldown -= 1;
+
+	return !cooldown && diff > sense && std::fabs(sample) > thres;
 }

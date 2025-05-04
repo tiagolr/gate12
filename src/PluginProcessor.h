@@ -100,6 +100,7 @@ public:
     double syncQN = 1.0; // sync quarter notes
     int ltrigger = -1; // last trigger mode
     bool midiTrigger = false; // flag midi has triggered envelope
+    bool showAudioKnobs = false;
     int winpos = 0;
     int lwinpos = 0;
     SmoothParam* value; // smooths envelope value
@@ -107,7 +108,6 @@ public:
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope
     int audioTriggerCountdown = -1; // samples until audio envelope starts
-    int audioTriggerCooldown = -1; // samples until audio trigger can be retriggered
     std::vector<double> latBufferL; // latency buffer left
     std::vector<double> latBufferR; // latency buffer right
     std::vector<double> latMonitorBufferL; // latency buffer left
@@ -117,6 +117,7 @@ public:
     Filter lpFilterR{};
     Filter hpFilterL{};
     Filter hpFilterR{};
+    double hitamp = 0.0;
     
     // PlayHead state
     bool playing = false;
@@ -137,8 +138,8 @@ public:
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<bool> drawSeek = false;
     std::vector<double> monSamples; // monitor samples to draw on view
-    std::atomic<double> monIdx = 0.0; // write index of monitor circular buf
-    int lmonIdx = 0; // last index
+    std::atomic<double> monpos = 0.0; // write index of monitor circular buf
+    int lmonpos = 0; // last index
     int monW = 1; // audio monitor width used to rotate monitor samples buffer
 
     //==============================================================================

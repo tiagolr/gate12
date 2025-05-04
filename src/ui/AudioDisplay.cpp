@@ -29,7 +29,7 @@ void AudioDisplay::paint(Graphics& g) {
     g.setColour(Colour(0xff7f7f7f));
     const int width = getWidth();
     const int height = getHeight();
-    const int index = (int)audioProcessor.monIdx.load();
+    const int index = (int)audioProcessor.monpos.load();
 
     for (int i = 0; i < width; ++i) {
         double sample = audioProcessor.monSamples[(index + i) % width];
@@ -44,7 +44,7 @@ void AudioDisplay::paint(Graphics& g) {
         }
         if (hit) {
             g.setColour(Colour(globals::COLOR_AUDIO));
-            g.drawLine((float)i, (float)height,(float)i, (float)(height - sample * height), 2.0f);
+            g.drawLine((float)i, (float)height,(float)i, (float)(height - sample * height), 1.0f);
             g.fillEllipse((float)(i - 2), (float)(height - sample * height)-2.f,4.f,4.f);
             g.setColour(Colour(0xff7f7f7f));
         }
