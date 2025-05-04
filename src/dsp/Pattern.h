@@ -14,7 +14,7 @@
 
 class GATE12AudioProcessor;
 
-struct CPoint {
+struct PPoint {
     std::string id;
     double x;
     double y;
@@ -35,10 +35,10 @@ struct Segment {
 class Pattern
 {
 public:
-    static std::vector<CPoint> copy_pattern;
+    static std::vector<PPoint> copy_pattern;
     const double PI = 3.14159265358979323846;
     int index;
-    std::vector<CPoint> points;
+    std::vector<PPoint> points;
     std::vector<Segment> segments;
 
     Pattern(GATE12AudioProcessor&, int);

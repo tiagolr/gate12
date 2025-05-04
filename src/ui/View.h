@@ -54,6 +54,7 @@ public:
   std::vector<double> View::getMidpointXY(Segment seg);
   int getHoveredPoint(int x, int y);
   int getHoveredMidpoint(int x, int y);
+  PPoint& getPointFromMidpoint(int midpoint);
 
   void mouseDown(const juce::MouseEvent& e) override;
   void mouseUp(const juce::MouseEvent& e) override;

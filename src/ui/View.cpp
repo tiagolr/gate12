@@ -111,9 +111,8 @@ void View::drawGrid(Graphics& g)
 
 void View::drawSegments(Graphics& g)
 {
-    auto& points = audioProcessor.pattern->points;
     double lastX = winx;
-    double lastY = points[0].y * winh + winy;
+    double lastY = audioProcessor.pattern->get_y_at(0) * winh + winy;
 
     auto colorBold = Colours::white;
     auto colorLight = Colours::white.withAlpha(0.125f);
@@ -130,7 +129,7 @@ void View::drawSegments(Graphics& g)
         lastY = py;
     }
     g.setColour(colorBold);
-    g.drawLine((float)lastX, (float)lastY, (float)(winw + winx), (float)(points[points.size() - 1].y * winh + winy));
+    g.drawLine((float)lastX, (float)lastY, (float)(winw + winx), (float)(audioProcessor.pattern->get_y_at(1) * winh + winy));
 }
 
 void View::drawPoints(Graphics& g)
@@ -230,8 +229,8 @@ void View::drawSelectionHandles(Graphics& g)
 
 std::vector<double> View::getMidpointXY(Segment seg)
 {
-    double x = (seg.x1 + seg.x2) * 0.5;
-    double y = seg.type > 1
+    double x = (std::max(seg.x1, 0.0) + std::min(seg.x2, 1.0)) * 0.5;
+    double y = seg.type > 1 && seg.x1 >= 0.0 && seg.x2 <= 1.0
         ? (seg.y1 + seg.y2) / 2
         : audioProcessor.pattern->get_y_at(x);
 
@@ -308,6 +307,20 @@ int View::getHoveredMidpoint(int x, int y)
     return -1;
 };
 
+// Midpoint index is derived from segment nu
+// there is an extra segment before the first point
+// so the matching pattern point to each midpoint is midpoint - 1
+PPoint& View::getPointFromMidpoint(int midpoint)
+{
+    auto size = (int)audioProcessor.pattern->points.size();
+    auto index = midpoint == 0 ? size - 1 : midpoint - 1;
+
+    if (index >= size)
+        index -= size;
+
+    return audioProcessor.pattern->points[index];
+}
+
 void View::mouseDown(const juce::MouseEvent& e)
 {
     if (!isEnabled() || pattern != audioProcessor.pattern->index)
@@ -337,7 +350,7 @@ void View::mouseDown(const juce::MouseEvent& e)
                 setMouseCursor(MouseCursor::NoCursor);
             }
             if (selectedMidpoint > -1) {
-                origTension = audioProcessor.pattern->points[selectedMidpoint].tension;
+                origTension = getPointFromMidpoint(selectedMidpoint).tension;
                 dragStartY = y;
                 e.source.enableUnboundedMouseMovement(true);
                 setMouseCursor(MouseCursor::NoCursor);
@@ -366,11 +379,11 @@ void View::mouseUp(const juce::MouseEvent& e)
     if (selectedPoint > -1) { // finished dragging point
         setMouseCursor(MouseCursor::NormalCursor);
     }
-    else if (selectedMidpoint > -1) { // finished dragging midpoint
+    else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
         setMouseCursor(MouseCursor::NormalCursor);
         e.source.enableUnboundedMouseMovement(false);
-        auto mpoint = audioProcessor.pattern->points[selectedMidpoint];
-        auto next = audioProcessor.pattern->points[static_cast<size_t>(selectedMidpoint) + 1];
+        auto& mpoint = getPointFromMidpoint(selectedMidpoint);
+        auto& next = getPointFromMidpoint(selectedMidpoint + 1);
         double midx = (mpoint.x + next.x) / 2.;
         int x = (int)(midx * winw + winx) + getScreenPosition().x;
         int y = (int)(audioProcessor.pattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
@@ -552,38 +565,43 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
     xx = (xx - winx) / winw;
     yy = (yy - winy) / winh;
+    if (yy > 1) yy = 1.0;
+    if (yy < 0) yy = 0.0;
 
     if (selectedPoint > -1) {
         auto& point = points[selectedPoint];
         point.y = yy;
-        if (point.y > 1) point.y = 1;
-        if (point.y < 0) point.y = 0;
+        
 
-        if (selectedPoint == 0 && audioProcessor.linkEdgePoints) {
-            auto& next = points[points.size() - 1];
-            next.y = point.y;
-        }
+        //if (selectedPoint == 0 && audioProcessor.linkEdgePoints) {
+        //    auto& next = points[points.size() - 1];
+        //    next.y = point.y;
+        //}
 
-        if (selectedPoint == points.size() - 1 && audioProcessor.linkEdgePoints) {
-            auto& first = points[0];
-            first.y = point.y;
-        }
+        //if (selectedPoint == points.size() - 1 && audioProcessor.linkEdgePoints) {
+        //    auto& first = points[0];
+        //    first.y = point.y;
+        //}
 
-        if (selectedPoint > 0 && selectedPoint < points.size() - 1) {
+        //if (selectedPoint > 0 && selectedPoint < points.size() - 1) {
             point.x = xx;
             if (point.x > 1) point.x = 1;
             if (point.x < 0) point.x = 0;
-            auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
-            auto& next = points[static_cast<size_t>(selectedPoint) + 1];
-            if (point.x < prev.x) point.x = prev.x;
-            if (point.x > next.x) point.x = next.x;
-        }
+            if (selectedPoint < points.size() - 1) {
+                auto& next = points[static_cast<size_t>(selectedPoint) + 1];
+                if (point.x > next.x) point.x = next.x;
+            }
+            if (selectedPoint > 0) {
+                auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
+                if (point.x < prev.x) point.x = prev.x;
+            }
+        //}
     }
 
     else if (selectedMidpoint > -1) {
         int distance = y - dragStartY;
-        auto& mpoint = points[selectedMidpoint];
-        auto& next = points[static_cast<size_t>(selectedMidpoint) + 1];
+        auto& mpoint = getPointFromMidpoint(selectedMidpoint);
+        auto& next = getPointFromMidpoint(selectedMidpoint + 1);
         if (mpoint.y < next.y) distance *= -1;
         float tension = (float)origTension + float(distance) / 500.f;
         if (tension > 1) tension = 1;
@@ -782,8 +800,11 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
     auto& points = audioProcessor.pattern->points;
     int pt = getHoveredPoint((int)x, (int)y);
     int mid = getHoveredMidpoint((int)x, (int)y);
-    if (pt > 0 && pt < points.size() - 1) {
+    //if (pt > 0 && pt < points.size() - 1) {
+    if (pt > -1) {
         audioProcessor.pattern->removePoint(pt);
+        hoverPoint = -1;
+        hoverMidpoint = -1;
     }
     if (pt == -1 && mid > -1) {
         points[mid].tension = 0;
@@ -801,7 +822,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         px = double(px - winx) / (double)winw;
         py = double(py - winy) / (double)winh;
         if (px >= 0 && px <= 1 && py >= 0 && py <= 1) { // point in env window
-            if (px == 1) px -= 0.000001; // special case avoid inserting point after last point
+            //if (px == 1) px -= 0.000001; // special case avoid inserting point after last point
             audioProcessor.pattern->insertPoint(px, py, 0, (int)audioProcessor.params.getRawParameterValue("point")->load());
         }
     }
@@ -906,6 +927,8 @@ void View::applyPaintTool(int x, int y, const MouseEvent& e)
         audioProcessor.pattern->insertPoint((seg + 1) / gridsegs - 0.00001, 1, 0, 1);
     }
 
+    hoverPoint = -1;
+    hoverMidpoint = -1;
     audioProcessor.pattern->buildSegments();
 }
 

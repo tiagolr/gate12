@@ -12,7 +12,7 @@
 #include <algorithm>
 #include "../PluginProcessor.h"
 
-std::vector<CPoint> Pattern::copy_pattern;
+std::vector<PPoint> Pattern::copy_pattern;
 
 Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
 {
@@ -22,7 +22,7 @@ Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
 void Pattern::sortPoints()
 {
     std::sort(points.begin(), points.end(), 
-        [](const CPoint& a, const CPoint& b) { return a.x < b.x; }
+        [](const PPoint& a, const PPoint& b) { return a.x < b.x; }
     );
 }
 
@@ -38,24 +38,17 @@ double Pattern::getTension()
 
 int Pattern::insertPoint(double x, double y, double tension, int type)
 {
-    // generate ID
+    // generate ID, used by multiselection
     char id[17];
     snprintf(id, sizeof(id), "%04X%04X%04X%04X", rand(), rand(), rand(), rand());
 
-    const CPoint p = { std::string(id), x, y, tension, type };
-    if (!points.size()) {
-        points.push_back(p);
-        return 0;
-    }
+    const PPoint p = { std::string(id), x, y, tension, type };
+    points.push_back(p);
+    sortPoints();
 
-    for (size_t i = points.size() - 1; i >= 0; --i) {
-        if (points[i].x <= x) {
-            points.insert(points.begin() + i + 1, p);
-            return (int)i;
-        }
-    }
-
-    return -1;
+    // return point index
+    auto pidx = std::find_if(points.begin(), points.end(), [id](const PPoint& p) { return p.id == id; });
+    return pidx == points.end() ? -1 : (int)std::distance(points.begin(), pidx);
 };
 
 void Pattern::removePoint(double x, double y)
@@ -116,11 +109,27 @@ void Pattern::clear()
 
 void Pattern::buildSegments()
 {
+    auto pts = points; // make points copy
+    if (pts.size() == 0) {
+        pts.push_back({"", -1.0, 0.5, 0.0, 1});
+        pts.push_back({"", 2.0, 0.5, 0.0, 1});
+    }
+    else if (pts.size() == 1) {
+        pts.push_back({"", -1.0, pts[0].y, 0.0, 1});
+        pts.push_back({"", 2.0, pts[0].y, 0.0, 1});
+    }
+    else {
+        auto p1 = pts[0];
+        auto p2 = pts[pts.size()-1];
+        pts.insert(pts.begin(), {"", p2.x - 1.0, p2.y, p2.tension, p2.type});
+        pts.push_back({"", p1.x + 1.0, p1.y, p1.tension, p1.type});
+    }
+
     std::lock_guard<std::mutex> lock(mtx); // prevents crash while reading Y from another thread
     segments.clear();
-    for (size_t i = 0; i < points.size() - 1; ++i) {
-        auto p1 = points[i];
-        auto p2 = points[i + 1];
+    for (size_t i = 0; i < pts.size() - 1; ++i) {
+        auto p1 = pts[i];
+        auto p2 = pts[i + 1];
         segments.push_back({p1.x, p2.x, p1.y, p2.y, p1.tension, 0, p1.type});
     }
 }

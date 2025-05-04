@@ -539,22 +539,25 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(globals::COLOR_BG));
-
     g.setColour(Colour(globals::COLOR_ACTIVE));
-    // draw loop play button
-    if (audioProcessor.alwaysPlaying) {
-        auto loopBounds = loopButton.getBounds().expanded(-5);
-        g.fillRect(loopBounds);
-    }
-    else {
-        juce::Path triangle;
-        auto loopBounds = loopButton.getBounds().expanded(-5);
-        triangle.startNewSubPath(0.0f, 0.0f);    
-        triangle.lineTo(0.0f, (float)loopBounds.getHeight());            
-        triangle.lineTo((float)loopBounds.getWidth(), loopBounds.getHeight() / 2.f);
-        triangle.closeSubPath();
-        g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
+    auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
 
+    // draw loop play button
+    if (trigger != Trigger::Sync) {
+        if (audioProcessor.alwaysPlaying) {
+            auto loopBounds = loopButton.getBounds().expanded(-5);
+            g.fillRect(loopBounds);
+        }
+        else {
+            juce::Path triangle;
+            auto loopBounds = loopButton.getBounds().expanded(-5);
+            triangle.startNewSubPath(0.0f, 0.0f);    
+            triangle.lineTo(0.0f, (float)loopBounds.getHeight());            
+            triangle.lineTo((float)loopBounds.getWidth(), loopBounds.getHeight() / 2.f);
+            triangle.closeSubPath();
+            g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
+
+        }
     }
     // draw audio settings button outline
     if (audioSettingsLogo.isVisible() && audioProcessor.showAudioKnobs) {
