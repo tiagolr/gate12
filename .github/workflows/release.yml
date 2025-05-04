@@ -34,12 +34,12 @@ jobs:
         with:
           name: gate12-win
           path: |
-            ./build/gate12_artefacts/Release/LV2
-            ./build/gate12_artefacts/Release/VST3
-            !./build/gate12_artefacts/Release/VST3/*.exp
-            !./build/gate12_artefacts/Release/VST3/*.lib
-            !./build/gate12_artefacts/Release/LV2/*.exp
-            !./build/gate12_artefacts/Release/LV2/*.lib
+            ./build/GATE12_artefacts/Release/LV2
+            ./build/GATE12_artefacts/Release/VST3
+            !./build/GATE12_artefacts/Release/VST3/*.exp
+            !./build/GATE12_artefacts/Release/VST3/*.lib
+            !./build/GATE12_artefacts/Release/LV2/*.exp
+            !./build/GATE12_artefacts/Release/LV2/*.lib
 
   build-macos:
     runs-on: macos-latest
@@ -62,7 +62,7 @@ jobs:
 
       - name: Copy readme
         run: |
-          cp ./doc/macos-readme.txt ./build/gate12_artefacts/Release/readme.txt
+          cp ./doc/macos-readme.txt ./build/GATE12_artefacts/Release/readme.txt
 
       - name: List errors
         run: cat "./build/CMakeFiles/CMakeError.log" || true
@@ -72,12 +72,12 @@ jobs:
         with:
           name: gate12-macos
           path: |
-            ./build/gate12_artefacts/Release/LV2
-            ./build/gate12_artefacts/Release/AU
-            ./build/gate12_artefacts/Release/VST3
-            ./build/gate12_artefacts/Release/readme.txt
-            !./build/gate12_artefacts/Release/VST3/*.exp
-            !./build/gate12_artefacts/Release/VST3/*.lib
+            ./build/GATE12_artefacts/Release/LV2
+            ./build/GATE12_artefacts/Release/AU
+            ./build/GATE12_artefacts/Release/VST3
+            ./build/GATE12_artefacts/Release/readme.txt
+            !./build/GATE12_artefacts/Release/VST3/*.exp
+            !./build/GATE12_artefacts/Release/VST3/*.lib
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -108,10 +108,10 @@ jobs:
         with:
           name: gate12-linux
           path: |
-            ./build/gate12_artefacts/Release/LV2
-            ./build/gate12_artefacts/Release/VST3
-            !./build/gate12_artefacts/Release/VST3/*.exp
-            !./build/gate12_artefacts/Release/VST3/*.lib
+            ./build/GATE12_artefacts/Release/LV2
+            ./build/GATE12_artefacts/Release/VST3
+            !./build/GATE12_artefacts/Release/VST3/*.exp
+            !./build/GATE12_artefacts/Release/VST3/*.lib
 
   release:
     runs-on: ubuntu-latest
