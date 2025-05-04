@@ -51,7 +51,7 @@ public:
   void drawSelection(Graphics& g);
   void drawSelectionHandles(Graphics& g);
   void drawSeek(Graphics& g);
-  std::vector<double> View::getMidpointXY(Segment seg);
+  std::vector<double> getMidpointXY(Segment seg);
   int getHoveredPoint(int x, int y);
   int getHoveredMidpoint(int x, int y);
   PPoint& getPointFromMidpoint(int midpoint);
