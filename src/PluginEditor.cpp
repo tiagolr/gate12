@@ -333,7 +333,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 100;
 
     addAndMakeVisible(loopButton);
-    loopButton.setTooltip("Toggle loop play mode");
+    loopButton.setTooltip("Toggle continuous play");
     loopButton.setColour(TextButton::buttonColourId, Colours::transparentWhite);
     loopButton.setColour(ComboBox::outlineColourId, Colours::transparentWhite);
     loopButton.setBounds(col, row, 25, 25);
@@ -365,7 +365,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col -= 10+10+5;
     addAndMakeVisible(nudgeRightButton);
     nudgeRightButton.setAlpha(0.f);
-    nudgeRightButton.setBounds(col, row+25/2-5, 10, 10);
+    nudgeRightButton.setBounds(col, row+25/2-5+1, 10, 10);
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
@@ -377,7 +377,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col -= 10+10;
     addAndMakeVisible(nudgeLeftButton);
     nudgeLeftButton.setAlpha(0.f);
-    nudgeLeftButton.setBounds(col, row+25/2-5, 10, 10);
+    nudgeLeftButton.setBounds(col, row+25/2-5+1, 10, 10);
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
@@ -390,6 +390,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(nudgeLabel);
     nudgeLabel.setText("Rotate", dontSendNotification);
     nudgeLabel.setJustificationType(Justification::centredRight);
+    nudgeLabel.setFont(FontOptions(16.f));
     nudgeLabel.setColour(Label::textColourId, Colour(globals::COLOR_NEUTRAL));
     nudgeLabel.setBounds(col, row, 50, 25);
 

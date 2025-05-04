@@ -6,7 +6,7 @@ CustomLookAndFeel::CustomLookAndFeel()
   setColour(ComboBox::textColourId, Colour(globals::COLOR_ACTIVE));
   setColour(ComboBox::arrowColourId, Colour(globals::COLOR_ACTIVE));
   setColour(ComboBox::outlineColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(TooltipWindow::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.5f));
+  setColour(TooltipWindow::backgroundColourId, Colour(globals::COLOR_BG).brighter(0.15f));
   setColour(PopupMenu::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.5f).withAlpha(0.99f));
   setColour(PopupMenu::highlightedBackgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.8f));
   setColour(TextButton::buttonColourId, Colour(globals::COLOR_ACTIVE));
