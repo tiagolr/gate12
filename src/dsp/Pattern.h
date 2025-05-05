@@ -14,8 +14,19 @@
 
 class GATE12AudioProcessor;
 
+enum PointType {
+    Hold,
+    Curve,
+    SCurve,
+    Pulse,
+    Wave,
+    Triangle,
+    Stairs,
+    SmoothSt,
+};
+
 struct PPoint {
-    uint64_t id; // unique point id used by multiselect to identify points
+    uint64_t id; // unique point id
     double x;
     double y;
     double tension;

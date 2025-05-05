@@ -36,7 +36,8 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	PopupMenu patterns2;
 	PopupMenu patterns3;
 
-	patterns1.addItem(110, "All");
+	patterns1.addItem(110, "Load All");
+	patterns1.addSeparator();
 	patterns1.addItem(111, "Empty");
 	patterns1.addItem(112, "Gate 2");
 	patterns1.addItem(113, "Gate 4");
@@ -50,37 +51,39 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	patterns1.addItem(121, "Trance 3");
 	patterns1.addItem(122, "Trance 4");
 
-	patterns2.addItem(130, "All");
-	patterns2.addItem(131, "Saw 1");
-	patterns2.addItem(132, "Saw 2");
-	patterns2.addItem(133, "Step 1");
-	patterns2.addItem(134, "Step 1 FadeIn");
-	patterns2.addItem(135, "Step 4 Gate");
-	patterns2.addItem(136, "Off Beat");
-	patterns2.addItem(137, "Dynamic 1/4");
-	patterns2.addItem(138, "Swing");
-	patterns2.addItem(139, "Gate Out");
-	patterns2.addItem(140, "Gate In");
-	patterns2.addItem(141, "Speed up");
-	patterns2.addItem(142, "Speed Down");
+	patterns2.addItem(123, "Load All");
+	patterns2.addSeparator();
+	patterns2.addItem(124, "Saw 1");
+	patterns2.addItem(125, "Saw 2");
+	patterns2.addItem(126, "Step 1");
+	patterns2.addItem(127, "Step 1 FadeIn");
+	patterns2.addItem(128, "Step 4 Gate");
+	patterns2.addItem(129, "Off Beat");
+	patterns2.addItem(130, "Dynamic 1/4");
+	patterns2.addItem(131, "Swing");
+	patterns2.addItem(132, "Gate Out");
+	patterns2.addItem(133, "Gate In");
+	patterns2.addItem(134, "Speed up");
+	patterns2.addItem(135, "Speed Down");
 
-	patterns3.addItem(150, "All");
-	patterns3.addItem(151, "End Fade");
-	patterns3.addItem(152, "End Gate");
-	patterns3.addItem(152, "Tremolo Slow");
-	patterns3.addItem(152, "Tremolo Fast");
-	patterns3.addItem(152, "Sidechain");
-	patterns3.addItem(152, "Drum Loop");
-	patterns3.addItem(152, "Copter");
-	patterns3.addItem(152, "AM");
-	patterns3.addItem(152, "Fade In");
-	patterns3.addItem(152, "Fade Out");
-	patterns3.addItem(152, "Fade OutIn");
-	patterns3.addItem(152, "Mute");
+	patterns3.addItem(136, "Load All");
+	patterns3.addSeparator();
+	patterns3.addItem(137, "End Fade");
+	patterns3.addItem(138, "End Gate");
+	patterns3.addItem(139, "Tremolo Slow");
+	patterns3.addItem(140, "Tremolo Fast");
+	patterns3.addItem(141, "Sidechain");
+	patterns3.addItem(142, "Drum Loop");
+	patterns3.addItem(143, "Copter");
+	patterns3.addItem(144, "AM");
+	patterns3.addItem(145, "Fade In");
+	patterns3.addItem(146, "Fade Out");
+	patterns3.addItem(147, "Fade OutIn");
+	patterns3.addItem(148, "Mute");
 
-	load.addSubMenu("Patterns 1", patterns1);
-	load.addSubMenu("Patterns 2", patterns2);
-	load.addSubMenu("Patterns 3", patterns3);
+	load.addSubMenu("Patterns 01-12", patterns1);
+	load.addSubMenu("Patterns 13-25", patterns2);
+	load.addSubMenu("Patterns 26-38", patterns3);
 
 	PopupMenu menu;
 	auto menuPos = localPointToGlobal(getLocalBounds().getBottomRight());
@@ -141,6 +144,11 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 					int grid = audioProcessor.getCurrentGrid();
 					audioProcessor.pattern->loadRandom(grid);
 					audioProcessor.pattern->buildSegments();
+				}
+				if (result >= 110 && result < 150) {
+					MessageManager::callAsync([this, result]() {
+						audioProcessor.loadProgram(result-110);
+					});
 				}
 			}
 			if (result == 1000) {

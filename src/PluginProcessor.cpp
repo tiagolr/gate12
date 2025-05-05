@@ -29,7 +29,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
-        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 7),
+        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 1),
         // audio trigger params
         std::make_unique<juce::AudioParameterChoice>("algo", "Audio Algorithm", StringArray { "Simple", "Drums" }, 0),
         std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", NormalisableRange<float>(0.0f, 1.0f), 0.5f),
@@ -196,12 +196,12 @@ void GATE12AudioProcessor::loadProgram (int index)
 
 const juce::String GATE12AudioProcessor::getProgramName (int index)
 {
-    std::array<String, 39> progNames = {
-        String("Load Patterns 01-12"),String("Empty"),String("Gate 2"),String("Gate 4"),String("Gate 8"),String("Gate 12"),String("Gate 16"),String("Gate 24"),String("Gate 32"),String("Trance 1"),String("Trance 2"),String("Trance 3"),String("Trance 4"),
-        String("Load Patterns 13-25"),String("Saw 1"),String("Saw 2"),String("Step 1"),String("Step 1 FadeIn"),String("Step 4 Gate"),String("Off Beat"),String("Dynamic 1/4"),String("Swing"),String("Gate Out"),String("Gate In"),String("Speed up"),String("Speed Down"),
-        String("Load Patterns 26-39"),String("End Fade"),String("End Gate"),String("Tremolo Slow"),String("Tremolo Fast"),String("Sidechain"),String("Drum Loop"),String("Copter"),String("AM"),String("Fade In"),String("Fade Out"),String("Fade OutIn"),String("Mute"),
+    static const std::array<juce::String, 39> progNames = {
+        "Load Patterns 01-12", "Empty", "Gate 2", "Gate 4", "Gate 8", "Gate 12", "Gate 16", "Gate 24", "Gate 32", "Trance 1", "Trance 2", "Trance 3", "Trance 4",
+        "Load Patterns 13-25", "Saw 1", "Saw 2", "Step 1", "Step 1 FadeIn", "Step 4 Gate", "Off Beat", "Dynamic 1/4", "Swing", "Gate Out", "Gate In", "Speed up", "Speed Down",
+        "Load Patterns 26-38", "End Fade", "End Gate", "Tremolo Slow", "Tremolo Fast", "Sidechain", "Drum Loop", "Copter", "AM", "Fade In", "Fade Out", "Fade OutIn", "Mute"
     };
-    return progNames[index];
+    return progNames.at(index);
 }
 
 void GATE12AudioProcessor::changeProgramName (int index, const juce::String& newName)
@@ -285,7 +285,7 @@ void GATE12AudioProcessor::onSlider()
         audioTrigger = false;
 
     int pat = (int)params.getRawParameterValue("pattern")->load();
-    if (pat != pattern->index + 1) {
+    if (pat != pattern->index + 1 && pat != queuedPattern) {
         queuePattern(pat);
     }
 
@@ -444,10 +444,12 @@ void GATE12AudioProcessor::queuePattern(int patidx)
         queuedPatternCountdown = (interval - timeInSamples % interval) % interval;
     }
 
-    auto param = params.getParameter("pattern");
-    param->beginChangeGesture();
-    param->setValueNotifyingHost(param->convertTo0to1((float)(patidx)));
-    param->endChangeGesture();
+    MessageManager::callAsync([this, patidx] {
+        auto param = params.getParameter("pattern");
+        param->beginChangeGesture();
+        param->setValueNotifyingHost(param->convertTo0to1((float)(patidx)));
+        param->endChangeGesture();
+    });
 }
 
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const

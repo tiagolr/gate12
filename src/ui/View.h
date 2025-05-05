@@ -49,6 +49,7 @@ public:
     PPoint& getPointFromMidpoint(int midpoint);
     
     // multi selection
+    void drawSelectionBackground(Graphics& g);
     void drawSelection(Graphics& g);
     void drawSelectionHandles(Graphics& g);
     void createSelection(const MouseEvent& e);
@@ -64,6 +65,7 @@ public:
     void mouseMove(const juce::MouseEvent& e) override;
     void mouseDoubleClick(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+    void mouseExit (const MouseEvent& event) override;
     bool keyPressed(const juce::KeyPress& key) override;
     
     void showPointContextMenu(const juce::MouseEvent& event);
@@ -81,6 +83,8 @@ private:
     int rmousePoint = -1;
     const int HOVER_RADIUS = 8;
     const int MSEL_PADDING = 8;
+    const int POINT_RADIUS = 4;
+    const int MPOINT_RADIUS = 3;
     
     GATE12AudioProcessor& audioProcessor;
     double origTension = 0;
