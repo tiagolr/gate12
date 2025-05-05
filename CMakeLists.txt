@@ -6,7 +6,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(BUILD_STANDALONE "Build Standalone plugin format" ON) # Allow overriding from the command line
 
-project(GATE-12 VERSION 0.1.5)
+project(GATE12 VERSION 0.1.5)
 
 add_compile_definitions(PROJECT_VERSION="${PROJECT_VERSION}")
 set(CMAKE_CXX_STANDARD 17)
@@ -37,7 +37,7 @@ juce_add_plugin(${PROJECT_NAME}
         PLUGIN_MANUFACTURER_CODE Tilr
         PLUGIN_CODE gt12
         FORMATS ${plugin_formats}
-        PRODUCT_NAME "GATE12"
+        PRODUCT_NAME "GATE-12"
         BUNDLE_ID "com.tilr.gate12"
         LV2URI "https://github.com/tiagolr/gate12"
 )
