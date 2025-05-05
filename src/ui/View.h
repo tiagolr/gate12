@@ -93,5 +93,5 @@ private:
     Rectangle<int> selectionArea = Rectangle<int>();
     Rectangle<int> selectionAreaStart = Rectangle<int>(); // used to drag or scale selection area
     std::vector<SelPoint> selectionPoints;
-    int selectionDragHover = -1; // flag for hovering selection drag handles, 1 top left corner, 2 top center etc..
+    int selectionDragHover = -1; // flag for hovering selection drag handles, 0 area, 1 top left corner, 2 top center etc..
 };

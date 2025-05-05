@@ -29,7 +29,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
-        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 8),
+        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 7),
         // audio trigger params
         std::make_unique<juce::AudioParameterChoice>("algo", "Audio Algorithm", StringArray { "Simple", "Drums" }, 0),
         std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", NormalisableRange<float>(0.0f, 1.0f), 0.5f),
@@ -157,7 +157,7 @@ double GATE12AudioProcessor::getTailLengthSeconds() const
 
 int GATE12AudioProcessor::getNumPrograms()
 {
-    return 0;
+    return 39;
 }
 
 int GATE12AudioProcessor::getCurrentProgram()
@@ -167,30 +167,41 @@ int GATE12AudioProcessor::getCurrentProgram()
 
 void GATE12AudioProcessor::setCurrentProgram (int index)
 {
-    (void)index;
-    // if (currentProgram == index) return;
-    // currentProgram = index;
-    // auto data = BinaryData::Init_xml;
-    // auto size = BinaryData::Init_xmlSize;
-    // if (currentProgram == -1) return;
+    if (currentProgram == index) return;
+    currentProgram = index;
 
-    // if (index == 1) { data = BinaryData::Harpsi_xml; size = BinaryData::Harpsi_xmlSize; }
+    loadProgram(index);
+}
 
-    // auto xmlState = XmlDocument::parse (juce::String (data, size));
-    // if (xmlState.get() != nullptr) {
-    //     if (xmlState->hasTagName(params.state.getType())) {
-    //         clearVoices();
-    //         params.replaceState(juce::ValueTree::fromXml (*xmlState));
-    //         resetLastModels();
-    //     }
-    // }
+void GATE12AudioProcessor::loadProgram (int index)
+{
+    auto loadPreset = [](Pattern& pat, int idx) {
+        auto preset = Presets::getPreset(idx);
+        pat.clear();
+        for (auto p = preset.begin(); p < preset.end(); ++p) {
+            pat.insertPoint(p->x, p->y, p->tension, p->type);
+        }
+        pat.buildSegments();
+    };
+
+    if (index == 0 || index == 13 || index == 26) {
+        for (int i = 0; i < 12; ++i) {
+            loadPreset(*patterns[i], index + i + 1);
+        }
+    }
+    else {
+        loadPreset(*pattern, index);
+    }
 }
 
 const juce::String GATE12AudioProcessor::getProgramName (int index)
 {
-    (void)index;
-    // if (index == 0) return "Init";
-    return "";
+    std::array<String, 39> progNames = {
+        String("Load Patterns 01-12"),String("Empty"),String("Gate 2"),String("Gate 4"),String("Gate 8"),String("Gate 12"),String("Gate 16"),String("Gate 24"),String("Gate 32"),String("Trance 1"),String("Trance 2"),String("Trance 3"),String("Trance 4"),
+        String("Load Patterns 13-25"),String("Saw 1"),String("Saw 2"),String("Step 1"),String("Step 1 FadeIn"),String("Step 4 Gate"),String("Off Beat"),String("Dynamic 1/4"),String("Swing"),String("Gate Out"),String("Gate In"),String("Speed up"),String("Speed Down"),
+        String("Load Patterns 26-39"),String("End Fade"),String("End Gate"),String("Tremolo Slow"),String("Tremolo Fast"),String("Sidechain"),String("Drum Loop"),String("Copter"),String("AM"),String("Fade In"),String("Fade Out"),String("Fade OutIn"),String("Mute"),
+    };
+    return progNames[index];
 }
 
 void GATE12AudioProcessor::changeProgramName (int index, const juce::String& newName)

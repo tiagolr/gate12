@@ -774,11 +774,6 @@ void View::updatePointsToSelection(bool invertx, bool inverty)
         double newx = (absx - winx) / (double)winw;
         double newy = (absy - winy) / (double)winh;
 
-        if (newx <= 0.0) newx = 0.000001;
-        if (newx >= 1.0) newx = 1-0.000001;
-        if (newy <= 0.0) newy = 0.000001;
-        if (newy >= 1.0) newy = 1-0.000001;
-
         // update selection point
         p.x = newx;
         p.y = newy;
@@ -805,6 +800,11 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         return;
 
     if (e.mods.isRightButtonDown()) {
+        return;
+    }
+
+    if (selectionDragHover > -1) {
+        clearSelection();
         return;
     }
 

@@ -59,7 +59,7 @@ bool Transient::detectDrums(double sample, double thres, double sense)
 	double diff = totalEnergy - prevEnergy;
 	prevEnergy = totalEnergy;
 
-	diff *= 100; // same story
+	diff *= 75; // same story
 	if (cooldown)
 		cooldown -= 1;
 

@@ -13,6 +13,7 @@
 #include "dsp/Pattern.h"
 #include "dsp/Filter.h"
 #include "dsp/Transient.h"
+#include "Presets.h"
 #include <atomic>
 #include <deque>
 
@@ -197,6 +198,7 @@ public:
     int getNumPrograms() override;
     int getCurrentProgram() override;
     void setCurrentProgram (int index) override;
+    void loadProgram(int index);
     const juce::String getProgramName (int index) override;
     void changeProgramName (int index, const juce::String& newName) override;
 
