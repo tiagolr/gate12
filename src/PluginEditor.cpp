@@ -33,10 +33,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     presetExport.setButtonText("Export");
     presetExport.setBounds(10, 10, 100, 25);
     presetExport.onClick = [this] {
-        auto state = audioProcessor.params.copyState();
-        std::unique_ptr<juce::XmlElement>xml(state.createXml());
-        juce::String xmlString = xml->toString();
-        DBG(xmlString.toStdString());
+        std::ostringstream oss;
+        auto points = audioProcessor.pattern->points;
+        for (const auto& point : points) {
+            oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
+        }
+        DBG(oss.str() << "\n");
     };
 #endif
 
@@ -133,7 +135,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
         btn->setColour (TextButton::buttonColourId,   Colour(globals::COLOR_ACTIVE).darker(0.8f));
         btn->setColour (TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
-        btn->setBounds (col + i * 22, row, 22, 25);
+        btn->setBounds (col + i * 22, row, 22+1, 25); // width +1 makes it seamless on higher DPI
         btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
         btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
         btn->onClick = [i, this]() {
@@ -170,42 +172,42 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // KNOBS ROW
     row += 35;
     col = globals::PAD;
-    rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hzFloat1);
+    rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hz1f);
     addAndMakeVisible(*rate);
     rate->setBounds(col,row,80,65);
     col += 75;
 
-    phase = std::make_unique<Rotary>(p, "phase", "Phase", LabelFormat::integerx100);
+    phase = std::make_unique<Rotary>(p, "phase", "Phase", LabelFormat::percx100);
     addAndMakeVisible(*phase);
     phase->setBounds(col,row,80,65);
     col += 75;
 
-    min = std::make_unique<Rotary>(p, "min", "Min", LabelFormat::integerx100);
+    min = std::make_unique<Rotary>(p, "min", "Min", LabelFormat::percx100);
     addAndMakeVisible(*min);
     min->setBounds(col,row,80,65);
     col += 75;
 
-    max = std::make_unique<Rotary>(p, "max", "Max", LabelFormat::integerx100);
+    max = std::make_unique<Rotary>(p, "max", "Max", LabelFormat::percx100);
     addAndMakeVisible(*max);
     max->setBounds(col,row,80,65);
     col += 75;
 
-    smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", LabelFormat::integerx100);
+    smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", LabelFormat::percx100);
     addAndMakeVisible(*smooth);
     smooth->setBounds(col,row,80,65);
     col += 75;
 
-    attack = std::make_unique<Rotary>(p, "attack", "Attack", LabelFormat::integerx100);
+    attack = std::make_unique<Rotary>(p, "attack", "Attack", LabelFormat::percx100);
     addAndMakeVisible(*attack);
     attack->setBounds(col,row,80,65);
     col += 75;
 
-    release = std::make_unique<Rotary>(p, "release", "Release", LabelFormat::integerx100);
+    release = std::make_unique<Rotary>(p, "release", "Release", LabelFormat::percx100);
     addAndMakeVisible(*release);
     release->setBounds(col,row,80,65);
     col += 75;
 
-    tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::integerx100, true);
+    tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::percx100, true);
     addAndMakeVisible(*tension);
     tension->setBounds(col,row,80,65);
     col += 75;
@@ -213,27 +215,27 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // AUDIO KNOBS
     col = globals::PAD;
 
-    threshold = std::make_unique<Rotary>(p, "threshold", "Thres", LabelFormat::integerx100, false, true);
+    threshold = std::make_unique<Rotary>(p, "threshold", "Thres", LabelFormat::gainTodB1f, false, true);
     addAndMakeVisible(*threshold);
     threshold->setBounds(col,row,80,65);
     col += 75;
 
-    sense = std::make_unique<Rotary>(p, "sense", "Sense", LabelFormat::percent, false, true);
+    sense = std::make_unique<Rotary>(p, "sense", "Sense", LabelFormat::percx100, false, true);
     addAndMakeVisible(*sense);
     sense->setBounds(col,row,80,65);
     col += 75;
 
-    lowcut = std::make_unique<Rotary>(p, "lowcut", "LowCut", LabelFormat::percent, false, true);
+    lowcut = std::make_unique<Rotary>(p, "lowcut", "Low Cut", LabelFormat::hzHp, false, true);
     addAndMakeVisible(*lowcut);
     lowcut->setBounds(col,row,80,65);
     col += 75;
 
-    highcut = std::make_unique<Rotary>(p, "highcut", "HiCut", LabelFormat::percent, false, true);
+    highcut = std::make_unique<Rotary>(p, "highcut", "Hi Cut", LabelFormat::hzLp, false, true);
     addAndMakeVisible(*highcut);
     highcut->setBounds(col,row,80,65);
     col += 75;
 
-    offset = std::make_unique<Rotary>(p, "offset", "Offset", LabelFormat::percent, true, true);
+    offset = std::make_unique<Rotary>(p, "offset", "Offset", LabelFormat::audioOffset, true, true);
     addAndMakeVisible(*offset);
     offset->setBounds(col,row,80,65);
     col += 75;
@@ -386,13 +388,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         });
     };
 
-    col -= 60;
+    col -= 65;
     addAndMakeVisible(nudgeLabel);
     nudgeLabel.setText("Rotate", dontSendNotification);
     nudgeLabel.setJustificationType(Justification::centredRight);
     nudgeLabel.setFont(FontOptions(16.f));
     nudgeLabel.setColour(Label::textColourId, Colour(globals::COLOR_NEUTRAL));
-    nudgeLabel.setBounds(col, row, 50, 25);
+    nudgeLabel.setBounds(col, row, 60, 25);
 
     // VIEW
     row += 25;
@@ -451,8 +453,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     }
     else {
         juce::MemoryInputStream audioInputStream(
-            audioProcessor.showAudioKnobs ? BinaryData::geardark_png : BinaryData::gear_png, 
-            audioProcessor.showAudioKnobs ? BinaryData::geardark_pngSize : BinaryData::gear_pngSize, 
+            audioProcessor.showAudioKnobs ? BinaryData::geardark_png : BinaryData::gear_png,
+            audioProcessor.showAudioKnobs ? BinaryData::geardark_pngSize : BinaryData::gear_pngSize,
             false
         );
         juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
@@ -491,7 +493,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
         auto row = globals::PAD + 35 + 35;
         rate->setVisible(sync == 0);
         rate->setTopLeftPosition(col, row);
-        if (rate->isVisible()) 
+        if (rate->isVisible())
             col += 75;
         phase->setTopLeftPosition(col, row);
         col += 75;
@@ -531,7 +533,6 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(globals::COLOR_BG));
-    
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
 
     // draw loop play button
@@ -547,37 +548,37 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
             g.setColour(Colour(0xff00ff00));
             juce::Path triangle;
             auto loopBounds = loopButton.getBounds().expanded(-5);
-            triangle.startNewSubPath(0.0f, 0.0f);    
-            triangle.lineTo(0.0f, (float)loopBounds.getHeight());            
+            triangle.startNewSubPath(0.0f, 0.0f);
+            triangle.lineTo(0.0f, (float)loopBounds.getHeight());
             triangle.lineTo((float)loopBounds.getWidth(), loopBounds.getHeight() / 2.f);
             triangle.closeSubPath();
             g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
 
         }
     }
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+
     // draw audio settings button outline
+    g.setColour(Colour(globals::COLOR_ACTIVE));
     if (audioSettingsLogo.isVisible() && audioProcessor.showAudioKnobs) {
         g.setColour(Colour(globals::COLOR_AUDIO));
         g.fillRoundedRectangle(audioSettingsLogo.getBounds().expanded(4,4).toFloat(), 3.0f);
     }
-    // draw phase nudge buttons
-    if (!audioProcessor.showAudioKnobs) {
-        g.setColour(Colour(globals::COLOR_ACTIVE));
-        juce::Path nudgeLeftTriangle;
-        nudgeLeftTriangle.startNewSubPath(0.0f, nudgeLeftButton.getHeight() / 2.f);    
-        nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), 0.f);            
-        nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), (float)nudgeLeftButton.getHeight());
-        nudgeLeftTriangle.closeSubPath();
-        g.fillPath(nudgeLeftTriangle, AffineTransform::translation((float)nudgeLeftButton.getX(), (float)nudgeLeftButton.getY()));
 
-        juce::Path nudgeRightTriangle;
-        nudgeRightTriangle.startNewSubPath(0.0f, 0.0f);    
-        nudgeRightTriangle.lineTo((float)nudgeRightButton.getWidth(), nudgeRightButton.getHeight()/2.f);            
-        nudgeRightTriangle.lineTo(0.0f, (float)nudgeRightButton.getHeight());
-        nudgeRightTriangle.closeSubPath();
-        g.fillPath(nudgeRightTriangle, AffineTransform::translation((float)nudgeRightButton.getX(), (float)nudgeRightButton.getY()));
-    }
+    // draw phase nudge buttons
+    g.setColour(Colour(globals::COLOR_ACTIVE));
+    juce::Path nudgeLeftTriangle;
+    nudgeLeftTriangle.startNewSubPath(0.0f, nudgeLeftButton.getHeight() / 2.f);
+    nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), 0.f);
+    nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), (float)nudgeLeftButton.getHeight());
+    nudgeLeftTriangle.closeSubPath();
+    g.fillPath(nudgeLeftTriangle, AffineTransform::translation((float)nudgeLeftButton.getX(), (float)nudgeLeftButton.getY()));
+
+    juce::Path nudgeRightTriangle;
+    nudgeRightTriangle.startNewSubPath(0.0f, 0.0f);
+    nudgeRightTriangle.lineTo((float)nudgeRightButton.getWidth(), nudgeRightButton.getHeight()/2.f);
+    nudgeRightTriangle.lineTo(0.0f, (float)nudgeRightButton.getHeight());
+    nudgeRightTriangle.closeSubPath();
+    g.fillPath(nudgeRightTriangle, AffineTransform::translation((float)nudgeRightButton.getX(), (float)nudgeRightButton.getY()));
 }
 
 void GATE12AudioProcessorEditor::resized()

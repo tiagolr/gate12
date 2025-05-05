@@ -41,28 +41,41 @@ void Rotary::paint(juce::Graphics& g) {
 void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
 {
     auto text = String(name);
+    std::stringstream ss;
+
     if (mouse_down) {
-        if (format == LabelFormat::percent) text = std::to_string((int)std::round((slider_val * 100))) + " %";
-        if (format == LabelFormat::integerx100) text = std::to_string((int)std::round((slider_val * 100)));
+        if (format == LabelFormat::percx100) text = std::to_string((int)std::round((slider_val * 100))) + " %";
+        if (format == LabelFormat::intx100) text = std::to_string((int)std::round((slider_val * 100)));
         else if (format == LabelFormat::hz) text = std::to_string((int)slider_val) + " Hz";
-        else if (format == LabelFormat::hzFloat1) {
-            std::stringstream ss;
+        else if (format == LabelFormat::hzLp) text = slider_val >= 20000 ? "Off" : std::to_string((int)slider_val) + " Hz";
+        else if (format == LabelFormat::hzHp) text = slider_val <= 20 ? "Off" : std::to_string((int)slider_val) + " Hz";
+        else if (format == LabelFormat::hz1f) {
             ss << std::fixed << std::setprecision(1) << slider_val << " Hz";
             text = ss.str();
         }
         else if (format == LabelFormat::float1) {
-            std::stringstream ss;
             ss << std::fixed << std::setprecision(1) << slider_val;
             text = ss.str();
         }
         else if (format == LabelFormat::float2) {
-            std::stringstream ss;
             ss << std::fixed << std::setprecision(2) << slider_val;
             text = ss.str();
         }
         else if (format == LabelFormat::float2x100) {
-            std::stringstream ss;
             ss << std::fixed << std::setprecision(2) << slider_val * 100;
+            text = ss.str();
+        }
+        else if (format == LabelFormat::gainTodB1f) {
+            if (slider_val > 0.0f) {
+                ss << std::fixed << std::setprecision(1) << 20.0f * std::log10(slider_val) << " dB";
+                text = ss.str();
+            }
+            else {
+                text = "-Inf";
+            }
+        }
+        else if (format == LabelFormat::audioOffset) {
+            ss << std::fixed << std::setprecision(1) << slider_val * globals::LATENCY_MILLIS << " ms";
             text = ss.str();
         }
     }

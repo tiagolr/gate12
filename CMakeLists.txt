@@ -54,6 +54,7 @@ source_group(Source
         ${CMAKE_CURRENT_SOURCE_DIR}/src/PluginEditor.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/PluginEditor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Presets.h
 )
 
 source_group(Source\\ui

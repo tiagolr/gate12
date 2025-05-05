@@ -11,7 +11,7 @@ void Transient::clear(double sampleRate)
 	envelope = 0.0;
 	prevEnvelope = 0.0;
 	cooldown = 0;
-    drumsBuf.resize((int)(srate * 0.01), 0.0); // 10ms buffer
+    drumsBuf.resize((int)(srate * globals::AUDIO_DRUMSBUF_MILLIS / 1000.0), 0.0);
 	drumsBufIdx = 0;
 	energy = 0.0;
     prevEnergy = 0.0;
@@ -19,7 +19,7 @@ void Transient::clear(double sampleRate)
 
 void Transient::startCooldown()
 {
-	cooldown = (int)(srate * globals::AUDIO_TRIG_COOLDOWN_MILLIS / 1000.0);
+	cooldown = (int)(srate * globals::AUDIO_COOLDOWN_MILLIS / 1000.0);
 }
 
 bool Transient::detect(int algo, double sample, double thres, double sense)
@@ -59,7 +59,7 @@ bool Transient::detectDrums(double sample, double thres, double sense)
 	double diff = totalEnergy - prevEnergy;
 	prevEnergy = totalEnergy;
 
-	diff *= 50;
+	diff *= 100; // same story
 	if (cooldown)
 		cooldown -= 1;
 

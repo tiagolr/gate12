@@ -7,12 +7,16 @@ class GATE12AudioProcessor;
 
 enum LabelFormat {
     hz,
-    hzFloat1,
-    percent,
-    integerx100,
+    hzLp,
+    hzHp,
+    gainTodB1f,
+    hz1f,
+    percx100,
+    intx100,
     float1,
     float2,
     float2x100,
+    audioOffset,
 };
 
 class Rotary : public juce::SettableTooltipClient, public juce::Component, private juce::AudioProcessorValueTreeState::Listener {

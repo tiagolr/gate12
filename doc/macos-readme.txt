@@ -1,4 +1,4 @@
-========== GATE12 ==========
+========== GATE-12 ==========
 Copyright (C) 2025 Tilr
 
 MacOS builds are untested and unsigned, please let me know of any issues by opening a ticket.

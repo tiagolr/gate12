@@ -67,18 +67,13 @@ void Pattern::removePoint(int i) {
 
 void Pattern::removePointsInRange(double x1, double x2)
 {
-  if (points.size() <= 2) return; // Skip if there are only two points or less
-
-  auto start = points.begin() + 1; // Skip the first point
-  auto end = points.end() - 1; // Skip the last point
-
-  for (auto i = start; i != end; ++i) {
-    if (i->x >= x1 && i->x <= x2) {
-      i = points.erase(i);
-      removePointsInRange(x1, x2);
-      return;
+    for (auto i = points.begin(); i != points.end(); ++i) {
+        if (i->x >= x1 && i->x <= x2) {
+            i = points.erase(i);
+            removePointsInRange(x1, x2);
+            return;
+        }
     }
-  }
 }
 
 void Pattern::invert()
@@ -114,13 +109,13 @@ void Pattern::rotate(double x) {
 void Pattern::clear()
 {
     points.clear();
-    insertPoint(0, 0.5, 0, 1);
-    insertPoint(1, 0.5, 0, 1);
 }
 
 void Pattern::buildSegments()
 {
     auto pts = points; // make points copy
+    // add (invisible) ghost points outside the 0..1 boundary
+    // allows the pattern to repeat itself and rotate seamlessly
     if (pts.size() == 0) {
         pts.push_back({"", -1.0, 0.5, 0.0, 1});
         pts.push_back({"", 2.0, 0.5, 0.0, 1});
@@ -205,6 +200,15 @@ double Pattern::get_y_curve(Segment seg, double x)
     return -1 * (std::pow(1 - (x - seg.x1) / (seg.x2 - seg.x1), pwr) - 1) * (seg.y2 - seg.y1) + seg.y1;
 }
 
+int Pattern::getWaveCount(Segment seg)
+{
+    if (seg.type == 3) return (int)(std::max(std::floor(std::pow(seg.tension,2) * 100), 1.0));
+    if (seg.type == 4) return (int)(std::floor(std::fabs(std::pow(seg.tension,2) * 100) + 1) - 1);
+    if (seg.type == 5) return (int)(std::floor(std::fabs(std::pow(seg.tension,2) * 100) + 1) - 1.0);
+    if (seg.type == 6) return (int)(std::max(std::floor(std::pow(seg.tension,2) * 150), 2.));
+    if (seg.type == 7) return (int)(std::max(floor(std::pow(seg.tension,2) * 150), 1.0));
+    return 0;
+}
 
 double Pattern::get_y_scurve(Segment seg, double x)
 {

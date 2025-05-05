@@ -99,7 +99,6 @@ public:
     double syncQN = 1.0; // sync quarter notes
     int ltrigger = -1; // last trigger mode
     bool midiTrigger = false; // flag midi has triggered envelope
-    bool showAudioKnobs = false;
     int winpos = 0;
     int lwinpos = 0;
     SmoothParam* value; // smooths envelope value
@@ -136,14 +135,19 @@ public:
     std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<bool> drawSeek = false;
-    std::vector<double> monSamples; // monitor samples to draw on view
+    std::vector<double> monSamples; // used to draw transients + waveform preview
     std::atomic<double> monpos = 0.0; // write index of monitor circular buf
     int lmonpos = 0; // last index
     int monW = 1; // audio monitor width used to rotate monitor samples buffer
+    bool showAudioKnobs = false; // used by UI to toggle audio knobs
 
     //==============================================================================
     GATE12AudioProcessor();
     ~GATE12AudioProcessor() override;
+
+    void loadSettings();
+    void saveSettings();
+    void setScale(float value);
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -196,10 +200,6 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
-    void loadSettings();
-    void saveSettings();
-    void setScale(float value);
 
     juce::AudioProcessorValueTreeState params;
     juce::UndoManager undoManager;

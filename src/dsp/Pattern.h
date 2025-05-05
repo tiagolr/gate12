@@ -59,6 +59,7 @@ public:
     void loadRandom(int grid);
     void copy();
     void paste();
+    int getWaveCount(Segment seg);
 
     double get_y_curve(Segment seg, double x);
     double get_y_scurve(Segment seg, double x);

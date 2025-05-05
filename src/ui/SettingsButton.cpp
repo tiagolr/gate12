@@ -30,6 +30,56 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	load.addItem(100, "Sine");
 	load.addItem(101, "Triangle");
 	load.addItem(102, "Random");
+	load.addSeparator();
+
+	PopupMenu patterns1;
+	PopupMenu patterns2;
+	PopupMenu patterns3;
+	load.addSubMenu("Patterns 1", patterns1);
+	load.addSubMenu("Patterns 2", patterns2);
+	load.addSubMenu("Patterns 3", patterns3);
+
+	patterns1.addItem(110, "All");
+	patterns1.addItem(111, "Empty");
+	patterns1.addItem(112, "Gate 2");
+	patterns1.addItem(113, "Gate 4");
+	patterns1.addItem(114, "Gate 8");
+	patterns1.addItem(115, "Gate 12");
+	patterns1.addItem(116, "Gate 16");
+	patterns1.addItem(117, "Gate 24");
+	patterns1.addItem(118, "Gate 32");
+	patterns1.addItem(119, "Trance 1");
+	patterns1.addItem(120, "Trance 2");
+	patterns1.addItem(121, "Trance 3");
+	patterns1.addItem(122, "Trance 4");
+
+	patterns2.addItem(130, "All");
+	patterns2.addItem(131, "Saw 1");
+	patterns2.addItem(132, "Saw 2");
+	patterns2.addItem(133, "Step 1");
+	patterns2.addItem(134, "Step 1 FadeIn");
+	patterns2.addItem(135, "Step 4 Gate");
+	patterns2.addItem(136, "Off Beat");
+	patterns2.addItem(137, "Dynamic 1/4");
+	patterns2.addItem(138, "Swing");
+	patterns2.addItem(139, "Gate Out");
+	patterns2.addItem(140, "Gate In");
+	patterns2.addItem(141, "Speed up");
+	patterns2.addItem(142, "Speed Down");
+
+	patterns3.addItem(150, "All");
+	patterns3.addItem(151, "End Fade");
+	patterns3.addItem(152, "End Gate");
+	patterns3.addItem(152, "Tremolo Slow");
+	patterns3.addItem(152, "Tremolo Fast");
+	patterns3.addItem(152, "Sidechain");
+	patterns3.addItem(152, "Drum Loop");
+	patterns3.addItem(152, "Copter");
+	patterns3.addItem(152, "AM");
+	patterns3.addItem(152, "Fade In");
+	patterns3.addItem(152, "Fade Out");
+	patterns3.addItem(152, "Fade OutIn");
+	patterns3.addItem(152, "Mute");
 
 	PopupMenu menu;
 	auto menuPos = localPointToGlobal(getLocalBounds().getBottomRight());

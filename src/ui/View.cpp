@@ -94,8 +94,8 @@ void View::drawGrid(Graphics& g)
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
 
-    auto colorNormal = Colours::white.withAlpha(0.15f);
-    auto colorBold = Colours::white.withAlpha(0.30f);
+    auto colorNormal = Colours::white.withAlpha(0.1f);
+    auto colorBold = Colours::white.withAlpha(0.2f);
     int c = -1; // flag used to toggle color only when it changes
 
     for (int i = 0; i < grid + 1; ++i) {
@@ -104,8 +104,8 @@ void View::drawGrid(Graphics& g)
             g.setColour(color ? colorNormal : colorBold);
             c = color;
         }
-        g.drawLine((float)winx, (float)(winy + gridy * i), (float)winx + winw, (float)(winy + gridy * i));
-        g.drawLine((float)(winx + gridx * i), (float)winy, (float)(winx + gridx * i), (float)winy + winh);
+        g.drawLine((float)winx, std::round((float)(winy + gridy * i))+0.5f, (float)winx + winw, std::round((float)(winy + gridy * i)) + 0.5f); // +0.5f removes aliasing
+        g.drawLine(std::round((float)(winx + gridx * i))+0.5f, (float)winy, std::round((float)(winx + gridx * i))+0.5f, (float)winy + winh);
     }
 }
 
@@ -117,19 +117,24 @@ void View::drawSegments(Graphics& g)
     auto colorBold = Colours::white;
     auto colorLight = Colours::white.withAlpha(0.125f);
 
+    Path boldPath;
+    boldPath.startNewSubPath((float)lastX, (float)lastY);
+
     for (int i = 0; i < winw + 1; ++i)
     {
         double px = double(i) / double(winw);
         double py = audioProcessor.pattern->get_y_at(px) * winh + winy;
+
         g.setColour(colorLight);
         g.drawLine((float)(i + winx), (float)(winy + winh), (float)(i + winx), (float)py);
-        g.setColour(colorBold);
-        g.drawLine((float)lastX, (float)lastY, (float)(i + winx), (float)py, 2.f);
-        lastX = i + winx;
-        lastY = py;
+
+        boldPath.lineTo((float)(i + winx), (float)py);
     }
+
+    boldPath.lineTo((float)(winw + winx), (float)(audioProcessor.pattern->get_y_at(1) * winh + winy));
+
     g.setColour(colorBold);
-    g.drawLine((float)lastX, (float)lastY, (float)(winw + winx), (float)(audioProcessor.pattern->get_y_at(1) * winh + winy));
+    g.strokePath(boldPath, PathStrokeType(2.f));
 }
 
 void View::drawPoints(Graphics& g)
@@ -264,6 +269,11 @@ void View::drawMidPoints(Graphics& g)
         auto& seg = segs[selectedMidpoint];
         auto xy = getMidpointXY(seg);
         g.fillEllipse((float)xy[0] - 3.0f, (float)xy[1] - 3.0f, 6.0f, 6.0f);
+        auto waveCount = audioProcessor.pattern->getWaveCount(seg);
+        if (waveCount > 0) {
+            g.setFont(FontOptions(14.f));
+            g.drawText(String(waveCount), (int)xy[0]-20,(int)xy[1]-25,40,20, Justification::centred);
+        }
     }
 }
 
@@ -418,9 +428,6 @@ void View::createSelection(const MouseEvent& e)
     
     auto points = audioProcessor.pattern->points;
     for (size_t i = 0; i < points.size(); ++i) {
-        if (i == 0 || i == points.size() - 1)
-            continue;
-
         auto& p = points[i];
         std::string id = p.id;
         int x = (int)(p.x * winw + winx);
@@ -735,7 +742,7 @@ void View::dragSelection(const MouseEvent& e)
     updatePointsToSelection(invertx, inverty);
 }
 
-// updates points position to match the selection area
+// updates points position to match the selection area after a scaling or translation
 // points have a position relative to area: xarea, yarea normalized from 0 to 1
 // xarea and yarea are used calculate the new points position on the view
 void View::updatePointsToSelection(bool invertx, bool inverty)
@@ -780,6 +787,10 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 {
     if (!isEnabled() || pattern != audioProcessor.pattern->index)
         return;
+
+    if (e.mods.isRightButtonDown()) {
+        return;
+    }
 
     int x = e.getPosition().x;
     int y = e.getPosition().y;

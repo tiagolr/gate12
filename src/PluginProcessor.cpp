@@ -29,10 +29,10 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
-        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 1, 32, 8),
+        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 1, 64, 8),
         // audio trigger params
         std::make_unique<juce::AudioParameterChoice>("algo", "Audio Algorithm", StringArray { "Simple", "Drums" }, 0),
-        std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", 0.0f, 1.0f, 0.5f),
+        std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", NormalisableRange<float>(0.0f, 1.0f), 0.5f),
         std::make_unique<juce::AudioParameterFloat>("sense", "Audio Sensitivity", 0.0f, 1.0f, 0.5f),
         std::make_unique<juce::AudioParameterFloat>("lowcut", "Audio LowCut", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f) , 20.f),
         std::make_unique<juce::AudioParameterFloat>("highcut", "Audio HighCut", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f) , 20000.f),
@@ -105,7 +105,6 @@ void GATE12AudioProcessor::saveSettings ()
     settings.saveIfNeeded();
 }
 
-// Set UI scale factor
 void GATE12AudioProcessor::setScale(float s)
 {
     scale = s;
