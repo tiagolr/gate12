@@ -16,22 +16,21 @@ View::View(GATE12AudioProcessor& p) : audioProcessor(p)
 {
     setWantsKeyboardFocus(true);
     startTimerHz(60);
-    audioProcessor.params.addParameterListener("pattern", this);
 };
 
 View::~View()
 {
-    audioProcessor.params.removeParameterListener("pattern", this);
 };
 
 void View::timerCallback()
 {
-    if (pattern != audioProcessor.pattern->index) {
+    if (patternID != audioProcessor.pattern->versionUID) {
         selectionStart = Point<int>(-1,-1);
         selectedMidpoint = -1;
         selectedPoint = -1;
-        clearSelection();
-        pattern = audioProcessor.pattern->index;
+        selectionDragHover = -1;
+        recalcSelectionArea();
+        patternID = audioProcessor.pattern->versionUID;
     }
     if (audioProcessor.queuedPattern && isEnabled()) {
         setAlpha(0.5f);
@@ -48,9 +47,6 @@ void View::parameterChanged (const juce::String& parameterID, float newValue)
 {
     (void)parameterID;
     (void)newValue;
-    if (parameterID == "pattern") {
-        
-    }
 };
 
 void View::init() 
@@ -75,27 +71,32 @@ void View::paint(Graphics& g) {
 
 void View::drawWave(Graphics& g, std::vector<double>& samples, Colour color) const
 {
-    double lastX = winx;
-    double lastY = winh - std::min(std::abs(samples[0]),1.) * winh + winy;
-    g.setColour(color.withAlpha(0.4f));
+    Path wavePath;
+    wavePath.startNewSubPath((float)winx, (float)(winy + winh));
+
     for (int i = 0; i < winw; ++i) {
-        double ypos = std::min(samples[i], 1.);
-        if (ypos > 0.0) {
-            g.drawLine((float)i + winx, (float)winy + winh, (float)i + winx, (float)(winh - ypos * winh + winy));
-        }
-        lastX = i + winx;
-        lastY = winh - ypos * winh + winy;
+        double ypos = std::min(std::abs(samples[i]), 1.0);
+        float x = (float)(i + winx);
+        float y = (float)(winh - ypos * winh + winy);
+
+        wavePath.lineTo(x, y);
     }
+
+    wavePath.lineTo((float)(winw + winx - 1), (float)(winy + winh));
+    wavePath.closeSubPath();
+
+    g.setColour(color.withAlpha(0.4f));
+    g.fillPath(wavePath);
 }
 
 void View::drawGrid(Graphics& g)
 {
-    int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
+    int grid = audioProcessor.getCurrentGrid();
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
 
-    auto colorNormal = Colours::white.withAlpha(0.1f);
-    auto colorBold = Colours::white.withAlpha(0.2f);
+    auto colorNormal = Colours::white.withAlpha(0.075f);
+    auto colorBold = Colours::white.withAlpha(0.15f);
     int c = -1; // flag used to toggle color only when it changes
 
     for (int i = 0; i < grid + 1; ++i) {
@@ -113,28 +114,32 @@ void View::drawSegments(Graphics& g)
 {
     double lastX = winx;
     double lastY = audioProcessor.pattern->get_y_at(0) * winh + winy;
-
-    auto colorBold = Colours::white;
-    auto colorLight = Colours::white.withAlpha(0.125f);
-
-    Path boldPath;
-    boldPath.startNewSubPath((float)lastX, (float)lastY);
-
+    
+    Path linePath;
+    Path shadePath;
+    
+    linePath.startNewSubPath((float)lastX, (float)lastY);
+    shadePath.startNewSubPath((float)lastX, (float)(winy + winh)); // Start from bottom
+    shadePath.lineTo((float)lastX, (float)lastY);                   // Line to first point on wave
+    
     for (int i = 0; i < winw + 1; ++i)
     {
         double px = double(i) / double(winw);
         double py = audioProcessor.pattern->get_y_at(px) * winh + winy;
-
-        g.setColour(colorLight);
-        g.drawLine((float)(i + winx), (float)(winy + winh), (float)(i + winx), (float)py);
-
-        boldPath.lineTo((float)(i + winx), (float)py);
+        float x = (float)(i + winx);
+        float y = (float)py;
+    
+        linePath.lineTo(x, y);
+        shadePath.lineTo(x, y);
     }
+    
+    shadePath.lineTo((float)(winw + winx), (float)(winy + winh)); // Bottom-right
+    shadePath.closeSubPath();
 
-    boldPath.lineTo((float)(winw + winx), (float)(audioProcessor.pattern->get_y_at(1) * winh + winy));
-
-    g.setColour(colorBold);
-    g.strokePath(boldPath, PathStrokeType(2.f));
+    g.setColour(Colours::white.withAlpha(0.125f));
+    g.fillPath(shadePath);
+    g.setColour(Colours::white);
+    g.strokePath(linePath, PathStrokeType(2.f));
 }
 
 void View::drawPoints(Graphics& g)
@@ -333,7 +338,7 @@ PPoint& View::getPointFromMidpoint(int midpoint)
 
 void View::mouseDown(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     Point pos = e.getPosition();
@@ -383,7 +388,7 @@ void View::mouseDown(const juce::MouseEvent& e)
 
 void View::mouseUp(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     if (selectedPoint > -1) { // finished dragging point
@@ -448,7 +453,7 @@ void View::createSelection(const MouseEvent& e)
             // if point is not on selection, add it
             else if (!std::any_of(selectionPoints.begin(), selectionPoints.end(), 
                 [id](const SelPoint& p) { return p.id == id; })) {
-                selectionPoints.push_back({ p.id, p.x, p.y, 0., 0. });
+                selectionPoints.push_back({ p.id, p.x, p.y, 0.0, 0.0 });
             }
         }
     }
@@ -462,6 +467,18 @@ void View::createSelection(const MouseEvent& e)
 
 void View::recalcSelectionArea()
 {
+    // the pattern may have changed, first update the selected points
+    std::vector<SelPoint> selPoints;
+    std::vector<PPoint> patPoints = audioProcessor.pattern->points;
+    for (auto i = patPoints.begin(); i < patPoints.end(); ++i) {
+        for (auto j = selectionPoints.begin(); j < selectionPoints.end(); ++j) {
+            if (i->id == j->id) {
+                selPoints.push_back({ i->id, i->x, i->y, 0.0, 0.0 });
+            }
+        }
+    }
+    selectionPoints = selPoints;
+
     // calculate selection area based on points positions
     int minx = globals::PLUG_WIDTH;
     int maxx = -1;
@@ -477,7 +494,7 @@ void View::recalcSelectionArea()
         if (y > maxy) maxy = y;
     }
     selectionArea = Rectangle<int>(minx, miny, maxx - minx, maxy - miny);
-
+    
     // calculate points positions relative to area
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
@@ -496,7 +513,7 @@ void View::clearSelection()
 
 void View::mouseMove(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     auto pos = e.getPosition();
@@ -543,7 +560,7 @@ void View::mouseMove(const juce::MouseEvent& e)
 
 void View::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     Point pos = e.getPosition();
@@ -561,7 +578,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
 
     auto& points = audioProcessor.pattern->points;
-    double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+    double grid = (double)audioProcessor.getCurrentGrid();
     double gridx = double(winw) / grid;
     double gridy = double(winh) / grid;
     double xx = (double)x;
@@ -611,7 +628,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
 
 void View::dragSelection(const MouseEvent& e)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     auto mouse = e.getPosition();
@@ -631,7 +648,7 @@ void View::dragSelection(const MouseEvent& e)
     int distcy = 0;
 
     if (isSnapping(e)) {
-        double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+        double grid = (double)audioProcessor.getCurrentGrid();
         double gridx = double(winw) / grid;
         double gridy = double(winh) / grid;
         mouse.x = (int)(std::round((mouse.x - winx) / gridx) * gridx + winx);
@@ -778,14 +795,13 @@ void View::updatePointsToSelection(bool invertx, bool inverty)
         }
     }
 
-    // TODO sort points
     audioProcessor.pattern->sortPoints();
     audioProcessor.pattern->buildSegments();
 }
 
 void View::mouseDoubleClick(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     if (e.mods.isRightButtonDown()) {
@@ -794,23 +810,22 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 
     int x = e.getPosition().x;
     int y = e.getPosition().y;
-    auto& points = audioProcessor.pattern->points;
     int pt = getHoveredPoint((int)x, (int)y);
     int mid = getHoveredMidpoint((int)x, (int)y);
-    //if (pt > 0 && pt < points.size() - 1) {
+    
     if (pt > -1) {
         audioProcessor.pattern->removePoint(pt);
         hoverPoint = -1;
         hoverMidpoint = -1;
     }
     if (pt == -1 && mid > -1) {
-        points[mid].tension = 0;
+        getPointFromMidpoint(mid).tension = 0;
     }
     if (pt == -1 && mid == -1) {
         double px = (double)x;
         double py = (double)y;
         if (isSnapping(e)) {
-            double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+            double grid = (double)audioProcessor.getCurrentGrid();
             double gridx = double(winw) / grid;
             double gridy = double(winh) / grid;
             px = std::round(double(px - winx) / gridx) * gridx + winx;
@@ -819,7 +834,6 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         px = double(px - winx) / (double)winw;
         py = double(py - winy) / (double)winh;
         if (px >= 0 && px <= 1 && py >= 0 && py <= 1) { // point in env window
-            //if (px == 1) px -= 0.000001; // special case avoid inserting point after last point
             audioProcessor.pattern->insertPoint(px, py, 0, (int)audioProcessor.params.getRawParameterValue("point")->load());
         }
     }
@@ -829,20 +843,20 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 
 void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return;
 
     (void)event;
     int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
     auto param = audioProcessor.params.getParameter("grid");
     param->beginChangeGesture();
-    param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0 ? 1.0f : -1.0f)));
+    param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0.f ? 1.0f : -1.0f)));
     param->endChangeGesture();
 }
 
 bool View::keyPressed(const juce::KeyPress& key) 
 {
-    if (!isEnabled() || pattern != audioProcessor.pattern->index)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
         return false;
 
     // remove selected points
@@ -892,7 +906,7 @@ void View::applyPaintTool(int x, int y, const MouseEvent& e)
 {
     double mousex = std::min(std::max(double(x - winx) / (double)winw, 0.), 0.9999999);
     double mousey = std::min(std::max(double(y - winy) / (double)winh, 0.), 1.);
-    double gridsegs = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+    double gridsegs = (double)audioProcessor.getCurrentGrid();
     if (isSnapping(e)) {
         mousey = std::round(mousey * gridsegs) / gridsegs;
     }

@@ -17,7 +17,14 @@ std::vector<PPoint> Pattern::copy_pattern;
 Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
 {
     index = i;
-};
+    changeVersionUID();
+}
+
+void Pattern::changeVersionUID()
+{
+    versionUID = globalVersionIDCounter;
+    globalVersionIDCounter += 1;
+}
 
 void Pattern::sortPoints()
 {
@@ -81,6 +88,7 @@ void Pattern::invert()
     for (auto i = points.begin(); i != points.end(); ++i) {
         i->y = 1 - i->y;
     }
+    changeVersionUID();
 };
 
 void Pattern::reverse()
@@ -93,6 +101,7 @@ void Pattern::reverse()
         if (i < points.size() - 1)
           p.tension = points[i + 1].tension * -1;
     }
+    changeVersionUID();
 };
 
 void Pattern::rotate(double x) {
@@ -104,17 +113,19 @@ void Pattern::rotate(double x) {
         if (p->x > 1.0) p->x -= 1.0;
     }
     sortPoints();
+    changeVersionUID();
 }
 
 void Pattern::clear()
 {
     points.clear();
+    changeVersionUID();
 }
 
 void Pattern::buildSegments()
 {
     auto pts = points; // make points copy
-    // add (invisible) ghost points outside the 0..1 boundary
+    // add ghost points outside the 0..1 boundary
     // allows the pattern to repeat itself and rotate seamlessly
     if (pts.size() == 0) {
         pts.push_back({"", -1.0, 0.5, 0.0, 1});
@@ -176,6 +187,7 @@ void Pattern::paste()
 {
   if (copy_pattern.size() > 0) {
     points = copy_pattern;
+    changeVersionUID();
   }
 }
 

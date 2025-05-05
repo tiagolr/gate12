@@ -137,7 +137,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 					audioProcessor.pattern->buildSegments();
 				}
 				if (result == 102) { // load random
-					int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
+					int grid = audioProcessor.getCurrentGrid();
 					audioProcessor.pattern->loadRandom(grid);
 					audioProcessor.pattern->buildSegments();
 				}

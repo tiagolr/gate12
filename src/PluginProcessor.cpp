@@ -29,7 +29,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
-        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 1, 64, 8),
+        std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 8),
         // audio trigger params
         std::make_unique<juce::AudioParameterChoice>("algo", "Audio Algorithm", StringArray { "Simple", "Drums" }, 0),
         std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", NormalisableRange<float>(0.0f, 1.0f), 0.5f),
@@ -109,6 +109,12 @@ void GATE12AudioProcessor::setScale(float s)
 {
     scale = s;
     saveSettings();
+}
+
+int GATE12AudioProcessor::getCurrentGrid()
+{
+    auto gridIndex = (int)params.getRawParameterValue("grid")->load();
+    return GRID_SIZES[gridIndex];
 }
 
 //==============================================================================

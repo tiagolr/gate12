@@ -85,7 +85,7 @@ private:
     GATE12AudioProcessor& audioProcessor;
     double origTension = 0;
     int dragStartY = 0;
-    int pattern = -1; // used to detect pattern changes
+    uint64_t patternID = 0; // used to detect pattern changes
     
     // Multi-select
     Point<int> selectionStart = Point(-1,-1);

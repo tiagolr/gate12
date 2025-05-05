@@ -35,6 +35,7 @@ struct Segment {
 class Pattern
 {
 public:
+    uint64_t versionUID = 0; // unique pattern ID, used by UI to detect pattern changes and clear selection etc
     static std::vector<PPoint> copy_pattern;
     const double PI = 3.14159265358979323846;
     int index;
@@ -42,6 +43,8 @@ public:
     std::vector<Segment> segments;
 
     Pattern(GATE12AudioProcessor&, int);
+    void changeVersionUID(); // generates a new unique ID for this pattern
+
     int insertPoint(double x, double y, double tension, int type);
     void sortPoints();
     void setTension(double t); // sets global tension multiplier
@@ -71,7 +74,8 @@ public:
     double get_y_at(double x);
 
 private:
-    std::atomic<double> tensionMult = 0.0; // global tension param
+    static inline uint64_t globalVersionIDCounter = 1; // static global ID counter
+    std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
     GATE12AudioProcessor& gate;
     std::mutex mtx;
     double mod(double a, double b);

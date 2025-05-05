@@ -22,11 +22,10 @@ void GridSelector::parameterChanged(const juce::String& parameterID, float newVa
 void GridSelector::paint(juce::Graphics& g) {
     g.fillAll(Colour(globals::COLOR_BG));
 
-    auto gridSize = audioProcessor.params.getRawParameterValue("grid")->load();
+    int gridSize = audioProcessor.getCurrentGrid();
     g.setFont(16);
     g.setColour(Colour(globals::COLOR_ACTIVE));
     g.drawFittedText("Grid " + String(gridSize), getLocalBounds(), Justification::centredLeft, 1);
-    //g.drawRect(getLocalBounds());
 }
 
 void GridSelector::mouseDown(const juce::MouseEvent& e) 

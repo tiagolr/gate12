@@ -75,6 +75,8 @@ public:
 class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener
 {
 public:
+    static constexpr int GRID_SIZES[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64 };
+
     // Plugin settings
     float scale = 1.0f; // UI scale factor
 
@@ -148,6 +150,7 @@ public:
     void loadSettings();
     void saveSettings();
     void setScale(float value);
+    int getCurrentGrid();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

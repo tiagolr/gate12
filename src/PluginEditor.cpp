@@ -370,7 +370,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeRightButton.setBounds(col, row+25/2-5+1, 10, 10);
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+            double grid = (double)audioProcessor.getCurrentGrid();
             audioProcessor.pattern->rotate(1.0/grid);
             audioProcessor.pattern->buildSegments();
         });
@@ -382,7 +382,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeLeftButton.setBounds(col, row+25/2-5+1, 10, 10);
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            double grid = (double)audioProcessor.params.getRawParameterValue("grid")->load();
+            double grid = (double)audioProcessor.getCurrentGrid();
             audioProcessor.pattern->rotate(-1.0/grid);
             audioProcessor.pattern->buildSegments();
         });
