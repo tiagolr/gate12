@@ -22,8 +22,8 @@ Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
 
 void Pattern::changeVersionUID()
 {
-    versionUID = globalVersionIDCounter;
-    globalVersionIDCounter += 1;
+    versionID = versionIDCounter;
+    versionIDCounter += 1;
 }
 
 void Pattern::sortPoints()
@@ -45,11 +45,10 @@ double Pattern::getTension()
 
 int Pattern::insertPoint(double x, double y, double tension, int type)
 {
-    // generate ID, used by multiselection
-    char id[17];
-    snprintf(id, sizeof(id), "%04X%04X%04X%04X", rand(), rand(), rand(), rand());
+    auto id = pointsIDCounter;
+    pointsIDCounter += 1;
 
-    const PPoint p = { std::string(id), x, y, tension, type };
+    const PPoint p = { id, x, y, tension, type };
     points.push_back(p);
     sortPoints();
 
@@ -128,18 +127,18 @@ void Pattern::buildSegments()
     // add ghost points outside the 0..1 boundary
     // allows the pattern to repeat itself and rotate seamlessly
     if (pts.size() == 0) {
-        pts.push_back({"", -1.0, 0.5, 0.0, 1});
-        pts.push_back({"", 2.0, 0.5, 0.0, 1});
+        pts.push_back({0, -1.0, 0.5, 0.0, 1});
+        pts.push_back({0, 2.0, 0.5, 0.0, 1});
     }
     else if (pts.size() == 1) {
-        pts.push_back({"", -1.0, pts[0].y, 0.0, 1});
-        pts.push_back({"", 2.0, pts[0].y, 0.0, 1});
+        pts.push_back({0, -1.0, pts[0].y, 0.0, 1});
+        pts.push_back({0, 2.0, pts[0].y, 0.0, 1});
     }
     else {
         auto p1 = pts[0];
         auto p2 = pts[pts.size()-1];
-        pts.insert(pts.begin(), {"", p2.x - 1.0, p2.y, p2.tension, p2.type});
-        pts.push_back({"", p1.x + 1.0, p1.y, p1.tension, p1.type});
+        pts.insert(pts.begin(), {0, p2.x - 1.0, p2.y, p2.tension, p2.type});
+        pts.push_back({0, p1.x + 1.0, p1.y, p1.tension, p1.type});
     }
 
     std::lock_guard<std::mutex> lock(mtx); // prevents crash while reading Y from another thread

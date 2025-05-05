@@ -35,9 +35,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	PopupMenu patterns1;
 	PopupMenu patterns2;
 	PopupMenu patterns3;
-	load.addSubMenu("Patterns 1", patterns1);
-	load.addSubMenu("Patterns 2", patterns2);
-	load.addSubMenu("Patterns 3", patterns3);
 
 	patterns1.addItem(110, "All");
 	patterns1.addItem(111, "Empty");
@@ -80,6 +77,10 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	patterns3.addItem(152, "Fade Out");
 	patterns3.addItem(152, "Fade OutIn");
 	patterns3.addItem(152, "Mute");
+
+	load.addSubMenu("Patterns 1", patterns1);
+	load.addSubMenu("Patterns 2", patterns2);
+	load.addSubMenu("Patterns 3", patterns3);
 
 	PopupMenu menu;
 	auto menuPos = localPointToGlobal(getLocalBounds().getBottomRight());

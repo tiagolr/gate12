@@ -15,7 +15,7 @@
 class GATE12AudioProcessor;
 
 struct PPoint {
-    std::string id;
+    uint64_t id; // unique point id used by multiselect to identify points
     double x;
     double y;
     double tension;
@@ -35,7 +35,7 @@ struct Segment {
 class Pattern
 {
 public:
-    uint64_t versionUID = 0; // unique pattern ID, used by UI to detect pattern changes and clear selection etc
+    uint64_t versionID = 0; // unique pattern ID, used by UI to detect pattern changes and update selection
     static std::vector<PPoint> copy_pattern;
     const double PI = 3.14159265358979323846;
     int index;
@@ -74,7 +74,8 @@ public:
     double get_y_at(double x);
 
 private:
-    static inline uint64_t globalVersionIDCounter = 1; // static global ID counter
+    static inline uint64_t versionIDCounter = 1; // static global ID counter
+    static inline uint64_t pointsIDCounter = 1; // static global ID counter
     std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
     GATE12AudioProcessor& gate;
     std::mutex mtx;

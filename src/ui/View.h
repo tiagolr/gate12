@@ -15,7 +15,7 @@
 class GATE12AudioProcessor;
 
 struct SelPoint {
-    std::string id;
+    uint64_t id;
     double x; // 0..1 in relation to viewport
     double y;
     double areax; // 0..1 in relation to selection area

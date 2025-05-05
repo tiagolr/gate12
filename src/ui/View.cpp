@@ -24,13 +24,13 @@ View::~View()
 
 void View::timerCallback()
 {
-    if (patternID != audioProcessor.pattern->versionUID) {
+    if (patternID != audioProcessor.pattern->versionID) {
         selectionStart = Point<int>(-1,-1);
         selectedMidpoint = -1;
         selectedPoint = -1;
         selectionDragHover = -1;
         recalcSelectionArea();
-        patternID = audioProcessor.pattern->versionUID;
+        patternID = audioProcessor.pattern->versionID;
     }
     if (audioProcessor.queuedPattern && isEnabled()) {
         setAlpha(0.5f);
@@ -338,7 +338,7 @@ PPoint& View::getPointFromMidpoint(int midpoint)
 
 void View::mouseDown(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     Point pos = e.getPosition();
@@ -388,7 +388,7 @@ void View::mouseDown(const juce::MouseEvent& e)
 
 void View::mouseUp(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     if (selectedPoint > -1) { // finished dragging point
@@ -434,7 +434,7 @@ void View::createSelection(const MouseEvent& e)
     auto points = audioProcessor.pattern->points;
     for (size_t i = 0; i < points.size(); ++i) {
         auto& p = points[i];
-        std::string id = p.id;
+        auto id = p.id;
         int x = (int)(p.x * winw + winx);
         int y = (int)(p.y * winh + winy);
 
@@ -513,7 +513,7 @@ void View::clearSelection()
 
 void View::mouseMove(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     auto pos = e.getPosition();
@@ -560,7 +560,7 @@ void View::mouseMove(const juce::MouseEvent& e)
 
 void View::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     Point pos = e.getPosition();
@@ -628,7 +628,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
 
 void View::dragSelection(const MouseEvent& e)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     auto mouse = e.getPosition();
@@ -801,7 +801,7 @@ void View::updatePointsToSelection(bool invertx, bool inverty)
 
 void View::mouseDoubleClick(const juce::MouseEvent& e)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     if (e.mods.isRightButtonDown()) {
@@ -843,7 +843,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 
 void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     (void)event;
@@ -856,7 +856,7 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
 
 bool View::keyPressed(const juce::KeyPress& key) 
 {
-    if (!isEnabled() || patternID != audioProcessor.pattern->versionUID)
+    if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return false;
 
     // remove selected points
