@@ -11,16 +11,9 @@
 #include <JuceHeader.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../dsp/Pattern.h"
+#include "Multiselect.h"
 
 class GATE12AudioProcessor;
-
-struct SelPoint {
-    uint64_t id;
-    double x; // 0..1 in relation to viewport
-    double y;
-    double areax; // 0..1 in relation to selection area
-    double areay;
-};
 
 class View : public juce::Component, private juce::AudioProcessorValueTreeState::Listener, private juce::Timer
 {
@@ -49,14 +42,8 @@ public:
     PPoint& getPointFromMidpoint(int midpoint);
 
     // multi selection
-    void drawSelectionBackground(Graphics& g);
-    void drawSelection(Graphics& g);
-    void drawSelectionHandles(Graphics& g);
     void createSelection(const MouseEvent& e);
-    void recalcSelectionArea();
-    void clearSelection();
-    void dragSelection(const MouseEvent& e);
-    void updatePointsToSelection(bool invertx, bool inverty);
+    void drawSelection(Graphics& g);
 
     // events
     void mouseDown(const juce::MouseEvent& e) override;
@@ -82,20 +69,16 @@ private:
     int hoverMidpoint = -1;
     int rmousePoint = -1;
     const int HOVER_RADIUS = 8;
-    const int MSEL_PADDING = 8;
     const int POINT_RADIUS = 4;
     const int MPOINT_RADIUS = 3;
 
     GATE12AudioProcessor& audioProcessor;
     double origTension = 0;
-    int dragStartY = 0;
+    int dragStartY = 0; // used for midpoint dragging
     uint64_t patternID = 0; // used to detect pattern changes
 
-    // Multi-select
+    // Multiselect
+    Multiselect multiselect;
     Point<int> selectionStart = Point(-1,-1);
     Point<int> selectionEnd = Point(-1,-1);
-    Rectangle<int> selectionArea = Rectangle<int>();
-    Rectangle<int> selectionAreaStart = Rectangle<int>(); // used to drag or scale selection area
-    std::vector<SelPoint> selectionPoints;
-    int selectionDragHover = -1; // flag for hovering selection drag handles, 0 area, 1 top left corner, 2 top center etc..
 };
