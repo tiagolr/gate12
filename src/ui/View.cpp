@@ -382,7 +382,7 @@ void View::mouseUp(const juce::MouseEvent& e)
         multiselect.makeSelection(e, selectionStart, selectionEnd);
     }
     else if (multiselect.selectionPoints.size() > 0) { // finished dragging selection
-        multiselect.recalcSelectionArea(); // FIX - points may have been inverted due to selection drag
+        multiselect.mouseUp(e); // FIX - points may have been inverted due to selection drag
     }
 
     selectionStart = Point<int>(-1,-1);
@@ -436,7 +436,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
 
     if (multiselect.mouseHover > -1 && e.mods.isLeftButtonDown()) {
-        multiselect.dragSelection(e);
+        multiselect.mouseDrag(e);
         return;
     }
 

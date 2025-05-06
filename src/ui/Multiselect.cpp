@@ -67,10 +67,10 @@ void Multiselect::drawHandles(Graphics& g)
     Point tr = q[1].toPoint();
     Point bl = q[2].toPoint();
     Point br = q[3].toPoint();
-    Point ml = tl.withY((int)bilinearInterpolate(q, 0, 0.5).y); // middle left
-    Point mr = ml.withX((int)bilinearInterpolate(q, 1, 0.5).x); // middle right
-    Point tm = tl.withX((int)bilinearInterpolate(q, 0.5, 0).x);// top middle
-    Point bm = tm.withY((int)bilinearInterpolate(q, 0.5, 1).y);
+    Point ml = bilinearInterpolate(q, 0, 0.5).toPoint(); // middle left
+    Point mr = bilinearInterpolate(q, 1, 0.5).toPoint(); // middle right
+    Point tm = bilinearInterpolate(q, 0.5, 0).toPoint();// top middle
+    Point bm = bilinearInterpolate(q, 0.5, 1).toPoint();
     auto tlRect = Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3);
     auto trRect = Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3);
     auto blRect = Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3);
@@ -83,14 +83,14 @@ void Multiselect::drawHandles(Graphics& g)
     g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
     g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
     g.setColour(Colours::white);
-    if (mouseHover == 1) g.fillRect(tlRect);
-    if (mouseHover == 2) g.fillRect(tmRect);
-    if (mouseHover == 3) g.fillRect(trRect);
-    if (mouseHover == 4) g.fillRect(mlRect);
-    if (mouseHover == 5) g.fillRect(mrRect);
-    if (mouseHover == 6) g.fillRect(blRect);
-    if (mouseHover == 7) g.fillRect(bmRect);
-    if (mouseHover == 8) g.fillRect(brRect);
+    if (mouseHover == MouseHover::TopLeft) g.fillRect(tlRect);
+    if (mouseHover == MouseHover::TopMid) g.fillRect(tmRect);
+    if (mouseHover == MouseHover::TopRight) g.fillRect(trRect);
+    if (mouseHover == MouseHover::MidLeft) g.fillRect(mlRect);
+    if (mouseHover == MouseHover::MidRight) g.fillRect(mrRect);
+    if (mouseHover == MouseHover::BottomLeft) g.fillRect(blRect);
+    if (mouseHover == MouseHover::BottomMid) g.fillRect(bmRect);
+    if (mouseHover == MouseHover::BottomRight) g.fillRect(brRect);
 }
 
 void Multiselect::mouseDown(const MouseEvent& e)
@@ -99,6 +99,24 @@ void Multiselect::mouseDown(const MouseEvent& e)
     selectionQuadStart = getQuadExpanded();
     selectionAreaStart = quadToRect(selectionQuadStart);
     calcRelativeQuadCoords(selectionAreaStart.toDouble());
+}
+
+void Multiselect::mouseUp(const MouseEvent& e)
+{
+    (void)e;
+    // finalize inversions of points by storing updated areax and areay
+    if (inverty) {
+        for (auto& p : selectionPoints) {
+            p.areay = 1.0 - p.areay;
+        }
+        inverty = false;
+    }
+    if (invertx) {
+        for (auto& p : selectionPoints) {
+            p.areax = 1.0 - p.areax;
+        }
+        invertx = false;
+    }
 }
 
 void Multiselect::calcRelativeQuadCoords(Rectangle<double> area)
@@ -123,10 +141,26 @@ void Multiselect::applyRelativeQuadCoords(Rectangle<double> area)
     const double w = area.getWidth();
     const double h = area.getHeight();
 
-    quad[0] = Vec2(x + quadrel[0].x * w, y + quadrel[0].y * h);
-    quad[1] = Vec2(x + quadrel[1].x * w, y + quadrel[1].y * h);
-    quad[2] = Vec2(x + quadrel[2].x * w, y + quadrel[2].y * h);
-    quad[3] = Vec2(x + quadrel[3].x * w, y + quadrel[3].y * h);
+    Quad rel = quadrel;
+    if (invertx) {
+        for (auto& p : rel) {
+            p.x = 1.0 - p.x;
+        }
+        std::swap(rel[0], rel[1]); // top-left <> top-right
+        std::swap(rel[2], rel[3]); // bottom-left <> bottom-right
+    }
+    if (inverty) {
+        for (auto& p : rel) {
+            p.y = 1.0 - p.y;
+        }
+        std::swap(rel[0], rel[2]); // top-left <> bottom-left
+        std::swap(rel[1], rel[3]); // top-right <> bottom-right
+    }
+
+    quad[0] = Vec2(x + rel[0].x * w, y + rel[0].y * h);
+    quad[1] = Vec2(x + rel[1].x * w, y + rel[1].y * h);
+    quad[2] = Vec2(x + rel[2].x * w, y + rel[2].y * h);
+    quad[3] = Vec2(x + rel[3].x * w, y + rel[3].y * h);
 }
 
 void Multiselect::mouseMove(const MouseEvent& e)
@@ -139,18 +173,18 @@ void Multiselect::mouseMove(const MouseEvent& e)
         Point tr = q[1].toPoint();
         Point bl = q[2].toPoint();
         Point br = q[3].toPoint();
-        Point ml = tl.withY((int)bilinearInterpolate(q, 0, 0.5).y); // middle left
-        Point mr = ml.withX((int)bilinearInterpolate(q, 1, 0.5).x); // middle right
-        Point tm = tl.withX((int)bilinearInterpolate(q, 0.5, 0).x);// top middle
-        Point bm = tm.withY((int)bilinearInterpolate(q, 0.5, 1).y);
-        if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 1; // mouse over top left drag handle
-        else if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 2;
-        else if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 3;
-        else if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 4;
-        else if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 5;
-        else if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 6;
-        else if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 7;
-        else if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 8;
+        Point ml = bilinearInterpolate(q, 0, 0.5).toPoint(); // middle left
+        Point mr = bilinearInterpolate(q, 1, 0.5).toPoint(); // middle right
+        Point tm = bilinearInterpolate(q, 0.5, 0).toPoint();// top middle
+        Point bm = bilinearInterpolate(q, 0.5, 1).toPoint();
+        if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopLeft;
+        else if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopMid;
+        else if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopRight;
+        else if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::MidLeft;
+        else if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::MidRight;
+        else if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomLeft;
+        else if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomMid;
+        else if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomRight;
         else if (quadToRect(q).contains(pos)) {
             juce::Path quadPath;
             quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
@@ -160,7 +194,7 @@ void Multiselect::mouseMove(const MouseEvent& e)
             quadPath.closeSubPath();
 
             if (quadPath.contains(pos.toFloat())) {
-                mouseHover = 0;
+                mouseHover = MouseHover::Area;
             };
         }
     }
@@ -207,7 +241,6 @@ void Multiselect::makeSelection(const MouseEvent& e, Point<int>selectionStart, P
         }
     }
 
-    //selectionArea = Rectangle<int>();
     if (selectionPoints.size() > 0) {
         recalcSelectionArea();
     }
@@ -248,7 +281,6 @@ void Multiselect::recalcSelectionArea()
     quad[2] = pointToVec(selectionArea.getBottomLeft().toDouble());
     quad[3] = pointToVec(selectionArea.getBottomRight().toDouble());
 
-    // calculate points positions relative to area
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
         double x = p.x * winw + winx;
@@ -265,7 +297,17 @@ void Multiselect::clearSelection()
     mouseHover = -1;
 }
 
-void Multiselect::dragSelection(const MouseEvent& e)
+void Multiselect::mouseDrag(const MouseEvent& e)
+{
+    if (e.mods.isAltDown() && mouseHover != MouseHover::TopMid && mouseHover != MouseHover::BottomMid) {
+        dragQuad(e);
+    }
+    else {
+        dragArea(e);
+    }
+}
+
+void Multiselect::dragArea(const MouseEvent& e) 
 {
     auto mouse = e.getPosition();
     auto mouseDown = e.getMouseDownPosition();
@@ -298,55 +340,55 @@ void Multiselect::dragSelection(const MouseEvent& e)
     int dx = mouse.x - mouseDown.x;
     int dy = mouse.y - mouseDown.y;
 
-    if (mouseHover == 0) { // area drag
+    if (mouseHover == MouseHover::Area) {
         left += dx + distl;
         right += dx + distr;
         top += dy + distt;
         bottom += dy + distb;
     }
-    else if (mouseHover == 1) { // top left corner
+    else if (mouseHover == MouseHover::TopLeft) { 
         left += dx + distl;
         top += dy + distt;
         right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx + distl : 0);
         bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy + distt : 0);
     }
-    else if (mouseHover == 2) { // top middle corner
+    else if (mouseHover == MouseHover::TopMid) {
         top += dy + distt;
         bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy + distt : 0);
     }
-    else if (mouseHover == 3) { // top right
+    else if (mouseHover == MouseHover::TopRight) {
         right += dx;
         top += dy;
         left = selectionArea.getX() - (e.mods.isShiftDown() ? dx : 0);
         bottom = selectionArea.getBottom() - (e.mods.isShiftDown() ? dy : 0);
     }
-    else if (mouseHover == 4) { // mid left
+    else if (mouseHover == MouseHover::MidLeft) {
         left += dx + distl;
         right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx + distl : 0);
     }
-    else if (mouseHover == 5) { // mid right
+    else if (mouseHover == MouseHover::MidRight) {
         right += dx + distr;
         left = selectionArea.getX() - (e.mods.isShiftDown() ? dx + distr : 0);
     }
-    else if (mouseHover == 6) { // bottom left
+    else if (mouseHover == MouseHover::BottomLeft) {
         left += dx + distl;
         bottom += dy + distb;
         right = selectionArea.getRight() - (e.mods.isShiftDown() ? dx + distl : 0);
         top = selectionArea.getY() - (e.mods.isShiftDown() ? dy + distb : 0);
     }
-    else if (mouseHover == 7) { // bottom mid
+    else if (mouseHover == MouseHover::BottomMid) {
         bottom += dy + distb;
         top = selectionArea.getY() - (e.mods.isShiftDown() ? dy + distb : 0);
     }
-    else if (mouseHover == 8) { // bottom right
+    else if (mouseHover == MouseHover::BottomRight) {
         right += dx + distr;
         bottom += dy + distb;
         left = selectionArea.getX() - (e.mods.isShiftDown() ? dx + distr : 0);
         top = selectionArea.getY() - (e.mods.isShiftDown() ? dy + distb : 0);
     }
 
-    bool invertx = false;
-    bool inverty = false;
+    invertx = false;
+    inverty = false;
 
     if (right < left) {
         invertx = true;
@@ -387,14 +429,50 @@ void Multiselect::dragSelection(const MouseEvent& e)
         selectionArea.setHeight(winh);
     }
     applyRelativeQuadCoords(selectionArea.toDouble());
-    updatePointsToSelection(invertx, inverty);
+    updatePointsToSelection();
+}
+
+void Multiselect::dragQuad(const MouseEvent& e) 
+{
+    auto mouse = e.getPosition();
+    auto mouseDown = e.getMouseDownPosition();
+    auto selectionArea = quadToRect(quad);
+
+    double dy = (double)(mouse.y - mouseDown.y);
+
+    if (mouseHover == MouseHover::TopLeft) {
+        quad[0].y = std::fmin(selectionQuadStart[0].y + dy, selectionArea.getBottom());
+    }
+    else if (mouseHover == MouseHover::TopRight) {
+        quad[1].y = std::fmin(selectionQuadStart[1].y + dy, selectionArea.getBottom());
+    }
+    else if (mouseHover == MouseHover::BottomLeft) {
+        quad[2].y = std::fmax(selectionQuadStart[2].y + dy, selectionArea.getY());
+    }
+    else if (mouseHover == MouseHover::BottomRight) {
+        quad[3].y = std::fmax(selectionQuadStart[3].y + dy, selectionArea.getY());
+    }
+    else if (mouseHover == MouseHover::MidLeft) {
+        quad[0].y = selectionQuadStart[0].y + dy;
+        quad[2].y = selectionQuadStart[2].y + dy;
+    }
+    else if (mouseHover == MouseHover::MidRight) {
+        quad[1].y = selectionQuadStart[1].y + dy;
+        quad[3].y = selectionQuadStart[3].y + dy;
+    }
+    quad[0].y = std::fmax((double)winy, std::fmin(quad[0].y, (double)winy+winh));
+    quad[1].y = std::fmax((double)winy, std::fmin(quad[1].y, (double)winy+winh));
+    quad[2].y = std::fmax((double)winy, std::fmin(quad[2].y, (double)winy+winh));
+    quad[3].y = std::fmax((double)winy, std::fmin(quad[3].y, (double)winy+winh));
+
+    updatePointsToSelection();
 }
 
 // updates points position to match the selection area after a scaling or translation
 // points have a position relative to area: xarea, yarea normalized from 0 to 1
 // xarea and yarea are used calculate the new points position on the view
-// later versions use bilinear interpolation to place the points in a defined quad instead of rectangle area
-void Multiselect::updatePointsToSelection(bool invertx, bool inverty)
+// now uses bilinear interpolation to place the points in a defined quad instead of rectangle area
+void Multiselect::updatePointsToSelection()
 {
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];

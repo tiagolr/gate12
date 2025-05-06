@@ -21,6 +21,18 @@ struct SelPoint {
     double areay;
 };
 
+enum MouseHover {
+    Area,
+    TopLeft,
+    TopMid,
+    TopRight,
+    MidLeft,
+    MidRight,
+    BottomLeft,
+    BottomMid,
+    BottomRight
+};
+
 struct Vec2 {
     double x, y;
 
@@ -41,28 +53,6 @@ inline Vec2 bilinearInterpolate(const Quad& quad, double u, double v) {
     return P;
 }
 
-//inline bool isPointInPolygon(const Vec2& p, const Quad& quad)
-//{
-//    int n = (int)quad.size();
-//    bool inside = false;
-//
-//    // Iterate through each edge of the polygon
-//    for (int i = 0, j = n - 1; i < n; j = i++) 
-//    {
-//        const Vec2& vertex1 = quad[i];
-//        const Vec2& vertex2 = quad[j];
-//
-//        // Check if the point P lies on the line segment between vertex1 and vertex2
-//        if (((vertex1.y > p.y) != (vertex2.y > p.y)) && 
-//            (p.x < (vertex2.x - vertex1.x) * (p.y - vertex1.y) / (vertex2.y - vertex1.y) + vertex1.x))
-//        {
-//            inside = !inside;
-//        }
-//    }
-//
-//    return inside;
-//}
-
 class Multiselect
 {
 public:
@@ -73,17 +63,15 @@ public:
 
 	void mouseDown(const MouseEvent& e);
     void mouseMove(const MouseEvent& e);
+    void mouseDrag(const MouseEvent& e);
+    void mouseUp(const MouseEvent& e);
 	void drawBackground(Graphics& g);
 	void draw(Graphics& g);
-
-    bool contains(Point<int>p);
-
     void drawHandles(Graphics& g);
+
     void recalcSelectionArea();
     void clearSelection();
     void makeSelection(const MouseEvent& e, Point<int>selectionStart, Point<int>selectionEnd);
-    void dragSelection(const MouseEvent& e);
-    void updatePointsToSelection(bool invertx, bool inverty);
     void deleteSelectedPoints();
 
     int mouseHover = -1; // flag for hovering selection drag handles, 0 area, 1 top left corner, 2 top center etc..
@@ -95,11 +83,16 @@ private:
     int winy = 0;
     int winw = 0;
     int winh = 0;
-
     // select quad coordinates
     Quad quad = { Vec2(0.0,0.0),Vec2(1.0,0.0),Vec2(0.0,1.0),Vec2(1.0,1.0) };
     // select quad relative coordinates to selection area
     Quad quadrel = { Vec2(0.0, 0.0), Vec2(0.0, 0.0), Vec2(0.0, 0.0), Vec2(0.0, 0.0) };
+    bool invertx = false;
+    bool inverty = false;
+
+    void dragArea(const MouseEvent& e);
+    void dragQuad(const MouseEvent& e);
+    void updatePointsToSelection();
 
     Quad getQuadExpanded(double expand = 0.0);
     void calcRelativeQuadCoords(Rectangle<double> area);
