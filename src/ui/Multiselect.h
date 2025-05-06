@@ -105,7 +105,6 @@ private:
     void calcRelativeQuadCoords(Rectangle<double> area);
     void applyRelativeQuadCoords(Rectangle<double> area);
 
-    Rectangle<int> selectionArea;
 	Rectangle<int> selectionAreaStart = Rectangle<int>(); // used to drag or scale selection area
     Quad selectionQuadStart = {Vec2(0.0,0.0), Vec2(1.0, 0.0), Vec2(0.0, 1.0), Vec2(1.0,1.0)};
     GATE12AudioProcessor& audioProcessor;
