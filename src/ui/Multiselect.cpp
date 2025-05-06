@@ -10,11 +10,26 @@
 #include "../Globals.h"
 #include "../PluginProcessor.h"
 
+void Multiselect::setViewBounds(int _x, int _y, int _w, int _h)
+{
+    winx = _x;
+    winy = _y;
+    winw = _w;
+    winh = _h;
+}
+
 void Multiselect::drawBackground(Graphics& g)
 {
     if (selectionPoints.size()) {
         g.setColour(Colour(globals::COLOR_SELECTION).withAlpha(0.25f));
-        g.fillRect(selectionArea.expanded(PADDING));
+        Quad q = getQuadExpanded((double)PAD);
+        juce::Path quadPath;
+        quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
+        quadPath.lineTo((float)q[1].x, (float)q[1].y);
+        quadPath.lineTo((float)q[3].x, (float)q[3].y);
+        quadPath.lineTo((float)q[2].x, (float)q[2].y);
+        quadPath.closeSubPath();
+        g.fillPath(quadPath);
     }
 }
 
@@ -28,9 +43,16 @@ void Multiselect::draw(Graphics& g)
         g.fillEllipse((float)(xx - 2.0), (float)(yy - 2.0), 4.0f, 4.0f);
     }
 
-    if (selectionPoints.size() > 0) {
+    if (selectionPoints.size()) {
         g.setColour(Colour(globals::COLOR_SELECTION));
-        g.drawRect(selectionArea.expanded(PADDING));
+        Quad q = getQuadExpanded((double)PAD);
+        juce::Path quadPath;
+        quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
+        quadPath.lineTo((float)q[1].x, (float)q[1].y);
+        quadPath.lineTo((float)q[3].x, (float)q[3].y);
+        quadPath.lineTo((float)q[2].x, (float)q[2].y);
+        quadPath.closeSubPath();
+        g.strokePath(quadPath, PathStrokeType(1.0f));
 
         if (selectionPoints.size() > 1) {
             drawHandles(g);
@@ -40,15 +62,15 @@ void Multiselect::draw(Graphics& g)
 
 void Multiselect::drawHandles(Graphics& g)
 {
-    auto area = selectionArea.expanded(PADDING);
-    Point tl = area.getTopLeft(); // top left
-    Point tr = area.getTopRight();
-    Point bl = area.getBottomLeft();
-    Point br = area.getBottomRight();
-    Point ml = tl.withY((tl.getY() + bl.getY()) / 2); // middle left
-    Point mr = ml.withX(br.getX()); // middle right
-    Point tm = tl.withX((tl.getX() + tr.getX()) / 2);// top middle
-    Point bm = tm.withY(br.getY());
+    auto q = getQuadExpanded((double)PAD);
+    Point tl = q[0].toPoint(); // top left
+    Point tr = q[1].toPoint();
+    Point bl = q[2].toPoint();
+    Point br = q[3].toPoint();
+    Point ml = tl.withY((int)bilinearInterpolate(q, 0, 0.5).y); // middle left
+    Point mr = ml.withX((int)bilinearInterpolate(q, 1, 0.5).x); // middle right
+    Point tm = tl.withX((int)bilinearInterpolate(q, 0.5, 0).x);// top middle
+    Point bm = tm.withY((int)bilinearInterpolate(q, 0.5, 1).y);
     auto tlRect = Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3);
     auto trRect = Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3);
     auto blRect = Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3);
@@ -74,45 +96,78 @@ void Multiselect::drawHandles(Graphics& g)
 void Multiselect::mouseDown(const MouseEvent& e)
 {
     (void)e;
-    selectionAreaStart = selectionArea;
+    selectionQuadStart = getQuadExpanded();
+    selectionAreaStart = quadToRect(selectionQuadStart);
+    calcRelativeQuadCoords(selectionAreaStart.toDouble());
+}
+
+void Multiselect::calcRelativeQuadCoords(Rectangle<double> area)
+{
+    const double x = area.getX();
+    const double y = area.getY();
+    const double w = area.getWidth();
+    const double h = area.getHeight();
+    const double invW = (w == 0.0 ? 0.0 : 1.0 / w); // safety against divisions by zero
+    const double invH = (h == 0.0 ? 0.0 : 1.0 / h);
+
+    quadrel[0] = Vec2((quad[0].x - x) * invW, (quad[0].y - y) * invH);
+    quadrel[1] = Vec2((quad[1].x - x) * invW, (quad[1].y - y) * invH);
+    quadrel[2] = Vec2((quad[2].x - x) * invW, (quad[2].y - y) * invH);
+    quadrel[3] = Vec2((quad[3].x - x) * invW, (quad[3].y - y) * invH);
+}
+ 
+void Multiselect::applyRelativeQuadCoords(Rectangle<double> area)
+{
+    const double x = area.getX();
+    const double y = area.getY();
+    const double w = area.getWidth();
+    const double h = area.getHeight();
+
+    quad[0] = Vec2(x + quadrel[0].x * w, y + quadrel[0].y * h);
+    quad[1] = Vec2(x + quadrel[1].x * w, y + quadrel[1].y * h);
+    quad[2] = Vec2(x + quadrel[2].x * w, y + quadrel[2].y * h);
+    quad[3] = Vec2(x + quadrel[3].x * w, y + quadrel[3].y * h);
 }
 
 void Multiselect::mouseMove(const MouseEvent& e)
 {
+    mouseHover = -1;
     auto pos = e.getPosition();
-    mouseHover = 0;
     if (selectionPoints.size() > 1) {
-        Point tl = selectionArea.expanded(PADDING).getTopLeft(); // top left
-        Point tr = selectionArea.expanded(PADDING).getTopRight();
-        Point bl = selectionArea.expanded(PADDING).getBottomLeft();
-        Point br = selectionArea.expanded(PADDING).getBottomRight();
-        Point ml = tl.withY((tl.getY() + bl.getY()) / 2); // middle left
-        Point mr = ml.withX(br.getX()); // middle right
-        Point tm = tl.withX((tl.getX() + tr.getX()) / 2);// top middle
-        Point bm = tm.withY(br.getY());
+        Quad q = getQuadExpanded((double)PAD);
+        Point tl = q[0].toPoint(); // top left
+        Point tr = q[1].toPoint();
+        Point bl = q[2].toPoint();
+        Point br = q[3].toPoint();
+        Point ml = tl.withY((int)bilinearInterpolate(q, 0, 0.5).y); // middle left
+        Point mr = ml.withX((int)bilinearInterpolate(q, 1, 0.5).x); // middle right
+        Point tm = tl.withX((int)bilinearInterpolate(q, 0.5, 0).x);// top middle
+        Point bm = tm.withY((int)bilinearInterpolate(q, 0.5, 1).y);
         if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 1; // mouse over top left drag handle
-        if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 2;
-        if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 3;
-        if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 4;
-        if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 5;
-        if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 6;
-        if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 7;
-        if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 8;
+        else if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 2;
+        else if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 3;
+        else if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 4;
+        else if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 5;
+        else if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 6;
+        else if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 7;
+        else if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = 8;
+        else if (quadToRect(q).contains(pos)) {
+            juce::Path quadPath;
+            quadPath.startNewSubPath((float)quad[0].x, (float)quad[0].y);
+            quadPath.lineTo((float)quad[1].x, (float)quad[1].y);
+            quadPath.lineTo((float)quad[3].x, (float)quad[3].y);
+            quadPath.lineTo((float)quad[2].x, (float)quad[2].y);
+            quadPath.closeSubPath();
+
+            if (quadPath.contains(pos.toFloat())) {
+                mouseHover = 0;
+            };
+        }
     }
 }
 
-void Multiselect::setViewBounds(int _x, int _y, int _w, int _h)
+void Multiselect::makeSelection(const MouseEvent& e, Point<int>selectionStart, Point<int>selectionEnd)
 {
-    winx = _x;
-    winy = _y;
-    winw = _w;
-    winh = _h;
-}
-
-void Multiselect::createSelection(const MouseEvent& e, Point<int>selectionStart, Point<int>selectionEnd)
-{
-    selectionArea = Rectangle<int>();
-
     if (!e.mods.isShiftDown() && !e.mods.isCtrlDown()) {
         selectionPoints.clear();
     }
@@ -152,11 +207,10 @@ void Multiselect::createSelection(const MouseEvent& e, Point<int>selectionStart,
         }
     }
 
-    if (selectionPoints.size() == 0) {
-        return;
+    //selectionArea = Rectangle<int>();
+    if (selectionPoints.size() > 0) {
+        recalcSelectionArea();
     }
-
-    recalcSelectionArea();
 }
 
 void Multiselect::recalcSelectionArea()
@@ -174,9 +228,9 @@ void Multiselect::recalcSelectionArea()
     selectionPoints = selPoints;
 
     // calculate selection area based on points positions
-    int minx = globals::PLUG_WIDTH;
+    int minx = winx + winw;
     int maxx = -1;
-    int miny = globals::PLUG_HEIGHT;
+    int miny = winy + winh;
     int maxy = -1;
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
@@ -189,6 +243,10 @@ void Multiselect::recalcSelectionArea()
     }
 
     selectionArea = Rectangle<int>(minx, miny, maxx - minx, maxy - miny);
+    quad[0] = pointToVec(selectionArea.getTopLeft().toDouble());
+    quad[1] = pointToVec(selectionArea.getTopRight().toDouble());
+    quad[2] = pointToVec(selectionArea.getBottomLeft().toDouble());
+    quad[3] = pointToVec(selectionArea.getBottomRight().toDouble());
 
     // calculate points positions relative to area
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
@@ -203,13 +261,9 @@ void Multiselect::recalcSelectionArea()
 void Multiselect::clearSelection()
 {
     selectionArea = Rectangle<int>();
+    quad = { Vec2(0.0, 0.0), Vec2(1.0, 0.0), Vec2(0.0, 1.0), Vec2(1.0, 1.0) };
     selectionPoints.clear();
     mouseHover = -1;
-}
-
-bool Multiselect::contains(Point<int> p)
-{
-    return selectionArea.expanded(PADDING + 3).contains(p);
 }
 
 void Multiselect::dragSelection(const MouseEvent& e)
@@ -218,6 +272,7 @@ void Multiselect::dragSelection(const MouseEvent& e)
     auto mouseDown = e.getMouseDownPosition();
 
     selectionArea = selectionAreaStart.expanded(0,0);
+
     int left = selectionArea.getX();
     int right = selectionArea.getRight();
     int top = selectionArea.getY();
@@ -334,13 +389,14 @@ void Multiselect::dragSelection(const MouseEvent& e)
         selectionArea.setY(winy);
         selectionArea.setHeight(winh);
     }
-
+    applyRelativeQuadCoords(selectionArea.toDouble());
     updatePointsToSelection(invertx, inverty);
 }
 
 // updates points position to match the selection area after a scaling or translation
 // points have a position relative to area: xarea, yarea normalized from 0 to 1
 // xarea and yarea are used calculate the new points position on the view
+// later versions use bilinear interpolation to place the points in a defined quad instead of rectangle area
 void Multiselect::updatePointsToSelection(bool invertx, bool inverty)
 {
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
@@ -348,22 +404,23 @@ void Multiselect::updatePointsToSelection(bool invertx, bool inverty)
 
         double areax = invertx ? 1.0 - p.areax : p.areax;
         double areay = inverty ? 1.0 - p.areay : p.areay;
-        double absx = selectionArea.getX() + (areax * selectionArea.getWidth());
-        double absy = selectionArea.getY() + (areay * selectionArea.getHeight());
-        double newx = (absx - winx) / (double)winw;
-        double newy = (absy - winy) / (double)winh;
+        //double absx = selectionArea.getX() + (areax * selectionArea.getWidth());
+        //double absy = selectionArea.getY() + (areay * selectionArea.getHeight());
+        //double newx = (absx - winx) / (double)winw;
+        //double newy = (absy - winy) / (double)winh;
+        auto newpos = bilinearInterpolate(quad, areax, areay);
 
         // update selection point
-        p.x = newx;
-        p.y = newy;
+        p.x = (int)newpos.x;
+        p.y = (int)newpos.y;
 
         // update pattern point
         auto& points = audioProcessor.pattern->points;
         for (size_t j = 0; j < points.size(); ++j) {
             auto& pp = points[j];
             if (pp.id == p.id) {
-                pp.x = newx;
-                pp.y = newy;
+                pp.x = (int)newpos.x;
+                pp.y = (int)newpos.y;
                 break;
             }
         }
@@ -389,7 +446,39 @@ void Multiselect::deleteSelectedPoints()
     audioProcessor.pattern->buildSegments();
 }
 
+Quad Multiselect::getQuadExpanded(double expand)
+{
+    return {
+        quad[0] + Vec2(-expand,-expand),
+        quad[1] + Vec2(expand, -expand),
+        quad[2] + Vec2(-expand, expand),
+        quad[3] + Vec2(expand, expand)
+    };
+}
+
 bool Multiselect::isSnapping(const MouseEvent& e) {
     bool snap = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
     return (snap && !e.mods.isCtrlDown()) || (!snap && e.mods.isCtrlDown());
+}
+
+Vec2 Multiselect::pointToVec(Point<double> p)
+{
+    return Vec2(p.getX(), p.getY());
+}
+
+Rectangle<int> Multiselect::quadToRect(Quad q)
+{
+    int minx = -1;
+    int maxx = winx + winw;
+    int miny = -1;
+    int maxy = winy + winh;
+    for (auto& p : q) {
+        auto x = (int)p.x;
+        auto y = (int)p.y;
+        if (x < minx) minx = x;
+        if (x > maxx) maxx = x;
+        if (y < miny) miny = y;
+        if (y > maxy) maxy = y;
+    }
+    return Rectangle<int>(minx, miny, maxx-minx, maxy-miny);
 }
