@@ -23,14 +23,12 @@ void About::paint(Graphics& g)
 	g.drawText("github.com/tiagolr/gate12", bounds.removeFromTop(22), Justification::centred);
 	bounds.removeFromTop(40);
 	g.drawText("- Ctrl for fine slider adjustments.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Double click to reset sliders.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Shift toggles snap on/off.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Mouse wheel changes grid size.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Ctrl toggles snap on/off.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Mouse wheel on view to change grid size.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Right click points to change point type.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Right click view to use paint tool.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Alt + Right click to erase points.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Click drag to select multiple points.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Check the github link for more info and new versions.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Alt + drag on selection handles to skew/deform the selected points.", bounds.removeFromTop(22), Justification::centredLeft);
 
 };
 

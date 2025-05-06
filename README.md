@@ -34,7 +34,7 @@
   * Built with **JUCE**
   * **Audio trigger** use audio transients to trigger the envelope
   * **Pattern sync** changes to beat position
-  * **Multi-point** selection dragging and scaling
+  * **Multi-point** selection dragging, scaling and skewing
   * **Rotate patterns** no longer constrained by start and end points
   * Other **fixes and improvements**
 
@@ -56,20 +56,56 @@
 * Current builds include VST3 and LV2 for Windows, Linux and macOS plus AU for macOS.
 * Clap is planned when there is official [JUCE support](https://juce.com/blog/juce-roadmap-update-q3-2024/).
 
-## Tips
-
-  * Ctrl for fine adjustments
-  * Double click to reset sliders
-  * Shift to toggle snap on/off
-  * Mouse wheel on view to change grid size
-  * Right click points to change point type
-  * Ctrl + right click view to erase points
-  * Right click view to paint using paint tool
-  * Alt + Right click to erase points
-
 ## About
 
-With version 2 this plugin was rebuilt from scratch using JUCE for its cross-platforms capabilities and overall development tools/processes.
+GATE-12 is an envelope generator plugin that tries to combine some of the best features of GrossBeat and ShaperBox, it includes a point system very similar to GrossBeat but also with some great features of ShaperBox like self repeating patterns and multi-selections that can be scaled or skewed, audio envelope triggering and more.
+
+With version 2 this plugin was rebuilt from scratch using JUCE for its cross-platforms capabilities, maintainability and overall development tools/processes.
+
+### Features
+
+#### Multiple point types
+
+Like GrossBeat, GATE-12 includes 8 point types that can be changed by right clicking a point, the default point type can also be changed on the toolsbar.
+
+![curves](/doc/curves.png)
+
+#### Self repeating patterns
+
+Patterns are not constrained by start and endpoints like they used to, they can have only one point or no points, this mainly allows patterns to be seamlessly rotated to create new rhythm variations.
+
+#### Multiple point selections
+
+Multiple points can be selected and moved around, the selections can also be scaled and skewed by holding `Alt + drag` the leftmost or rightmost handles, this allows to quickly make rising or falling wedges as well as compress or expand sets of points.
+
+![rising-wedge](/doc/rising-wedge.png)
+
+#### Audio Trigger
+
+Audio transients can be used to trigger the envelope or restart its cycle, its heavily based on ShaperBox and includes two modes of detection: *Simple* - based on envelope following and *Drums* - based on total energy during a small time window. This feature is also heavily based on ShaperBox and also allows to use sidechain as input.
+
+#### MIDI Trigger
+
+MIDI can be used to trigger the envelope or restart its cycle, it can also be used to change patterns (defaults to channel 10).
+
+#### Pattern sync
+
+Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
+
+#### Paint mode
+
+Using right click on the view, the current selected paint tool will be applied to the selected grid segment. This system is being revised. Using `Alt + right click` will apply the erase tool to the grid segment.
+
+### Tips
+
+  * `Ctrl` for fine slider adjustments
+  * `Ctrl` to toggle snap on/off
+  * `Mouse wheel` on view to change grid size
+  * `Right click` points to change point type
+  * `Right click` view to paint using paint tool
+  * `Ctrl + right click` view to erase points
+  * `Alt + right click` to erase points
+  * `Alt + drag` selection handles to skew/deform the selected points
 
 ## MacOS
 
