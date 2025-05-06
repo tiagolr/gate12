@@ -22,6 +22,13 @@ void AudioDisplay::timerCallback()
         repaint();
 }
 
+void AudioDisplay::resized()
+{
+    MessageManager::callAsync([this] {
+        audioProcessor.monW = getWidth();
+    });
+}
+
 void AudioDisplay::paint(Graphics& g) {
     auto bounds = getLocalBounds();
     g.setColour(Colours::white.withAlpha(0.4f));

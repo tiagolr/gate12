@@ -15,7 +15,7 @@
 
 class GATE12AudioProcessor;
 
-class View : public juce::Component, private juce::AudioProcessorValueTreeState::Listener, private juce::Timer
+class View : public juce::Component, private juce::Timer
 {
 public:
     int winx = 0;
@@ -25,9 +25,8 @@ public:
 
     View(GATE12AudioProcessor&);
     ~View() override;
-    void init();
+    void resized() override;
     void timerCallback() override;
-    void parameterChanged (const juce::String& parameterID, float newValue) override;
 
     void paint(Graphics& g) override;
     void drawWave(Graphics& g, std::vector<double>& samples, Colour color) const;

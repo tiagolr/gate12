@@ -22,6 +22,7 @@ class AudioDisplay : public juce::Component, private juce::Timer
 public:
     AudioDisplay(GATE12AudioProcessor&);
     ~AudioDisplay() override {};
+    void resized() override;
     void timerCallback() override;
     void paint(Graphics& g) override;
     

@@ -73,6 +73,12 @@ private:
     int winw = 0;
     int winh = 0;
 
+    // select quad coordinates
+    // double tl = 0.0;
+    // double tr = 0.0;
+    // double bl = 0.0;
+    // double br = 0.0;
+
     Rectangle<int> selectionArea;
 	Rectangle<int> selectionAreaStart = Rectangle<int>(); // used to drag or scale selection area
     GATE12AudioProcessor& audioProcessor;

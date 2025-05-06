@@ -45,13 +45,7 @@ void View::timerCallback()
     repaint();
 }
 
-void View::parameterChanged (const juce::String& parameterID, float newValue)
-{
-    (void)parameterID;
-    (void)newValue;
-};
-
-void View::init()
+void View::resized()
 {
     auto bounds = getLocalBounds();
     winx = bounds.getX() + globals::PAD;
@@ -59,6 +53,9 @@ void View::init()
     winw = bounds.getWidth() - globals::PAD * 2;
     winh = bounds.getHeight() - globals::PAD * 2;
     multiselect.setViewBounds(winx, winy, winw, winh);
+    MessageManager::callAsync([this] {
+        audioProcessor.viewW = winw;
+    });
 }
 
 void View::paint(Graphics& g) {

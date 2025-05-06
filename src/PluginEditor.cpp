@@ -243,9 +243,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioDisplay = std::make_unique<AudioDisplay>(p);
     addAndMakeVisible(*audioDisplay);
     audioDisplay->setBounds(col,row,getWidth() - col - globals::PAD - 80 - 10, 65);
-    MessageManager::callAsync([this] {
-        audioProcessor.monW = audioDisplay->getWidth();
-    });
 
     col = getWidth() - globals::PAD - 80;
     addAndMakeVisible(useSidechain);
@@ -402,10 +399,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     view = std::make_unique<View>(p);
     addAndMakeVisible(*view);
     view->setBounds(col,row,getWidth(), getHeight() - row);
-    view->init();
-    MessageManager::callAsync([this] {
-        audioProcessor.viewW = view->winw;
-    });
 
     // ABOUT
     about = std::make_unique<About>();
