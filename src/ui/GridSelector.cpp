@@ -30,31 +30,29 @@ void GridSelector::paint(juce::Graphics& g) {
 
 void GridSelector::mouseDown(const juce::MouseEvent& e) 
 {
-    e.source.enableUnboundedMouseMovement(true);
-    mouse_down = true;
-    auto param = audioProcessor.params.getParameter("grid");
-    auto cur_val = param->getValue();
-    cur_normed_value = cur_val;
-    last_mouse_position = e.getPosition();
-    setMouseCursor(MouseCursor::NoCursor);
-    start_mouse_pos = Desktop::getInstance().getMousePosition();
-}
+    (void)e;
+    PopupMenu menu;
+    menu.addSectionHeader("Straight");
+    menu.addItem(1, "8");
+    menu.addItem(2, "16");
+    menu.addItem(3, "32");
+    menu.addItem(4, "64");
+    menu.addSectionHeader("Triplet");
+    menu.addItem(5, "12");
+    menu.addItem(6, "24");
+    menu.addItem(7, "48");
 
-void GridSelector::mouseUp(const juce::MouseEvent& e) {
-    mouse_down = false;
-    setMouseCursor(MouseCursor::NormalCursor);
-    e.source.enableUnboundedMouseMovement(false);
-    Desktop::getInstance().setMousePosition(start_mouse_pos);
-}
+    auto menuPos = localPointToGlobal(getLocalBounds().getBottomLeft());
 
-void GridSelector::mouseDrag(const juce::MouseEvent& e) {
-    auto change = e.getPosition() - last_mouse_position;
-    last_mouse_position = e.getPosition();
-    auto speed = (e.mods.isCtrlDown() ? 40.0f : 4.0f) * 200.0f;
-    auto slider_change = float(change.getX() - change.getY()) / speed;
-    cur_normed_value += slider_change;
-    auto param = audioProcessor.params.getParameter("grid");
-    param->beginChangeGesture();
-    param->setValueNotifyingHost(cur_normed_value);
-    param->endChangeGesture();
+    menu.showMenuAsync(PopupMenu::Options()
+        .withTargetScreenArea({menuPos.getX(), menuPos.getY(), 1, 1}),
+        [this](int result) {
+            if (result == 0) return;
+            auto param = audioProcessor.params.getParameter("grid");
+            param->beginChangeGesture();
+            param->setValueNotifyingHost(param->convertTo0to1(result-1.f));
+            param->endChangeGesture();
+        }
+    );
+    
 }

@@ -54,7 +54,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     syncMenu.addItem("1 Bar", 6);
     syncMenu.addItem("2 Bars", 7);
     syncMenu.addItem("4 Bars", 8);
-    syncMenu.addSectionHeading("Tripplet");
+    syncMenu.addSectionHeading("Triplet");
     syncMenu.addItem("1/16T", 9);
     syncMenu.addItem("1/8T", 10);
     syncMenu.addItem("1/4T", 11);

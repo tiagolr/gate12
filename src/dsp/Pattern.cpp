@@ -151,7 +151,7 @@ void Pattern::buildSegments()
 }
 
 void Pattern::loadSine() {
-    points.clear();
+    clear();
     insertPoint(0, 1, 0.33, 2);
     insertPoint(0.5, 0, 0.33, 2);
     insertPoint(1, 1, 0.33, 2);
@@ -159,14 +159,14 @@ void Pattern::loadSine() {
 }
 
 void Pattern::loadTriangle() {
-    points.clear();
+    clear();
     insertPoint(0, 1, 0, 1);
     insertPoint(0.5, 0, 0, 1);
     insertPoint(1, 1, 0, 1);
 };
 
 void Pattern::loadRandom(int grid) {
-    points.clear();
+    clear();
     auto y = static_cast<double>(rand())/RAND_MAX;
     insertPoint(0, y, 0, 1);
     insertPoint(1, y, 0, 1);

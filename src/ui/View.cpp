@@ -370,6 +370,7 @@ PPoint& View::getPointFromMidpoint(int midpoint)
 
 void View::mouseDown(const juce::MouseEvent& e)
 {
+    DBG("MOUSE DOWN " << e.getPosition().x);
     if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
@@ -682,8 +683,6 @@ void View::dragSelection(const MouseEvent& e)
     int distr = 0; // distance right
     int distt = 0;
     int distb = 0; 
-    int distcx = 0;
-    int distcy = 0;
 
     if (isSnapping(e)) {
         double grid = (double)audioProcessor.getCurrentGrid();
@@ -697,18 +696,16 @@ void View::dragSelection(const MouseEvent& e)
         distr = (int)(std::round((right - winx) / gridx) * gridx + winx) - right;
         distt = (int)(std::round((top - winy) / gridy) * gridy + winy) - top;
         distb = (int)(std::round((bottom - winy) / gridy) * gridy + winy) - bottom;
-        distcx = (int)(std::round((selectionArea.getCentreX() - winx) / gridx) * gridx + winx) - selectionArea.getCentreX();
-        distcy = (int)(std::round((selectionArea.getCentreY() - winy) / gridy) * gridy + winy) - selectionArea.getCentreY();
     }
 
     int dx = mouse.x - mouseDown.x;
     int dy = mouse.y - mouseDown.y;
 
     if (selectionDragHover == 0) { // area drag
-        left += dx + distcx;
-        right += dx + distcx;
-        top += dy + distcy;
-        bottom += dy + distcy;
+        left += dx + distl;
+        right += dx + distr;
+        top += dy + distt;
+        bottom += dy + distb;
     }
     else if (selectionDragHover == 1) { // top left corner
         left += dx + distl;
@@ -887,9 +884,13 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
     (void)event;
     int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
     auto param = audioProcessor.params.getParameter("grid");
-    param->beginChangeGesture();
-    param->setValueNotifyingHost(param->convertTo0to1((float)grid + (wheel.deltaY > 0.f ? 1.0f : -1.0f)));
-    param->endChangeGesture();
+    int newgrid = grid + (wheel.deltaY > 0.f ? 1 : -1);
+    // constrain grid size to stay on straights or tripplets
+    if (!(grid == 3 && newgrid == 4) && !(grid == 4 && newgrid == 3)) { 
+        param->beginChangeGesture();
+        param->setValueNotifyingHost(param->convertTo0to1((float)newgrid));
+        param->endChangeGesture();    
+    }
 }
 
 bool View::keyPressed(const juce::KeyPress& key) 

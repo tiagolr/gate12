@@ -21,8 +21,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	triggerChn.addItem(27, "Any", true, audioProcessor.triggerChn == 16);
 
 	PopupMenu options;
-	options.addSubMenu("UI Scale", uiScale);
-	options.addSeparator();
 	options.addSubMenu("Trigger Channel", triggerChn);
 	options.addItem(30, "Dual smooth", true, audioProcessor.dualSmooth);
 
@@ -87,6 +85,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 
 	PopupMenu menu;
 	auto menuPos = localPointToGlobal(getLocalBounds().getBottomRight());
+	menu.addSubMenu("UI Scale", uiScale);
 	menu.addSubMenu("Options", options);
 	menu.addSeparator();
 	menu.addItem(50, "Invert");
