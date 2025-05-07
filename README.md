@@ -36,6 +36,7 @@
   * **Pattern sync** changes to beat position
   * **Multi-point** selection dragging, scaling and skewing
   * **Rotate patterns** no longer constrained by start and end points
+  * **Undo & Redo** changes
   * Other **fixes and improvements**
 
 ## Features

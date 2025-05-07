@@ -456,9 +456,7 @@ void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameter
         patterns[(int)newValue - 1].get()->setToggleState(true, dontSendNotification);
     }
 
-    juce::MessageManager::callAsync([this] {
-        toggleUIComponents();
-    });
+    toggleUIComponents();
 };
 
 void GATE12AudioProcessorEditor::toggleUIComponents()

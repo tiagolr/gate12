@@ -654,6 +654,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 auto tension = (double)params.getRawParameterValue("tension")->load();
                 pattern->setTension(tension);
                 pattern->buildSegments();
+                MessageManager::callAsync([this]() {
+                    sendChangeMessage();
+                });
                 queuedPattern = 0;
             }
             if (queuedPatternCountdown > 0) {
