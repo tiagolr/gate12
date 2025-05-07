@@ -80,7 +80,6 @@ public:
     std::vector<SelPoint> selectionPoints;
 
 private:
-    const int PAD = 8;
     int winx = 0;
     int winy = 0;
     int winw = 0;
@@ -107,4 +106,5 @@ private:
     bool isSnapping(const MouseEvent& e);
     Vec2 pointToVec(Point<double> p);
     Rectangle<int> quadToRect(Quad q);
+    bool isCollinear(const std::vector<SelPoint>& p, bool xaxis);
 };

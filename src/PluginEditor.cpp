@@ -15,8 +15,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     setSize (PLUG_WIDTH, PLUG_HEIGHT);
     setScaleFactor(audioProcessor.scale);
-    auto col = PADDING;
-    auto row = PADDING;
+    auto col = PLUG_PADDING;
+    auto row = PLUG_PADDING;
 
     // FIRST ROW
 
@@ -114,7 +114,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
     col += 35;
 
-    col = getWidth() - PADDING - 25;
+    col = getWidth() - PLUG_PADDING - 25;
     settingsButton = std::make_unique<SettingsButton>(p);
     addAndMakeVisible(*settingsButton);
     settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
@@ -125,7 +125,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // SECOND ROW
 
     row += 35;
-    col = PADDING;
+    col = PLUG_PADDING;
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
         btn->setRadioGroupId (1337);
@@ -171,7 +171,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     // KNOBS ROW
     row += 35;
-    col = PADDING;
+    col = PLUG_PADDING;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hz1f);
     addAndMakeVisible(*rate);
     rate->setBounds(col,row,80,65);
@@ -213,7 +213,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 75;
 
     // AUDIO KNOBS
-    col = PADDING;
+    col = PLUG_PADDING;
 
     threshold = std::make_unique<Rotary>(p, "threshold", "Thres", LabelFormat::gainTodB1f, false, true);
     addAndMakeVisible(*threshold);
@@ -242,9 +242,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     audioDisplay = std::make_unique<AudioDisplay>(p);
     addAndMakeVisible(*audioDisplay);
-    audioDisplay->setBounds(col,row,getWidth() - col - PADDING - 80 - 10, 65);
+    audioDisplay->setBounds(col,row,getWidth() - col - PLUG_PADDING - 80 - 10, 65);
 
-    col = getWidth() - PADDING - 80;
+    col = getWidth() - PLUG_PADDING - 80;
     addAndMakeVisible(useSidechain);
     useSidechain.setTooltip("Use sidechain for transient detection");
     useSidechain.setButtonText("Sidechain");
@@ -278,7 +278,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
 
     // THIRD ROW
-    col = PADDING;
+    col = PLUG_PADDING;
     row += 75;
     juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
     juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
@@ -345,7 +345,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 35;
 
     // THIRD ROW RIGHT
-    col = getWidth() - PADDING - 60;
+    col = getWidth() - PLUG_PADDING - 60;
 
     addAndMakeVisible(snapButton);
     snapButton.setTooltip("Toggle snap by using ctrl key");
@@ -361,10 +361,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(*gridSelector);
     gridSelector->setBounds(col,row,50,25);
 
-    col -= 10+10+5;
+    col -= 10+15+5;
     addAndMakeVisible(nudgeRightButton);
     nudgeRightButton.setAlpha(0.f);
-    nudgeRightButton.setBounds(col, row+25/2-5+1, 10, 10);
+    nudgeRightButton.setBounds(col, row, 20, 25);
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.getCurrentGrid();
@@ -375,10 +375,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         });
     };
 
-    col -= 15+10;
+    col -= 10+15-5;
     addAndMakeVisible(nudgeLeftButton);
     nudgeLeftButton.setAlpha(0.f);
-    nudgeLeftButton.setBounds(col, row+25/2-5+1, 10, 10);
+    nudgeLeftButton.setBounds(col, row, 20, 25);
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.getCurrentGrid();
@@ -389,7 +389,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         });
     };
 
-    col -= 35;
+    col -= 30;
     addAndMakeVisible(redoButton);
     redoButton.setButtonText("redo");
     redoButton.setComponentID("button");
@@ -421,6 +421,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     view = std::make_unique<View>(p);
     addAndMakeVisible(*view);
     view->setBounds(col,row,getWidth(), getHeight() - row);
+
+    addAndMakeVisible(latencyWarning);
+    latencyWarning.setText("Plugin latency has changed, restart playback", dontSendNotification);
+    latencyWarning.setColour(Label::backgroundColourId, Colours::black.withAlpha(0.5f));
+    latencyWarning.setJustificationType(Justification::centred);
+    latencyWarning.setColour(Label::textColourId, Colour(COLOR_ACTIVE));
+    latencyWarning.setBounds(view->getBounds().getCentreX() - 150, PLUG_HEIGHT - 20 - 25, 300, 25);
 
     // ABOUT
     about = std::make_unique<About>();
@@ -509,8 +516,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     audioDisplay->setVisible(showAudioKnobs);
 
     if (!showAudioKnobs) {
-        auto col = PADDING;
-        auto row = PADDING + 35 + 35;
+        auto col = PLUG_PADDING;
+        auto row = PLUG_PADDING + 35 + 35;
         rate->setVisible(sync == 0);
         rate->setTopLeftPosition(col, row);
         if (rate->isVisible())
@@ -545,6 +552,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     useSidechain.setToggleState(audioProcessor.useSidechain, dontSendNotification);
     useMonitor.setToggleState(audioProcessor.useMonitor, dontSendNotification);
 
+    latencyWarning.setVisible(audioProcessor.showLatencyWarning);
     repaint();
 }
 
@@ -585,18 +593,24 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 
     // draw phase nudge buttons
     g.setColour(Colour(COLOR_ACTIVE));
+    auto triCenter = nudgeLeftButton.getBounds().toFloat().getCentre();
+    auto triRadius = 5.f;
     juce::Path nudgeLeftTriangle;
-    nudgeLeftTriangle.startNewSubPath(0.0f, nudgeLeftButton.getHeight() / 2.f);
-    nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), 0.f);
-    nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), (float)nudgeLeftButton.getHeight());
-    nudgeLeftTriangle.closeSubPath();
-    g.fillPath(nudgeLeftTriangle, AffineTransform::translation((float)nudgeLeftButton.getX(), (float)nudgeLeftButton.getY()));
+    nudgeLeftTriangle.addTriangle(
+        triCenter.translated(-triRadius, 0),
+        triCenter.translated(triRadius, -triRadius),
+        triCenter.translated(triRadius, triRadius)
+    );
+    g.fillPath(nudgeLeftTriangle);
+
+    triCenter = nudgeRightButton.getBounds().toFloat().getCentre();
     juce::Path nudgeRightTriangle;
-    nudgeRightTriangle.startNewSubPath(0.0f, 0.0f);
-    nudgeRightTriangle.lineTo((float)nudgeRightButton.getWidth(), nudgeRightButton.getHeight()/2.f);
-    nudgeRightTriangle.lineTo(0.0f, (float)nudgeRightButton.getHeight());
-    nudgeRightTriangle.closeSubPath();
-    g.fillPath(nudgeRightTriangle, AffineTransform::translation((float)nudgeRightButton.getX(), (float)nudgeRightButton.getY()));
+    nudgeRightTriangle.addTriangle(
+        triCenter.translated(-triRadius, -triRadius),
+        triCenter.translated(-triRadius, triRadius),
+        triCenter.translated(triRadius, 0)
+    );
+    g.fillPath(nudgeRightTriangle);
 
     // draw undo redo buttons
     auto canUndo = !audioProcessor.pattern->undoStack.empty();

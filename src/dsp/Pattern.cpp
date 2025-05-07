@@ -28,9 +28,9 @@ void Pattern::incrementVersion()
 
 void Pattern::sortPoints()
 {
-    std::sort(points.begin(), points.end(), 
-        [](const PPoint& a, const PPoint& b) { return a.x < b.x; }
-    );
+    std::sort(points.begin(), points.end(), [](const PPoint& a, const PPoint& b) { 
+        return a.x == b.x ? a.id < b.id : a.x < b.x; 
+    });
 }
 
 void Pattern::setTension(double t)
@@ -107,6 +107,8 @@ void Pattern::rotate(double x) {
     if (x > 1.0) x = 1.0;
     if (x < -1.0) x = -1.0;
     for (auto p = points.begin(); p != points.end(); ++p) {
+        if (p->x == 0.0) p->x += 1e-9; // FIX - distinguish 1.0 and 0.0 points 
+        if (p->x == 1.0) p->x -= 1e-9; //
         p->x += x;
         if (p->x < 0.0) p->x += 1.0;
         if (p->x > 1.0) p->x -= 1.0;

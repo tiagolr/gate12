@@ -93,6 +93,7 @@ private:
     std::unique_ptr<GridSelector> gridSelector;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;
     std::unique_ptr<View> view;
+    Label latencyWarning;
 
     TooltipWindow tooltipWindow;
 

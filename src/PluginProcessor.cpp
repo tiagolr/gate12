@@ -192,13 +192,12 @@ int GATE12AudioProcessor::getCurrentProgram()
 void GATE12AudioProcessor::setCurrentProgram (int index)
 {
     if (currentProgram == index) return;
-    currentProgram = index;
-
     loadProgram(index);
 }
 
 void GATE12AudioProcessor::loadProgram (int index)
 {
+    currentProgram = index;
     auto loadPreset = [](Pattern& pat, int idx) {
         auto preset = Presets::getPreset(idx);
         pat.clear();
@@ -302,10 +301,15 @@ void GATE12AudioProcessor::onSlider()
 
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger) {
+        auto latency = getLatencySamples();
         setLatencySamples(trigger == Trigger::Audio 
             ? static_cast<int>(getSampleRate() * globals::LATENCY_MILLIS / 1000.0) 
             : 0
         );
+        if (getLatencySamples() != latency && playing) {
+            showLatencyWarning = true;
+            MessageManager::callAsync([this]() { sendChangeMessage(); });
+        }
         clearLatencyBuffers();
         ltrigger = trigger;
     }
@@ -405,6 +409,10 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
 
 void GATE12AudioProcessor::onStop()
 {
+    if (showLatencyWarning) {
+        showLatencyWarning = false;
+        MessageManager::callAsync([this]() { sendChangeMessage(); });
+    }
 }
 
 void GATE12AudioProcessor::clearDrawBuffers()

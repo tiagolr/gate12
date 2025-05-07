@@ -13,11 +13,17 @@ namespace globals {
 	inline unsigned int COLOR_MIDI = 0xff50a9ff;
 	inline unsigned int COLOR_SELECTION = 0xff50a9ff;
 
-	inline const int PLUG_WIDTH = 640;
-	inline const int PLUG_HEIGHT = 640;
-	inline const int PADDING = 10; // plugin sides padding
 	inline const int LATENCY_MILLIS = 5;
 	inline const int AUDIO_COOLDOWN_MILLIS = 50;
 	inline const int AUDIO_DRUMSBUF_MILLIS = 20;
 	inline const int MAX_UNDO = 100;
+
+	// view consts
+	inline const int PLUG_WIDTH = 640;
+	inline const int PLUG_HEIGHT = 640;
+	inline const int PLUG_PADDING = 10;
+	inline const int HOVER_RADIUS = 8;
+	inline const int POINT_RADIUS = 4;
+	inline const int MPOINT_RADIUS = 3;
+	inline const int MSEL_PADDING = 8;
 };

@@ -28,8 +28,8 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	load.addItem(100, "Sine");
 	load.addItem(101, "Triangle");
 	load.addItem(102, "Random");
-	load.addItem(109, "Init");
 	load.addSeparator();
+	load.addItem(109, "Init");
 
 	PopupMenu patterns1;
 	PopupMenu patterns2;
@@ -117,14 +117,17 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			if (result == 50) {
 				audioProcessor.pattern->invert();
 				audioProcessor.pattern->buildSegments();
+				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 51) {
 				audioProcessor.pattern->reverse();
 				audioProcessor.pattern->buildSegments();
+				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 52) {
 				audioProcessor.pattern->clear();
 				audioProcessor.pattern->buildSegments();
+				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 53) {
 				audioProcessor.pattern->copy();
@@ -132,6 +135,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			if (result == 54) {
 				audioProcessor.pattern->paste();
 				audioProcessor.pattern->buildSegments();
+				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 109) {
 				audioProcessor.loadProgram(0);
@@ -159,7 +163,6 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			if (result == 1000) {
 				toggleAbout();
 			}
-			audioProcessor.createUndoPointFromSnapshot(snapshot);
 		}
 	);
 };

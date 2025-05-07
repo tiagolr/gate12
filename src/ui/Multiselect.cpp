@@ -21,7 +21,7 @@ void Multiselect::drawBackground(Graphics& g)
 {
     if (selectionPoints.size()) {
         g.setColour(Colour(COLOR_SELECTION).withAlpha(0.25f));
-        Quad q = getQuadExpanded((double)PAD);
+        Quad q = getQuadExpanded((double)MSEL_PADDING);
         juce::Path quadPath;
         quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
         quadPath.lineTo((float)q[1].x, (float)q[1].y);
@@ -42,9 +42,9 @@ void Multiselect::draw(Graphics& g)
         g.fillEllipse((float)(xx - 2.0), (float)(yy - 2.0), 4.0f, 4.0f);
     }
 
-    if (selectionPoints.size()) {
+    if (!selectionPoints.empty()) {
         g.setColour(Colour(COLOR_SELECTION));
-        Quad q = getQuadExpanded((double)PAD);
+        Quad q = getQuadExpanded((double)MSEL_PADDING);
         juce::Path quadPath;
         quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
         quadPath.lineTo((float)q[1].x, (float)q[1].y);
@@ -53,15 +53,17 @@ void Multiselect::draw(Graphics& g)
         quadPath.closeSubPath();
         g.strokePath(quadPath, PathStrokeType(1.0f));
 
-        if (selectionPoints.size() > 1) {
-            drawHandles(g);
-        }
+        
+        drawHandles(g);
     }
 }
 
 void Multiselect::drawHandles(Graphics& g)
 {
-    auto q = getQuadExpanded((double)PAD);
+    if (selectionPoints.size() < 2) 
+        return;
+
+    auto q = getQuadExpanded((double)MSEL_PADDING);
     Point tl = q[0].toPoint(); // top left
     Point tr = q[1].toPoint();
     Point bl = q[2].toPoint();
@@ -78,18 +80,41 @@ void Multiselect::drawHandles(Graphics& g)
     auto mrRect = Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3);
     auto tmRect = Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3);
     auto bmRect = Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3);
+
+    bool isCollinearX = isCollinear(selectionPoints, true);
+    bool isCollinearY = isCollinear(selectionPoints, false);
+
     g.setColour(Colour(COLOR_SELECTION));
-    g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
-    g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
+    if (isCollinearX) {
+        g.fillRect(tmRect);g.fillRect(bmRect);
+    } 
+    else if (isCollinearY) {
+        g.fillRect(mlRect);g.fillRect(mrRect);
+    }
+    else {
+        g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
+        g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
+    }
+    
     g.setColour(Colours::white);
-    if (mouseHover == MouseHover::TopLeft) g.fillRect(tlRect);
-    if (mouseHover == MouseHover::TopMid) g.fillRect(tmRect);
-    if (mouseHover == MouseHover::TopRight) g.fillRect(trRect);
-    if (mouseHover == MouseHover::MidLeft) g.fillRect(mlRect);
-    if (mouseHover == MouseHover::MidRight) g.fillRect(mrRect);
-    if (mouseHover == MouseHover::BottomLeft) g.fillRect(blRect);
-    if (mouseHover == MouseHover::BottomMid) g.fillRect(bmRect);
-    if (mouseHover == MouseHover::BottomRight) g.fillRect(brRect);
+    if (isCollinearX) {
+        if (mouseHover == MouseHover::TopMid) g.fillRect(tmRect);
+        if (mouseHover == MouseHover::BottomMid) g.fillRect(bmRect);
+    }
+    else if (isCollinearY) {
+        if (mouseHover == MouseHover::MidLeft) g.fillRect(mlRect);
+        if (mouseHover == MouseHover::MidRight) g.fillRect(mrRect);
+    }
+    else {
+        if (mouseHover == MouseHover::TopLeft) g.fillRect(tlRect);
+        if (mouseHover == MouseHover::TopMid) g.fillRect(tmRect);
+        if (mouseHover == MouseHover::TopRight) g.fillRect(trRect);
+        if (mouseHover == MouseHover::MidLeft) g.fillRect(mlRect);
+        if (mouseHover == MouseHover::MidRight) g.fillRect(mrRect);
+        if (mouseHover == MouseHover::BottomLeft) g.fillRect(blRect);
+        if (mouseHover == MouseHover::BottomMid) g.fillRect(bmRect);
+        if (mouseHover == MouseHover::BottomRight) g.fillRect(brRect);
+    }
 }
 
 void Multiselect::mouseDown(const MouseEvent& e)
@@ -166,8 +191,10 @@ void Multiselect::mouseMove(const MouseEvent& e)
 {
     mouseHover = -1;
     auto pos = e.getPosition();
-    if (selectionPoints.size() > 1) {
-        Quad q = getQuadExpanded((double)PAD);
+
+    if (!selectionPoints.empty()) {
+        int size = (int)selectionPoints.size();
+        Quad q = getQuadExpanded((double)MSEL_PADDING);
         Point tl = q[0].toPoint(); // top left
         Point tr = q[1].toPoint();
         Point bl = q[2].toPoint();
@@ -176,14 +203,16 @@ void Multiselect::mouseMove(const MouseEvent& e)
         Point mr = bilinearInterpolate(q, 1, 0.5).toPoint(); // middle right
         Point tm = bilinearInterpolate(q, 0.5, 0).toPoint();// top middle
         Point bm = bilinearInterpolate(q, 0.5, 1).toPoint();
-        if (Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopLeft;
-        else if (Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopMid;
-        else if (Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopRight;
-        else if (Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::MidLeft;
-        else if (Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::MidRight;
-        else if (Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomLeft;
-        else if (Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomMid;
-        else if (Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomRight;
+        bool cx = isCollinear(selectionPoints, true);
+        bool cy = isCollinear(selectionPoints, false);
+        if (!cx && !cy && size > 1 && Rectangle<int>(tl.getX(), tl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopLeft;
+        else if (!cy && size > 1 && Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopMid;
+        else if (!cx && !cy && size > 1 && Rectangle<int>(tr.getX(), tr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::TopRight;
+        else if (!cx && size > 1 && Rectangle<int>(ml.getX(), ml.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::MidLeft;
+        else if (!cx && size > 1 && Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::MidRight;
+        else if (!cx && !cy && size > 1 && Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomLeft;
+        else if (!cy && size > 1 && Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomMid;
+        else if (!cx && !cy && size > 1 && Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::BottomRight;
         else if (quadToRect(q).contains(pos)) {
             juce::Path quadPath;
             quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
@@ -553,4 +582,20 @@ Rectangle<int> Multiselect::quadToRect(Quad q)
         if (y > maxy) maxy = y;
     }
     return Rectangle<int>(minx, miny, maxx-minx, maxy-miny);
+}
+
+bool Multiselect::isCollinear(const std::vector<SelPoint>& points, bool xaxis)
+{
+    if (points.size() < 2) return true;
+
+    const double EPSILON = 1e-6;
+    double firstCoord = xaxis ? points[0].x : points[0].y;
+
+    for (const auto& p : points) {
+        double coord = xaxis ? p.x : p.y;
+        if (std::fabs(coord - firstCoord) > EPSILON) 
+            return false;
+    }
+
+    return true;
 }

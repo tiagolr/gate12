@@ -24,7 +24,7 @@ View::~View()
 void View::timerCallback()
 {
     if (patternID != audioProcessor.pattern->versionID) {
-        selectionStart = Point<int>(-1,-1);
+        preSelectionStart = Point<int>(-1,-1);
         selectedMidpoint = -1;
         selectedPoint = -1;
         multiselect.mouseHover = -1;
@@ -47,10 +47,10 @@ void View::timerCallback()
 void View::resized()
 {
     auto bounds = getLocalBounds();
-    winx = bounds.getX() + PADDING;
-    winy = bounds.getY() + PADDING;
-    winw = bounds.getWidth() - PADDING * 2;
-    winh = bounds.getHeight() - PADDING * 2;
+    winx = bounds.getX() + PLUG_PADDING;
+    winy = bounds.getY() + PLUG_PADDING;
+    winw = bounds.getWidth() - PLUG_PADDING * 2;
+    winh = bounds.getHeight() - PLUG_PADDING * 2;
     multiselect.setViewBounds(winx, winy, winw, winh);
     MessageManager::callAsync([this] {
         audioProcessor.viewW = winw;
@@ -69,7 +69,7 @@ void View::paint(Graphics& g) {
     drawSegments(g);
     drawMidPoints(g);
     drawPoints(g);
-    drawSelection(g);
+    drawPreSelection(g);
     multiselect.draw(g);
     drawSeek(g);
 }
@@ -190,19 +190,27 @@ void View::drawPoints(Graphics& g)
     }
 }
 
-void View::drawSelection(Graphics& g)
+void View::drawPreSelection(Graphics& g)
 {
-    if (selectionStart.x > -1 && (selectionStart.x != selectionEnd.x || selectionStart.y != selectionEnd.y)) {
-        int x = std::min(selectionStart.x, selectionEnd.x);
-        int y = std::min(selectionStart.y, selectionEnd.y);
-        int w = std::abs(selectionStart.x - selectionEnd.x);
-        int h = std::abs(selectionStart.y - selectionEnd.y);
-        auto bounds = Rectangle<int>(x,y,w,h);
-        g.setColour(Colour(COLOR_SELECTION));
-        g.drawRect(bounds);
-        g.setColour(Colour(COLOR_SELECTION).withAlpha(0.25f));
-        g.fillRect(bounds);
-    }
+    if (preSelectionStart.x == -1 || (preSelectionStart.x == preSelectionEnd.x && preSelectionStart.y == preSelectionEnd.y)) 
+        return;
+
+    int x1 = std::clamp(preSelectionStart.x, 0, getWidth());
+    int y1 = std::clamp(preSelectionStart.y, 0, getHeight());
+    int x2 = std::clamp(preSelectionEnd.x, 0, getWidth());
+    int y2 = std::clamp(preSelectionEnd.y, 0, getHeight());
+
+    int x = std::min(x1, x2);
+    int y = std::min(y1, y2);
+    int w = std::abs(x2 - x1);
+    int h = std::abs(y2 - y1);
+
+    auto bounds = Rectangle<int>(x,y,w,h);
+
+    g.setColour(Colour(COLOR_SELECTION));
+    g.drawRect(bounds);
+    g.setColour(Colour(COLOR_SELECTION).withAlpha(0.25f));
+    g.fillRect(bounds);
 }
 
 std::vector<double> View::getMidpointXY(Segment seg)
@@ -222,6 +230,7 @@ void View::drawMidPoints(Graphics& g)
 {
     auto segs = audioProcessor.pattern->segments;
 
+    // draw midpoints
     g.setColour(Colour(COLOR_ACTIVE));
     for (auto seg = segs.begin(); seg != segs.end(); ++seg) {
         if (!isCollinear(*seg) && seg->type != PointType::Hold) {
@@ -230,6 +239,7 @@ void View::drawMidPoints(Graphics& g)
         }
     }
 
+    // draw hovered midpoint
     g.setColour(Colour(COLOR_ACTIVE).withAlpha(0.5f));
     if (selectedPoint == -1 && selectedMidpoint == -1 && hoverMidpoint != -1) {
         auto& seg = segs[hoverMidpoint];
@@ -237,6 +247,7 @@ void View::drawMidPoints(Graphics& g)
         g.fillEllipse((float)xy[0] - HOVER_RADIUS, (float)xy[1] - HOVER_RADIUS, (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
+    // draw selected midpoint
     g.setColour(Colour(COLOR_ACTIVE));
     if (selectedMidpoint != -1) {
         auto& seg = segs[selectedMidpoint];
@@ -287,7 +298,7 @@ int View::getHoveredMidpoint(int x, int y)
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);
-        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - HOVER_RADIUS, (int)xy[1] - HOVER_RADIUS, HOVER_RADIUS * 2, HOVER_RADIUS * 2)) {
+        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - MPOINT_RADIUS, (int)xy[1] - MPOINT_RADIUS, MPOINT_RADIUS * 2, MPOINT_RADIUS * 2)) {
             return i;
         }
     }
@@ -324,6 +335,7 @@ void View::mouseDown(const juce::MouseEvent& e)
 
     if (e.mods.isLeftButtonDown()) {
         if (multiselect.mouseHover > -1) {
+            setMouseCursor(MouseCursor::NoCursor);
             multiselect.mouseDown(e);
             return;
         }
@@ -333,8 +345,8 @@ void View::mouseDown(const juce::MouseEvent& e)
             selectedMidpoint = getHoveredMidpoint(x, y);
 
         if (selectedPoint == -1 && selectedMidpoint == -1) {
-            selectionStart = e.getPosition();
-            selectionEnd = e.getPosition();
+            preSelectionStart = e.getPosition();
+            preSelectionEnd = e.getPosition();
         }
 
         if (selectedPoint > -1 || selectedMidpoint > -1) {
@@ -366,14 +378,14 @@ void View::mouseDown(const juce::MouseEvent& e)
 
 void View::mouseUp(const juce::MouseEvent& e)
 {
+    setMouseCursor(MouseCursor::NormalCursor);
     if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
     if (selectedPoint > -1) { // finished dragging point
-        setMouseCursor(MouseCursor::NormalCursor);
+        // ----
     }
     else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
-        setMouseCursor(MouseCursor::NormalCursor);
         e.source.enableUnboundedMouseMovement(false);
         auto& mpoint = getPointFromMidpoint(selectedMidpoint);
         auto& next = getPointFromMidpoint(selectedMidpoint + 1);
@@ -382,19 +394,19 @@ void View::mouseUp(const juce::MouseEvent& e)
         int y = (int)(audioProcessor.pattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
         Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
     }
-    else if (selectionStart.x > -1) { // finished creating selection
-        multiselect.makeSelection(e, selectionStart, selectionEnd);
+    else if (preSelectionStart.x > -1) { // finished creating selection
+        multiselect.makeSelection(e, preSelectionStart, preSelectionEnd);
     }
-    else if (multiselect.selectionPoints.size() > 0) { // finished dragging selection
+    else if (!multiselect.selectionPoints.empty()) { // finished dragging selection
         multiselect.mouseUp(e); // FIX - points may have been inverted due to selection drag
     }
     
-    // if there were changes on mouseup create undo point from previous snapshot
+    // if there were changes on mouseup, create undo point from previous snapshot
     if (snapshotIdx == audioProcessor.pattern->index) {
         audioProcessor.createUndoPointFromSnapshot(snapshot);
     }
 
-    selectionStart = Point<int>(-1,-1);
+    preSelectionStart = Point<int>(-1,-1);
     selectedMidpoint = -1;
     selectedPoint = -1;
 }
@@ -477,11 +489,11 @@ void View::mouseDrag(const juce::MouseEvent& e)
         if (point.x < 0) point.x = 0;
         if (selectedPoint < points.size() - 1) {
             auto& next = points[static_cast<size_t>(selectedPoint) + 1];
-            if (point.x > next.x) point.x = next.x;
+            if (point.x >= next.x) point.x = next.x - 1e-8;
         }
         if (selectedPoint > 0) {
             auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
-            if (point.x < prev.x) point.x = prev.x;
+            if (point.x <= prev.x) point.x = prev.x + 1e-8;
         }
     }
 
@@ -496,8 +508,8 @@ void View::mouseDrag(const juce::MouseEvent& e)
         mpoint.tension = tension;
     }
 
-    else if (selectionStart.x > -1) {
-        selectionEnd = e.getPosition();
+    else if (preSelectionStart.x > -1) {
+        preSelectionEnd = e.getPosition();
     }
 
     audioProcessor.pattern->buildSegments();
@@ -545,6 +557,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         py = double(py - winy) / (double)winh;
         if (px >= 0 && px <= 1 && py >= 0 && py <= 1) { // point in env window
             audioProcessor.pattern->insertPoint(px, py, 0, (int)audioProcessor.params.getRawParameterValue("point")->load());
+            audioProcessor.pattern->sortPoints(); // keep things consistent, avoids reorders later
         }
     }
 

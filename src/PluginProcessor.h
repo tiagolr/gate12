@@ -109,6 +109,7 @@ public:
     int winpos = 0;
     int lwinpos = 0;
     RCSmoother* value; // smooths envelope value
+    bool showLatencyWarning = false;
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope

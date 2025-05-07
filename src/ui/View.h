@@ -37,13 +37,11 @@ public:
     void drawMidPoints(Graphics& g);
     void drawPoints(Graphics& g);
     void drawSeek(Graphics& g);
+    void drawPreSelection(Graphics& g);
     std::vector<double> getMidpointXY(Segment seg);
     int getHoveredPoint(int x, int y);
     int getHoveredMidpoint(int x, int y);
     PPoint& getPointFromMidpoint(int midpoint);
-
-    // multi selection
-    void drawSelection(Graphics& g);
 
     // events
     void mouseDown(const juce::MouseEvent& e) override;
@@ -68,9 +66,6 @@ private:
     int hoverPoint = -1;
     int hoverMidpoint = -1;
     int rmousePoint = -1;
-    const int HOVER_RADIUS = 8;
-    const int POINT_RADIUS = 4;
-    const int MPOINT_RADIUS = 3;
 
     GATE12AudioProcessor& audioProcessor;
     double origTension = 0;
@@ -81,6 +76,6 @@ private:
 
     // Multiselect
     Multiselect multiselect;
-    Point<int> selectionStart = Point(-1,-1);
-    Point<int> selectionEnd = Point(-1,-1);
+    Point<int> preSelectionStart = Point(-1,-1);
+    Point<int> preSelectionEnd = Point(-1,-1);
 };
