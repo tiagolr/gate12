@@ -20,7 +20,7 @@
 
 using namespace globals;
 
-class GATE12AudioProcessorEditor : public juce::AudioProcessorEditor, private juce::AudioProcessorValueTreeState::Listener
+class GATE12AudioProcessorEditor : public juce::AudioProcessorEditor, private juce::AudioProcessorValueTreeState::Listener, public juce::ChangeListener
 {
 public:
     GATE12AudioProcessorEditor (GATE12AudioProcessor&);
@@ -31,6 +31,8 @@ public:
     void toggleUIComponents ();
     void paint (juce::Graphics&) override;
     void resized() override;
+    void changeListenerCallback(ChangeBroadcaster* source) override;
+    void drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color);
 
 private:
     GATE12AudioProcessor& audioProcessor;
@@ -72,6 +74,8 @@ private:
     TextButton nudgeRightButton;
     Label nudgeLabel;
     TextButton nudgeLeftButton;
+    TextButton undoButton;
+    TextButton redoButton;
     ImageButton paintLogo;
     ComboBox paintMenu;
     std::unique_ptr<AudioDisplay> audioDisplay;

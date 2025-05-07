@@ -117,6 +117,30 @@ int GATE12AudioProcessor::getCurrentGrid()
     return GRID_SIZES[gridIndex];
 }
 
+void GATE12AudioProcessor::createUndoPoint(int patindex)
+{
+    if (patindex == -1) {
+        pattern->createUndo();
+    }
+    else {
+        patterns[patindex]->createUndo();
+    }
+    sendChangeMessage(); // UI repaint
+}
+
+/*
+    Used to create an undo point from a previously saved state
+*/
+void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snapshot)
+{
+    if (!Pattern::comparePoints(snapshot, pattern->points)) {
+        auto points = pattern->points;
+        pattern->points = snapshot;
+        createUndoPoint();
+        pattern->points = points;
+    }
+}
+
 //==============================================================================
 const juce::String GATE12AudioProcessor::getName() const
 {
@@ -182,6 +206,7 @@ void GATE12AudioProcessor::loadProgram (int index)
             pat.insertPoint(p->x, p->y, p->tension, p->type);
         }
         pat.buildSegments();
+        pat.clearUndo();
     };
 
     if (index == 0 || index == 13 || index == 26) {
@@ -192,6 +217,7 @@ void GATE12AudioProcessor::loadProgram (int index)
     else {
         loadPreset(*pattern, index);
     }
+    sendChangeMessage(); // UI Repaint
 }
 
 const juce::String GATE12AudioProcessor::getProgramName (int index)

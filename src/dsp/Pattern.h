@@ -52,9 +52,11 @@ public:
     int index;
     std::vector<PPoint> points;
     std::vector<Segment> segments;
+    std::vector<std::vector<PPoint>> undoStack;
+    std::vector<std::vector<PPoint>> redoStack;
 
     Pattern(GATE12AudioProcessor&, int);
-    void changeVersionUID(); // generates a new unique ID for this pattern
+    void incrementVersion(); // generates a new unique ID for this pattern
 
     int insertPoint(double x, double y, double tension, int type);
     void sortPoints();
@@ -84,11 +86,16 @@ public:
     double get_y_smooth_stairs(Segment seg, double x);
     double get_y_at(double x);
 
+    void createUndo();
+    void undo();
+    void redo();
+    void clearUndo();
+    static bool comparePoints(const std::vector<PPoint>& a, const std::vector<PPoint>& b);
+
 private:
     static inline uint64_t versionIDCounter = 1; // static global ID counter
     static inline uint64_t pointsIDCounter = 1; // static global ID counter
     std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
     GATE12AudioProcessor& gate;
     std::mutex mtx;
-    double mod(double a, double b);
 };

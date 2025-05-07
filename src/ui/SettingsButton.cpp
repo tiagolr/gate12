@@ -100,6 +100,8 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 		.withTargetScreenArea({menuPos.getX() -110, menuPos.getY(), 1, 1}),
 		[this](int result) {
 			if (result == 0) return;
+			auto snapshot = audioProcessor.pattern->points;
+
 			if (result >= 1 && result <= 5) { // UI Scale
 				audioProcessor.setScale(result == 5 ? 2.0f : result == 4 ? 1.75f : result == 3 ? 1.5f : result == 2 ? 1.25f : 1.0f);
 				onScaleChange();
@@ -153,6 +155,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			if (result == 1000) {
 				toggleAbout();
 			}
+			audioProcessor.createUndoPointFromSnapshot(snapshot);
 		}
 	);
 };

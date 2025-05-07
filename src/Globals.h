@@ -19,4 +19,5 @@ namespace globals {
 	inline const int LATENCY_MILLIS = 5;
 	inline const int AUDIO_COOLDOWN_MILLIS = 50;
 	inline const int AUDIO_DRUMSBUF_MILLIS = 20;
+	inline const int MAX_UNDO = 100;
 };

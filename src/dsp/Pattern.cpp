@@ -17,10 +17,10 @@ std::vector<PPoint> Pattern::copy_pattern;
 Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
 {
     index = i;
-    changeVersionUID();
+    incrementVersion();
 }
 
-void Pattern::changeVersionUID()
+void Pattern::incrementVersion()
 {
     versionID = versionIDCounter;
     versionIDCounter += 1;
@@ -87,7 +87,7 @@ void Pattern::invert()
     for (auto i = points.begin(); i != points.end(); ++i) {
         i->y = 1 - i->y;
     }
-    changeVersionUID();
+    incrementVersion();
 };
 
 void Pattern::reverse()
@@ -100,7 +100,7 @@ void Pattern::reverse()
         if (i < points.size() - 1)
           p.tension = points[i + 1].tension * -1;
     }
-    changeVersionUID();
+    incrementVersion();
 };
 
 void Pattern::rotate(double x) {
@@ -112,13 +112,13 @@ void Pattern::rotate(double x) {
         if (p->x > 1.0) p->x -= 1.0;
     }
     sortPoints();
-    changeVersionUID();
+    incrementVersion();
 }
 
 void Pattern::clear()
 {
     points.clear();
-    changeVersionUID();
+    incrementVersion();
 }
 
 void Pattern::buildSegments()
@@ -186,7 +186,7 @@ void Pattern::paste()
 {
   if (copy_pattern.size() > 0) {
     points = copy_pattern;
-    changeVersionUID();
+    incrementVersion();
   }
 }
 
@@ -256,7 +256,7 @@ double Pattern::get_y_pulse(Segment seg, double x)
     return seg.y2;
 
   double cycle_width = (seg.x2 - seg.x1) / t;
-  double x_in_cycle = mod((x - seg.x1), cycle_width);
+  double x_in_cycle = cycle_width == 0.0 ? 0.0 : std::fmod((x - seg.x1), cycle_width);
   return x_in_cycle < cycle_width / 2
     ? (seg.tension >= 0 ? seg.y1 : seg.y2)
     : (seg.tension >= 0 ? seg.y2 : seg.y1);
@@ -355,12 +355,59 @@ double Pattern::get_y_at(double x)
     return -1;
 }
 
-/*
-  Modulus that works with fractional numbers
-*/
-double Pattern::mod(double a, double b)
+void Pattern::createUndo()
 {
-  while( a >= b )
-    a -= b;
-  return a;
+    if (undoStack.size() > globals::MAX_UNDO) {
+        undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(points);
+    redoStack.clear();
+}
+void Pattern::undo()
+{
+    if (undoStack.empty())
+        return;
+
+    redoStack.push_back(points);
+    points = undoStack.back();
+    undoStack.pop_back();
+
+    incrementVersion();
+    buildSegments();
+}
+
+void Pattern::redo()
+{
+    if (redoStack.empty()) 
+        return;
+
+    undoStack.push_back(points);
+    points = redoStack.back();
+    redoStack.pop_back();
+
+    incrementVersion();
+    buildSegments();
+}
+
+void Pattern::clearUndo()
+{
+    undoStack.clear();
+    redoStack.clear();
+}
+
+bool Pattern::comparePoints(const std::vector<PPoint>& a, const std::vector<PPoint>& b)
+{
+    if (a.size() != b.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (a[i].id != b[i].id ||
+            a[i].x != b[i].x ||
+            a[i].y != b[i].y ||
+            a[i].tension != b[i].tension ||
+            a[i].type != b[i].type) {
+            return false;
+        }
+    }
+    return true;
 }

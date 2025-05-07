@@ -58,7 +58,7 @@
 
 ## About
 
-GATE-12 is an envelope generator plugin that tries to combine some of the best features of GrossBeat and ShaperBox, it includes a point system very similar to GrossBeat but also with some great features of ShaperBox like self repeating patterns, multi-point selections that can be scaled or skewed, audio envelope triggering and more.
+GATE-12 is an envelope generator plugin that combines some of the best features of GrossBeat and ShaperBox, it includes a point system very similar to GrossBeat but also with some great features of ShaperBox like self repeating patterns, multi-point selections that can be scaled or skewed, audio envelope triggering and more.
 
 With version 2 this plugin was rebuilt from scratch using JUCE for its cross-platforms capabilities, maintainability and overall development tools/processes.
 

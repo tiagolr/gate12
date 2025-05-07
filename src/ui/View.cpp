@@ -314,6 +314,11 @@ void View::mouseDown(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.pattern->versionID)
         return;
 
+    // save snapshon, compare with changes after mouseup
+    // if changes were made save this snapshot as undo
+    snapshot = audioProcessor.pattern->points; 
+    snapshotIdx = audioProcessor.pattern->index;
+
     Point pos = e.getPosition();
     int x = pos.x;
     int y = pos.y;
@@ -383,6 +388,11 @@ void View::mouseUp(const juce::MouseEvent& e)
     }
     else if (multiselect.selectionPoints.size() > 0) { // finished dragging selection
         multiselect.mouseUp(e); // FIX - points may have been inverted due to selection drag
+    }
+    
+    // if there were changes on mouseup create undo point from previous snapshot
+    if (snapshotIdx == audioProcessor.pattern->index) {
+        audioProcessor.createUndoPointFromSnapshot(snapshot);
     }
 
     selectionStart = Point<int>(-1,-1);
@@ -512,6 +522,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
     int y = e.getPosition().y;
     int pt = getHoveredPoint((int)x, (int)y);
     int mid = getHoveredMidpoint((int)x, (int)y);
+    snapshot = audioProcessor.pattern->points;
 
     if (pt > -1) {
         audioProcessor.pattern->removePoint(pt);
@@ -538,6 +549,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         }
     }
 
+    audioProcessor.createUndoPointFromSnapshot(snapshot);
     audioProcessor.pattern->buildSegments();
 }
 
@@ -564,8 +576,9 @@ bool View::keyPressed(const juce::KeyPress& key)
         return false;
 
     // remove selected points
-    if (key == KeyPress::deleteKey)
+    if (key == KeyPress::deleteKey && !multiselect.selectionPoints.empty())
     {
+        audioProcessor.createUndoPoint();
         multiselect.deleteSelectedPoints();
         return true;
     }

@@ -73,7 +73,7 @@ public:
 //==============================================================================
 /**
 */
-class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener
+class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener, public juce::ChangeBroadcaster
 {
 public:
     static constexpr int GRID_SIZES[] = { 
@@ -90,7 +90,7 @@ public:
     bool MIDIHoldEnvelopeTail = true; // MIDI trigger - keep processing last position after envelope finishes
     bool AudioHoldEnvelopeTail = false; // Audio trigger - keep processing last position after envelope finishes
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
-    bool useMonitor = false; 
+    bool useMonitor = false;
     bool useSidechain = false;
 
     // State
@@ -155,6 +155,8 @@ public:
     void saveSettings();
     void setScale(float value);
     int getCurrentGrid();
+    void createUndoPoint(int patindex = -1);
+    void createUndoPointFromSnapshot(std::vector<PPoint> snapshot);
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

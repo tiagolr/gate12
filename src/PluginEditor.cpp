@@ -8,6 +8,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     : AudioProcessorEditor (&p)
     , audioProcessor (p)
 {
+    audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("trigger", this);
     audioProcessor.params.addParameterListener("pattern", this);
@@ -44,7 +45,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     addAndMakeVisible(syncMenu);
     syncMenu.setTooltip("Tempo sync");
-    syncMenu.addSectionHeading("Free");
     syncMenu.addItem("Rate Hz", 1);
     syncMenu.addSectionHeading("Straight");
     syncMenu.addItem("1/16", 2);
@@ -368,30 +368,52 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.getCurrentGrid();
+            auto snapshot = audioProcessor.pattern->points;
             audioProcessor.pattern->rotate(1.0/grid);
             audioProcessor.pattern->buildSegments();
+            audioProcessor.createUndoPointFromSnapshot(snapshot);
         });
     };
 
-    col -= 10+10;
+    col -= 15+10;
     addAndMakeVisible(nudgeLeftButton);
     nudgeLeftButton.setAlpha(0.f);
     nudgeLeftButton.setBounds(col, row+25/2-5+1, 10, 10);
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.getCurrentGrid();
+            auto snapshot = audioProcessor.pattern->points;
             audioProcessor.pattern->rotate(-1.0/grid);
             audioProcessor.pattern->buildSegments();
+            audioProcessor.createUndoPointFromSnapshot(snapshot);
         });
     };
 
-    col -= 65;
-    addAndMakeVisible(nudgeLabel);
-    nudgeLabel.setText("Rotate", dontSendNotification);
-    nudgeLabel.setJustificationType(Justification::centredRight);
-    nudgeLabel.setFont(FontOptions(16.f));
-    nudgeLabel.setColour(Label::textColourId, Colour(globals::COLOR_NEUTRAL));
-    nudgeLabel.setBounds(col, row, 60, 25);
+    col -= 35;
+    addAndMakeVisible(redoButton);
+    redoButton.setButtonText("redo");
+    redoButton.setComponentID("button");
+    redoButton.setBounds(col, row+5, 20, 15);
+    redoButton.setAlpha(0.f);
+    redoButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            audioProcessor.pattern->redo();
+            repaint();
+        });
+    };
+
+    col -= 35;
+    addAndMakeVisible(undoButton);
+    undoButton.setButtonText("undo");
+    undoButton.setComponentID("button");
+    undoButton.setBounds(col, row+5, 20, 15);
+    undoButton.setAlpha(0.f);
+    undoButton.onClick = [this]() {
+        MessageManager::callAsync([this] {
+            audioProcessor.pattern->undo();
+            repaint();
+        });
+    };
 
     // VIEW
     row += 25;
@@ -419,6 +441,13 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
     audioProcessor.params.removeParameterListener("sync", this);
     audioProcessor.params.removeParameterListener("trigger", this);
     audioProcessor.params.removeParameterListener("pattern", this);
+    audioProcessor.removeChangeListener(this);
+}
+
+void GATE12AudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* source)
+{
+    (void)source;
+    toggleUIComponents();
 }
 
 void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
@@ -546,7 +575,6 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
             triangle.lineTo((float)loopBounds.getWidth(), loopBounds.getHeight() / 2.f);
             triangle.closeSubPath();
             g.fillPath(triangle, AffineTransform::translation((float)loopBounds.getX(), (float)loopBounds.getY()));
-
         }
     }
 
@@ -565,13 +593,61 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), (float)nudgeLeftButton.getHeight());
     nudgeLeftTriangle.closeSubPath();
     g.fillPath(nudgeLeftTriangle, AffineTransform::translation((float)nudgeLeftButton.getX(), (float)nudgeLeftButton.getY()));
-
     juce::Path nudgeRightTriangle;
     nudgeRightTriangle.startNewSubPath(0.0f, 0.0f);
     nudgeRightTriangle.lineTo((float)nudgeRightButton.getWidth(), nudgeRightButton.getHeight()/2.f);
     nudgeRightTriangle.lineTo(0.0f, (float)nudgeRightButton.getHeight());
     nudgeRightTriangle.closeSubPath();
     g.fillPath(nudgeRightTriangle, AffineTransform::translation((float)nudgeRightButton.getX(), (float)nudgeRightButton.getY()));
+
+    // draw undo redo buttons
+    auto canUndo = !audioProcessor.pattern->undoStack.empty();
+    auto canRedo = !audioProcessor.pattern->redoStack.empty();
+    drawUndoButton(g, undoButton.getBounds().toFloat(), true, Colour(canUndo ? globals::COLOR_ACTIVE : globals::COLOR_NEUTRAL));
+    drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? globals::COLOR_ACTIVE : globals::COLOR_NEUTRAL));
+}
+
+void GATE12AudioProcessorEditor::drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color)
+{
+        auto bounds = area;
+        auto thickness = 2.f;
+        int left = bounds.getX();
+        int right = bounds.getRight();
+        int top = bounds.getY();
+        int bottom = bounds.getBottom();
+        int centerY = bounds.getCentreY();
+        int arrowHeadWidth = std::min(bounds.getWidth() / 3, bounds.getHeight() / 2);
+        int shaftStart = right - 7;
+
+        Path arrowPath;
+        // Left edge of the triangle (arrow head)
+        arrowPath.startNewSubPath(right, centerY);
+        arrowPath.lineTo(shaftStart, top+4);
+        // Right edge of the triangle (arrow head)
+        arrowPath.startNewSubPath(right, centerY);
+        arrowPath.lineTo(shaftStart, bottom-4);
+
+        // Middle line (shaft)
+        float radius = (bottom - centerY);
+        arrowPath.startNewSubPath(right, centerY);
+        arrowPath.lineTo(left + radius, centerY);
+
+        arrowPath.startNewSubPath(left + radius, centerY);
+        arrowPath.addArc(left, centerY, radius, radius, 2.f * float_Pi, float_Pi);
+
+        if (invertx) {
+            // Flip around the center of the provided bounds
+            AffineTransform flipTransform = AffineTransform::scale(-1.0f, 1.0f)
+                .translated(bounds.getWidth(), 0);
+
+            // First move the path to origin, apply transform, then move back
+            arrowPath.applyTransform(AffineTransform::translation(-bounds.getPosition()));
+            arrowPath.applyTransform(flipTransform);
+            arrowPath.applyTransform(AffineTransform::translation(bounds.getPosition()));
+        }
+
+        g.setColour(color);
+        g.strokePath(arrowPath, PathStrokeType(thickness));
 }
 
 void GATE12AudioProcessorEditor::resized()
