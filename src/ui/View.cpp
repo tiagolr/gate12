@@ -9,7 +9,6 @@
 
 #include "View.h"
 #include "../PluginProcessor.h"
-#include "../Globals.h"
 #include <utility>
 
 View::View(GATE12AudioProcessor& p) : audioProcessor(p), multiselect(p)
@@ -48,10 +47,10 @@ void View::timerCallback()
 void View::resized()
 {
     auto bounds = getLocalBounds();
-    winx = bounds.getX() + globals::PAD;
-    winy = bounds.getY() + globals::PAD;
-    winw = bounds.getWidth() - globals::PAD * 2;
-    winh = bounds.getHeight() - globals::PAD * 2;
+    winx = bounds.getX() + PADDING;
+    winy = bounds.getY() + PADDING;
+    winw = bounds.getWidth() - PADDING * 2;
+    winh = bounds.getHeight() - PADDING * 2;
     multiselect.setViewBounds(winx, winy, winw, winh);
     MessageManager::callAsync([this] {
         audioProcessor.viewW = winw;
@@ -59,12 +58,12 @@ void View::resized()
 }
 
 void View::paint(Graphics& g) {
-    g.setColour(Colour(globals::COLOR_BG).darker(0.2f));
+    g.setColour(Colour(COLOR_BG).darker(0.2f));
     g.fillRect(winx + winw/4, winy, winw/4, winh);
     g.fillRect(winx + winw - winw/4, winy, winw/4, winh);
 
     drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
-    drawWave(g, audioProcessor.postSamples, Colour(globals::COLOR_ACTIVE));
+    drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
     drawGrid(g);
     multiselect.drawBackground(g);
     drawSegments(g);
@@ -199,9 +198,9 @@ void View::drawSelection(Graphics& g)
         int w = std::abs(selectionStart.x - selectionEnd.x);
         int h = std::abs(selectionStart.y - selectionEnd.y);
         auto bounds = Rectangle<int>(x,y,w,h);
-        g.setColour(Colour(globals::COLOR_SELECTION));
+        g.setColour(Colour(COLOR_SELECTION));
         g.drawRect(bounds);
-        g.setColour(Colour(globals::COLOR_SELECTION).withAlpha(0.25f));
+        g.setColour(Colour(COLOR_SELECTION).withAlpha(0.25f));
         g.fillRect(bounds);
     }
 }
@@ -223,7 +222,7 @@ void View::drawMidPoints(Graphics& g)
 {
     auto segs = audioProcessor.pattern->segments;
 
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+    g.setColour(Colour(COLOR_ACTIVE));
     for (auto seg = segs.begin(); seg != segs.end(); ++seg) {
         if (!isCollinear(*seg) && seg->type != PointType::Hold) {
             auto xy = getMidpointXY(*seg);
@@ -231,14 +230,14 @@ void View::drawMidPoints(Graphics& g)
         }
     }
 
-    g.setColour(Colour(globals::COLOR_ACTIVE).withAlpha(0.5f));
+    g.setColour(Colour(COLOR_ACTIVE).withAlpha(0.5f));
     if (selectedPoint == -1 && selectedMidpoint == -1 && hoverMidpoint != -1) {
         auto& seg = segs[hoverMidpoint];
         auto xy = getMidpointXY(seg);
         g.fillEllipse((float)xy[0] - HOVER_RADIUS, (float)xy[1] - HOVER_RADIUS, (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+    g.setColour(Colour(COLOR_ACTIVE));
     if (selectedMidpoint != -1) {
         auto& seg = segs[selectedMidpoint];
         auto xy = getMidpointXY(seg);
@@ -246,7 +245,7 @@ void View::drawMidPoints(Graphics& g)
         auto waveCount = audioProcessor.pattern->getWaveCount(seg);
         if (waveCount > 0) {
             auto bounds = Rectangle<int>((int)xy[0]-15,(int)xy[1]-25, 30, 20);
-            g.setColour(Colour(globals::COLOR_BG).withAlpha(.75f));
+            g.setColour(Colour(COLOR_BG).withAlpha(.75f));
             g.fillRoundedRectangle(bounds.toFloat(), 4.f);
             g.setColour(Colours::white);
             g.setFont(FontOptions(14.f));
@@ -262,10 +261,10 @@ void View::drawSeek(Graphics& g)
     bool drawSeek = audioProcessor.drawSeek.load();
 
     if (drawSeek) {
-        g.setColour(Colour(globals::COLOR_SEEK).withAlpha(0.5f));
+        g.setColour(Colour(COLOR_SEEK).withAlpha(0.5f));
         g.drawLine((float)(xpos * winw + winx), (float)winy, (float)(xpos * winw + winx), (float)(winy + winh));
     }
-    g.setColour(Colour(globals::COLOR_SEEK));
+    g.setColour(Colour(COLOR_SEEK));
     g.drawEllipse((float)(xpos * winw + winx - 5.f), (float)((1 - ypos) * winh + winy - 5.f), 10.0f, 10.0f, 1.0f);
 }
 

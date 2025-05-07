@@ -2,17 +2,17 @@
 
 CustomLookAndFeel::CustomLookAndFeel()
 {
-  setColour(ComboBox::backgroundColourId, Colour(globals::COLOR_BG));
-  setColour(ComboBox::textColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(ComboBox::arrowColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(ComboBox::outlineColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(TooltipWindow::backgroundColourId, Colour(globals::COLOR_BG).brighter(0.15f));
-  setColour(PopupMenu::backgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.5f).withAlpha(0.99f));
-  setColour(PopupMenu::highlightedBackgroundColourId, Colour(globals::COLOR_ACTIVE).darker(0.8f));
-  setColour(TextButton::buttonColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
-  setColour(TextButton::textColourOnId, Colour(globals::COLOR_BG));
-  setColour(TextButton::textColourOffId, Colour(globals::COLOR_ACTIVE));
+  setColour(ComboBox::backgroundColourId, Colour(COLOR_BG));
+  setColour(ComboBox::textColourId, Colour(COLOR_ACTIVE));
+  setColour(ComboBox::arrowColourId, Colour(COLOR_ACTIVE));
+  setColour(ComboBox::outlineColourId, Colour(COLOR_ACTIVE));
+  setColour(TooltipWindow::backgroundColourId, Colour(COLOR_BG).brighter(0.15f));
+  setColour(PopupMenu::backgroundColourId, Colour(COLOR_ACTIVE).darker(0.5f).withAlpha(0.99f));
+  setColour(PopupMenu::highlightedBackgroundColourId, Colour(COLOR_ACTIVE).darker(0.8f));
+  setColour(TextButton::buttonColourId, Colour(COLOR_ACTIVE));
+  setColour(TextButton::buttonOnColourId, Colour(COLOR_ACTIVE));
+  setColour(TextButton::textColourOnId, Colour(COLOR_BG));
+  setColour(TextButton::textColourOffId, Colour(COLOR_ACTIVE));
 
   typeface = juce::Typeface::createSystemTypefaceFor(BinaryData::UbuntuMedium_ttf, BinaryData::UbuntuMedium_ttfSize);
   setDefaultSansSerifTypeface(typeface);

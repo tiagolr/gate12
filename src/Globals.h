@@ -15,7 +15,7 @@ namespace globals {
 
 	inline const int PLUG_WIDTH = 640;
 	inline const int PLUG_HEIGHT = 640;
-	inline const int PAD = 10; // plugin sides padding
+	inline const int PADDING = 10; // plugin sides padding
 	inline const int LATENCY_MILLIS = 5;
 	inline const int AUDIO_COOLDOWN_MILLIS = 50;
 	inline const int AUDIO_DRUMSBUF_MILLIS = 20;

@@ -13,10 +13,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioProcessor.params.addParameterListener("trigger", this);
     audioProcessor.params.addParameterListener("pattern", this);
 
-    setSize (globals::PLUG_WIDTH, globals::PLUG_HEIGHT);
+    setSize (PLUG_WIDTH, PLUG_HEIGHT);
     setScaleFactor(audioProcessor.scale);
-    auto col = globals::PAD;
-    auto row = globals::PAD;
+    auto col = PADDING;
+    auto row = PADDING;
 
     // FIRST ROW
 
@@ -71,7 +71,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 100;
 
     addAndMakeVisible(triggerLabel);
-    triggerLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
+    triggerLabel.setColour(juce::Label::ColourIds::textColourId, Colour(COLOR_NEUTRAL_LIGHT));
     triggerLabel.setFont(FontOptions(16.0f));
     triggerLabel.setText("Trigger", NotificationType::dontSendNotification);
     triggerLabel.setBounds(col, row, 60, 25);
@@ -91,9 +91,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     algoMenu.addItem("Simple", 1);
     algoMenu.addItem("Drums", 2);
     algoMenu.setBounds(col,row,90,25);
-    algoMenu.setColour(ComboBox::arrowColourId, Colour(globals::COLOR_AUDIO));
-    algoMenu.setColour(ComboBox::textColourId, Colour(globals::COLOR_AUDIO));
-    algoMenu.setColour(ComboBox::outlineColourId, Colour(globals::COLOR_AUDIO));
+    algoMenu.setColour(ComboBox::arrowColourId, Colour(COLOR_AUDIO));
+    algoMenu.setColour(ComboBox::textColourId, Colour(COLOR_AUDIO));
+    algoMenu.setColour(ComboBox::outlineColourId, Colour(COLOR_AUDIO));
     algoAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "algo", algoMenu);
     col += 100;
 
@@ -114,7 +114,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
     col += 35;
 
-    col = getWidth() - globals::PAD - 25;
+    col = getWidth() - PADDING - 25;
     settingsButton = std::make_unique<SettingsButton>(p);
     addAndMakeVisible(*settingsButton);
     settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
@@ -125,16 +125,16 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // SECOND ROW
 
     row += 35;
-    col = globals::PAD;
+    col = PADDING;
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
         btn->setRadioGroupId (1337);
         btn->setToggleState(audioProcessor.pattern->index == i, dontSendNotification);
         btn->setClickingTogglesState (false);
-        btn->setColour (TextButton::textColourOffId,  Colour(globals::COLOR_BG));
-        btn->setColour (TextButton::textColourOnId,   Colour(globals::COLOR_BG));
-        btn->setColour (TextButton::buttonColourId,   Colour(globals::COLOR_ACTIVE).darker(0.8f));
-        btn->setColour (TextButton::buttonOnColourId, Colour(globals::COLOR_ACTIVE));
+        btn->setColour (TextButton::textColourOffId,  Colour(COLOR_BG));
+        btn->setColour (TextButton::textColourOnId,   Colour(COLOR_BG));
+        btn->setColour (TextButton::buttonColourId,   Colour(COLOR_ACTIVE).darker(0.8f));
+        btn->setColour (TextButton::buttonOnColourId, Colour(COLOR_ACTIVE));
         btn->setBounds (col + i * 22, row, 22+1, 25); // width +1 makes it seamless on higher DPI
         btn->setConnectedEdges (((i != 0) ? Button::ConnectedOnLeft : 0) | ((i != 11) ? Button::ConnectedOnRight : 0));
         btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
@@ -152,7 +152,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 274;
 
     addAndMakeVisible(patSyncLabel);
-    patSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(globals::COLOR_NEUTRAL_LIGHT));
+    patSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(COLOR_NEUTRAL_LIGHT));
     patSyncLabel.setFont(FontOptions(16.0f));
     patSyncLabel.setText("Pat. Sync", NotificationType::dontSendNotification);
     patSyncLabel.setBounds(col, row, 70, 25);
@@ -171,7 +171,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     // KNOBS ROW
     row += 35;
-    col = globals::PAD;
+    col = PADDING;
     rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hz1f);
     addAndMakeVisible(*rate);
     rate->setBounds(col,row,80,65);
@@ -213,7 +213,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 75;
 
     // AUDIO KNOBS
-    col = globals::PAD;
+    col = PADDING;
 
     threshold = std::make_unique<Rotary>(p, "threshold", "Thres", LabelFormat::gainTodB1f, false, true);
     addAndMakeVisible(*threshold);
@@ -242,17 +242,17 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     audioDisplay = std::make_unique<AudioDisplay>(p);
     addAndMakeVisible(*audioDisplay);
-    audioDisplay->setBounds(col,row,getWidth() - col - globals::PAD - 80 - 10, 65);
+    audioDisplay->setBounds(col,row,getWidth() - col - PADDING - 80 - 10, 65);
 
-    col = getWidth() - globals::PAD - 80;
+    col = getWidth() - PADDING - 80;
     addAndMakeVisible(useSidechain);
     useSidechain.setTooltip("Use sidechain for transient detection");
     useSidechain.setButtonText("Sidechain");
     useSidechain.setComponentID("button");
-    useSidechain.setColour(TextButton::buttonColourId, Colour(globals::COLOR_AUDIO));
-    useSidechain.setColour(TextButton::buttonOnColourId, Colour(globals::COLOR_AUDIO));
-    useSidechain.setColour(TextButton::textColourOnId, Colour(globals::COLOR_BG));
-    useSidechain.setColour(TextButton::textColourOffId, Colour(globals::COLOR_AUDIO));
+    useSidechain.setColour(TextButton::buttonColourId, Colour(COLOR_AUDIO));
+    useSidechain.setColour(TextButton::buttonOnColourId, Colour(COLOR_AUDIO));
+    useSidechain.setColour(TextButton::textColourOnId, Colour(COLOR_BG));
+    useSidechain.setColour(TextButton::textColourOffId, Colour(COLOR_AUDIO));
     useSidechain.setBounds(col,row,80,25);
     useSidechain.onClick = [this]() {
         MessageManager::callAsync([this] {
@@ -265,10 +265,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     useMonitor.setTooltip("Monitor signal used for transient detection");
     useMonitor.setButtonText("Monitor");
     useMonitor.setComponentID("button");
-    useMonitor.setColour(TextButton::buttonColourId, Colour(globals::COLOR_AUDIO));
-    useMonitor.setColour(TextButton::buttonOnColourId, Colour(globals::COLOR_AUDIO));
-    useMonitor.setColour(TextButton::textColourOnId, Colour(globals::COLOR_BG));
-    useMonitor.setColour(TextButton::textColourOffId, Colour(globals::COLOR_AUDIO));
+    useMonitor.setColour(TextButton::buttonColourId, Colour(COLOR_AUDIO));
+    useMonitor.setColour(TextButton::buttonOnColourId, Colour(COLOR_AUDIO));
+    useMonitor.setColour(TextButton::textColourOnId, Colour(COLOR_BG));
+    useMonitor.setColour(TextButton::textColourOffId, Colour(COLOR_AUDIO));
     useMonitor.setBounds(col,row+35,80,25);
     useMonitor.onClick = [this]() {
         MessageManager::callAsync([this] {
@@ -278,7 +278,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
 
     // THIRD ROW
-    col = globals::PAD;
+    col = PADDING;
     row += 75;
     juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
     juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
@@ -345,7 +345,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 35;
 
     // THIRD ROW RIGHT
-    col = getWidth() - globals::PAD - 60;
+    col = getWidth() - PADDING - 60;
 
     addAndMakeVisible(snapButton);
     snapButton.setTooltip("Toggle snap by using ctrl key");
@@ -462,7 +462,7 @@ void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameter
 void GATE12AudioProcessorEditor::toggleUIComponents()
 {
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
-    auto triggerColor = trigger == 0 ? globals::COLOR_ACTIVE : trigger == 1 ? globals::COLOR_MIDI : globals::COLOR_AUDIO;
+    auto triggerColor = trigger == 0 ? COLOR_ACTIVE : trigger == 1 ? COLOR_MIDI : COLOR_AUDIO;
     triggerMenu.setColour(ComboBox::arrowColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::textColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::outlineColourId, Colour(triggerColor));
@@ -509,8 +509,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     audioDisplay->setVisible(showAudioKnobs);
 
     if (!showAudioKnobs) {
-        auto col = globals::PAD;
-        auto row = globals::PAD + 35 + 35;
+        auto col = PADDING;
+        auto row = PADDING + 35 + 35;
         rate->setVisible(sync == 0);
         rate->setTopLeftPosition(col, row);
         if (rate->isVisible())
@@ -552,7 +552,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
 void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
-    g.fillAll(Colour(globals::COLOR_BG));
+    g.fillAll(Colour(COLOR_BG));
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
 
     // draw loop play button
@@ -577,14 +577,14 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     }
 
     // draw audio settings button outline
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+    g.setColour(Colour(COLOR_ACTIVE));
     if (audioSettingsLogo.isVisible() && audioProcessor.showAudioKnobs) {
-        g.setColour(Colour(globals::COLOR_AUDIO));
+        g.setColour(Colour(COLOR_AUDIO));
         g.fillRoundedRectangle(audioSettingsLogo.getBounds().expanded(4,4).toFloat(), 3.0f);
     }
 
     // draw phase nudge buttons
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+    g.setColour(Colour(COLOR_ACTIVE));
     juce::Path nudgeLeftTriangle;
     nudgeLeftTriangle.startNewSubPath(0.0f, nudgeLeftButton.getHeight() / 2.f);
     nudgeLeftTriangle.lineTo((float)nudgeLeftButton.getWidth(), 0.f);
@@ -601,40 +601,38 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     // draw undo redo buttons
     auto canUndo = !audioProcessor.pattern->undoStack.empty();
     auto canRedo = !audioProcessor.pattern->redoStack.empty();
-    drawUndoButton(g, undoButton.getBounds().toFloat(), true, Colour(canUndo ? globals::COLOR_ACTIVE : globals::COLOR_NEUTRAL));
-    drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? globals::COLOR_ACTIVE : globals::COLOR_NEUTRAL));
+    drawUndoButton(g, undoButton.getBounds().toFloat(), true, Colour(canUndo ? COLOR_ACTIVE : COLOR_NEUTRAL));
+    drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? COLOR_ACTIVE : COLOR_NEUTRAL));
 }
 
 void GATE12AudioProcessorEditor::drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color)
 {
         auto bounds = area;
         auto thickness = 2.f;
-        int left = bounds.getX();
-        int right = bounds.getRight();
-        int top = bounds.getY();
-        int bottom = bounds.getBottom();
-        int centerY = bounds.getCentreY();
-        int arrowHeadWidth = std::min(bounds.getWidth() / 3, bounds.getHeight() / 2);
-        int shaftStart = right - 7;
+        float left = bounds.getX();
+        float right = bounds.getRight();
+        float top = bounds.getY();
+        float bottom = bounds.getBottom();
+        float centerY = bounds.getCentreY();
+        float shaftStart = right - 7;
 
         Path arrowPath;
-        // Left edge of the triangle (arrow head)
+        // arrow head
         arrowPath.startNewSubPath(right, centerY);
         arrowPath.lineTo(shaftStart, top+4);
-        // Right edge of the triangle (arrow head)
         arrowPath.startNewSubPath(right, centerY);
         arrowPath.lineTo(shaftStart, bottom-4);
 
-        // Middle line (shaft)
+        // shaft
         float radius = (bottom - centerY);
         arrowPath.startNewSubPath(right, centerY);
         arrowPath.lineTo(left + radius, centerY);
 
+        // semi circle
         arrowPath.startNewSubPath(left + radius, centerY);
         arrowPath.addArc(left, centerY, radius, radius, 2.f * float_Pi, float_Pi);
 
         if (invertx) {
-            // Flip around the center of the provided bounds
             AffineTransform flipTransform = AffineTransform::scale(-1.0f, 1.0f)
                 .translated(bounds.getWidth(), 0);
 

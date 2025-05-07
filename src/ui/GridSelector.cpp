@@ -1,6 +1,5 @@
 #include "GridSelector.h"
 #include "../PluginProcessor.h"
-#include "../Globals.h"
 
 GridSelector::GridSelector(GATE12AudioProcessor& p) : audioProcessor(p)
 {
@@ -20,11 +19,11 @@ void GridSelector::parameterChanged(const juce::String& parameterID, float newVa
 }
 
 void GridSelector::paint(juce::Graphics& g) {
-    g.fillAll(Colour(globals::COLOR_BG));
+    g.fillAll(Colour(COLOR_BG));
 
     int gridSize = audioProcessor.getCurrentGrid();
     g.setFont(16);
-    g.setColour(Colour(globals::COLOR_ACTIVE));
+    g.setColour(Colour(COLOR_ACTIVE));
     g.drawFittedText("Grid " + String(gridSize), getLocalBounds(), Justification::centredLeft, 1);
 }
 

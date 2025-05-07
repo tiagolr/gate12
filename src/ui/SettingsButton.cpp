@@ -28,6 +28,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	load.addItem(100, "Sine");
 	load.addItem(101, "Triangle");
 	load.addItem(102, "Random");
+	load.addItem(109, "Init");
 	load.addSeparator();
 
 	PopupMenu patterns1;
@@ -132,6 +133,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 				audioProcessor.pattern->paste();
 				audioProcessor.pattern->buildSegments();
 			}
+			if (result == 109) {
+				audioProcessor.loadProgram(0);
+			}
 			if (result >= 100 && result <= 200) { // load
 				if (result == 100) { // load sine
 					audioProcessor.pattern->loadSine();
@@ -148,7 +152,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 				}
 				if (result >= 110 && result < 150) {
 					MessageManager::callAsync([this, result]() {
-						audioProcessor.loadProgram(result-110);
+						audioProcessor.loadProgram(result-110+1);
 					});
 				}
 			}

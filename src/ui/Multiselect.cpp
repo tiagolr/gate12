@@ -7,7 +7,6 @@
   ==============================================================================
 */
 #include "Multiselect.h"
-#include "../Globals.h"
 #include "../PluginProcessor.h"
 
 void Multiselect::setViewBounds(int _x, int _y, int _w, int _h)
@@ -21,7 +20,7 @@ void Multiselect::setViewBounds(int _x, int _y, int _w, int _h)
 void Multiselect::drawBackground(Graphics& g)
 {
     if (selectionPoints.size()) {
-        g.setColour(Colour(globals::COLOR_SELECTION).withAlpha(0.25f));
+        g.setColour(Colour(COLOR_SELECTION).withAlpha(0.25f));
         Quad q = getQuadExpanded((double)PAD);
         juce::Path quadPath;
         quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
@@ -35,7 +34,7 @@ void Multiselect::drawBackground(Graphics& g)
 
 void Multiselect::draw(Graphics& g)
 {
-    g.setColour(Colour(globals::COLOR_SELECTION));
+    g.setColour(Colour(COLOR_SELECTION));
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
         auto xx = p.x * winw + winx;
@@ -44,7 +43,7 @@ void Multiselect::draw(Graphics& g)
     }
 
     if (selectionPoints.size()) {
-        g.setColour(Colour(globals::COLOR_SELECTION));
+        g.setColour(Colour(COLOR_SELECTION));
         Quad q = getQuadExpanded((double)PAD);
         juce::Path quadPath;
         quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
@@ -79,7 +78,7 @@ void Multiselect::drawHandles(Graphics& g)
     auto mrRect = Rectangle<int>(mr.getX(), mr.getY(), 0, 0).expanded(3);
     auto tmRect = Rectangle<int>(tm.getX(), tm.getY(), 0, 0).expanded(3);
     auto bmRect = Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3);
-    g.setColour(Colour(globals::COLOR_SELECTION));
+    g.setColour(Colour(COLOR_SELECTION));
     g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
     g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
     g.setColour(Colours::white);

@@ -10,7 +10,9 @@
 
 #include <JuceHeader.h>
 #include <iostream>
+#include "../Globals.h"
 
+using namespace globals;
 class GATE12AudioProcessor;
 
 struct SelPoint {

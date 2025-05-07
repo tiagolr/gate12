@@ -42,31 +42,32 @@ enum PatSync {
 
 /*
     RC lowpass filter with two resitances a or b
-    Used for attack release smooth or single smooth of ypos
+    Used for attack release smooth of ypos
 */
-class SmoothParam
+class RCSmoother
 {
 public:
     double a; // resistance a
     double b; // resistance b
-    double lp; // last value
-    double smooth; // latest value
+    double state;
+    double output;
 
-    void rcSet2(double rca, double rcb, double srate)
+    void setup(double ra, double rb, double srate)
     {
-        a = 1 / (rca * srate + 1);
-        b = 1 / (rcb * srate + 1);
+        a = 1.0 / (ra * srate + 1);
+        b = 1.0 / (rb * srate + 1);
     }
 
-    double rcLP2(double s, bool ab)
+    double process(double input, bool useAorB)
     {
-        return lp += ab ? a * (s - lp) : b * (s - lp);
+        state += (useAorB ? a : b) * (input - state);
+        output = state;
+        return output;
     }
 
-    double smooth2(double s, bool ab)
+    void reset(double value = 0.0)
     {
-        lp = smooth;
-        return smooth = rcLP2(s, ab);
+        output = state = value;
     }
 };
 
@@ -107,7 +108,7 @@ public:
     bool midiTrigger = false; // flag midi has triggered envelope
     int winpos = 0;
     int lwinpos = 0;
-    SmoothParam* value; // smooths envelope value
+    RCSmoother* value; // smooths envelope value
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope

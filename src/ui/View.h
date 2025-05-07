@@ -12,8 +12,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../dsp/Pattern.h"
 #include "Multiselect.h"
+#include "../Globals.h"
 
 class GATE12AudioProcessor;
+using namespace globals;
 
 class View : public juce::Component, private juce::Timer
 {
@@ -41,7 +43,6 @@ public:
     PPoint& getPointFromMidpoint(int midpoint);
 
     // multi selection
-    void createSelection(const MouseEvent& e);
     void drawSelection(Graphics& g);
 
     // events

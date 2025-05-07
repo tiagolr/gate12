@@ -68,7 +68,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     preSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= viewport width 
     postSamples.resize(globals::PLUG_WIDTH, 0);
     monSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
-    value = new SmoothParam();
+    value = new RCSmoother();
 
     loadSettings();
 }
@@ -181,7 +181,7 @@ double GATE12AudioProcessor::getTailLengthSeconds() const
 
 int GATE12AudioProcessor::getNumPrograms()
 {
-    return 39;
+    return 40;
 }
 
 int GATE12AudioProcessor::getCurrentProgram()
@@ -209,20 +209,28 @@ void GATE12AudioProcessor::loadProgram (int index)
         pat.clearUndo();
     };
 
-    if (index == 0 || index == 13 || index == 26) {
+    if (index == 0) { // Init
         for (int i = 0; i < 12; ++i) {
-            loadPreset(*patterns[i], index + i + 1);
+            patterns[i]->loadTriangle();
+            patterns[i]->buildSegments();
+            patterns[i]->clearUndo();
+        }
+    }
+    else if (index == 1 || index == 14 || index == 27) {
+        for (int i = 0; i < 12; ++i) {
+            loadPreset(*patterns[i], index + i);
         }
     }
     else {
-        loadPreset(*pattern, index);
+        loadPreset(*pattern, index - 1);
     }
     sendChangeMessage(); // UI Repaint
 }
 
 const juce::String GATE12AudioProcessor::getProgramName (int index)
 {
-    static const std::array<juce::String, 39> progNames = {
+    static const std::array<juce::String, 40> progNames = {
+        "Init",
         "Load Patterns 01-12", "Empty", "Gate 2", "Gate 4", "Gate 8", "Gate 12", "Gate 16", "Gate 24", "Gate 32", "Trance 1", "Trance 2", "Trance 3", "Trance 4",
         "Load Patterns 13-25", "Saw 1", "Saw 2", "Step 1", "Step 1 FadeIn", "Step 4 Gate", "Off Beat", "Dynamic 1/4", "Swing", "Gate Out", "Gate In", "Speed up", "Speed Down",
         "Load Patterns 26-38", "End Fade", "End Gate", "Tremolo Slow", "Tremolo Fast", "Sidechain", "Drum Loop", "Copter", "AM", "Fade In", "Fade Out", "Fade OutIn", "Mute"
@@ -392,7 +400,7 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
         xpos -= std::floor(xpos);
     }
 
-    value->smooth = getY(xpos, min, max); // reset smooth
+    value->reset(getY(xpos, min, max)); // reset smooth
 }
 
 void GATE12AudioProcessor::onStop()
@@ -443,11 +451,11 @@ void GATE12AudioProcessor::setSmooth()
     if (dualSmooth) {
         float attack = params.getRawParameterValue("attack")->load();
         float release = params.getRawParameterValue("release")->load();
-        value->rcSet2(attack * 0.25, release * 0.25, getSampleRate());
+        value->setup(attack * 0.25, release * 0.25, getSampleRate());
     }
     else {
         float lfosmooth = params.getRawParameterValue("smooth")->load();
-        value->rcSet2(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
+        value->setup(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
     }
 }
 
@@ -672,7 +680,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             xpos -= std::floor(xpos);
             
             double newypos = getY(xpos, min, max);
-            ypos = value->smooth2(newypos, newypos > ypos);
+            ypos = value->process(newypos, newypos > ypos);
             
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
@@ -702,7 +710,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             }
 
             double newypos = getY(xpos, min, max);
-            ypos = value->smooth2(newypos, newypos > ypos);    
+            ypos = value->process(newypos, newypos > ypos);    
 
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
@@ -799,7 +807,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             }
 
             double newypos = getY(xpos, min, max);
-            ypos = value->smooth2(newypos, newypos > ypos);    
+            ypos = value->process(newypos, newypos > ypos);    
             if (!useMonitor) {
                 applyGain(sample, ypos, lsample, rsample);
             }
@@ -836,24 +844,66 @@ juce::AudioProcessorEditor* GATE12AudioProcessor::createEditor()
 //==============================================================================
 void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    auto state = params.copyState();
+    auto state = ValueTree("PluginState");
+    state.appendChild(params.copyState(), nullptr);
+    state.setProperty("version", PROJECT_VERSION, nullptr);
     state.setProperty("currentProgram", currentProgram, nullptr);
-    std::unique_ptr<juce::XmlElement>xml(state.createXml());
+    state.setProperty("alwaysPlaying",alwaysPlaying, nullptr);
+    state.setProperty("dualSmooth",dualSmooth, nullptr);
+    state.setProperty("MIDIHoldEnvelopeTail",MIDIHoldEnvelopeTail, nullptr);
+    state.setProperty("AudioHoldEnvelopeTail",AudioHoldEnvelopeTail, nullptr);
+    state.setProperty("triggerChn",triggerChn, nullptr);
+    state.setProperty("useMonitor",useMonitor, nullptr);
+    state.setProperty("useSidechain",useSidechain, nullptr);
+
+    for (int i = 0; i < 12; ++i) {
+        std::ostringstream oss;
+        auto points = patterns[i]->points;
+        for (const auto& point : points) {
+            oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
+        }
+        state.setProperty("pattern" + juce::String(i), var(oss.str()), nullptr);
+    }
+
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
 
 void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     std::unique_ptr<juce::XmlElement>xmlState (getXmlFromBinary (data, sizeInBytes));
-    if (xmlState.get() != nullptr) {
-        if (xmlState->hasTagName(params.state.getType())) {
-            auto state = juce::ValueTree::fromXml (*xmlState);
-            if (state.hasProperty("currentProgram")) {
-                currentProgram = static_cast<int>(state.getProperty("currentProgram"));
+    if (!xmlState) return;
+    auto state = ValueTree::fromXml (*xmlState);
+    if (!state.isValid()) return;
+
+    params.replaceState(state.getChild(0));
+    if (state.hasProperty("version")) {
+        currentProgram = (int)state.getProperty("currentProgram");
+        alwaysPlaying = (bool)state.getProperty("alwaysPlaying");
+        dualSmooth = (bool)state.getProperty("dualSmooth");
+        MIDIHoldEnvelopeTail = (bool)state.getProperty("MIDIHoldEnvelopeTail");
+        AudioHoldEnvelopeTail = (bool)state.getProperty("AudioHoldEnvelopeTail");
+        triggerChn = (int)state.getProperty("triggerChn");
+        useMonitor = (bool)state.getProperty("useMonitor");
+        useSidechain = (bool)state.getProperty("useSidechain");
+
+        for (int i = 0; i < 12; ++i) {
+            patterns[i]->clear();
+
+            auto str = state.getProperty("pattern" + String(i)).toString().toStdString();
+            if (!str.empty()) {
+                double x, y, tension;
+                int type;
+                std::istringstream iss(str);
+                while (iss >> x >> y >> tension >> type) {
+                    patterns[i]->insertPoint(x,y,tension,type);
+                }
             }
-            params.replaceState(state);
+            patterns[i]->buildSegments();
         }
     }
+
+    sendChangeMessage();
 }
 
 //==============================================================================

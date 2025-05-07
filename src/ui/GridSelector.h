@@ -2,6 +2,9 @@
 
 #include <JuceHeader.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../Globals.h"
+
+using namespace globals;
 
 class GATE12AudioProcessor;
 

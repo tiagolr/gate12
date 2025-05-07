@@ -65,8 +65,6 @@ source_group(Source\\ui
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/CustomLookAndFeel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/GridSelector.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/GridSelector.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PatternSelector.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PatternSelector.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/MultiSelect.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/MultiSelect.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/View.h

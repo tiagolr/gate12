@@ -36,7 +36,7 @@
   * **Pattern sync** changes to beat position
   * **Multi-point** selection dragging, scaling and skewing
   * **Rotate patterns** no longer constrained by start and end points
-  * **Undo & Redo** changes
+  * **Undo & Redo** added
   * Other **fixes and improvements**
 
 ## Features
@@ -107,7 +107,6 @@ Using right click on the view, the current selected paint tool will be applied t
   * `Ctrl + right click` view to erase points
   * `Alt + right click` to erase points
   * `Alt + drag` selection handles to skew/deform the selected points
-  * Multi-select on a single point allows it to be dragged across other points
 
 ## MacOS
 

@@ -1,6 +1,5 @@
 #include "Rotary.h"
 #include "../PluginProcessor.h"
-#include "../Globals.h"
 
 Rotary::Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name, LabelFormat format, bool isSymmetric, bool isAudioKnob)
     : juce::SettableTooltipClient()
@@ -75,7 +74,7 @@ void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
             }
         }
         else if (format == LabelFormat::audioOffset) {
-            ss << std::fixed << std::setprecision(1) << slider_val * globals::LATENCY_MILLIS << " ms";
+            ss << std::fixed << std::setprecision(1) << slider_val * LATENCY_MILLIS << " ms";
             text = ss.str();
         }
     }
@@ -145,15 +144,15 @@ void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {
     const float radius = 16.0f;
     const float angle = -deg130 + slider_pos * (deg130 - -deg130);
 
-    g.setColour(juce::Colour(globals::COLOR_KNOB));
+    g.setColour(juce::Colour(COLOR_KNOB));
     g.fillEllipse(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius - 8.0f, radius*2.0f, radius*2.0f);
 
-    g.setColour(Colour(globals::COLOR_KNOB));
+    g.setColour(Colour(COLOR_KNOB));
     juce::Path arcKnob;
     arcKnob.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 8.0f, radius + 5.0f, radius + 5.0f, 0,-deg130, deg130, true);
     g.strokePath(arcKnob, PathStrokeType(3.0, PathStrokeType::JointStyle::curved, PathStrokeType::rounded));
 
-    g.setColour(Colour(isAudioKnob ? globals::COLOR_AUDIO : globals::COLOR_ACTIVE));
+    g.setColour(Colour(isAudioKnob ? COLOR_AUDIO : COLOR_ACTIVE));
     if ((isSymmetric && slider_pos != 0.5f) || (!isSymmetric && slider_pos)) {
         juce::Path arcActive;
         arcActive.addCentredArc(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 8.0f, radius + 5.0f, radius + 5.0f, 0, isSymmetric ? 0 : -deg130, angle, true);
