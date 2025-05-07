@@ -2,7 +2,6 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "Globals.h"
 #include <ctime>
 
 GATE12AudioProcessor::GATE12AudioProcessor()
@@ -65,9 +64,9 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     }
 
     pattern = patterns[0];
-    preSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= viewport width 
-    postSamples.resize(globals::PLUG_WIDTH, 0);
-    monSamples.resize(globals::PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
+    preSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= viewport width 
+    postSamples.resize(MAX_PLUG_WIDTH, 0);
+    monSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
     value = new RCSmoother();
 
     loadSettings();
@@ -94,6 +93,8 @@ void GATE12AudioProcessor::loadSettings ()
 {
     if (auto* file = settings.getUserSettings()) {
         scale = (float)file->getDoubleValue("scale", 1.0f);
+        plugWidth = file->getIntValue("width", PLUG_WIDTH);
+        plugHeight = file->getIntValue("height", PLUG_HEIGHT);
     }
 }
 
@@ -101,6 +102,8 @@ void GATE12AudioProcessor::saveSettings ()
 {
     if (auto* file = settings.getUserSettings()) {
         file->setValue("scale", scale);
+        file->setValue("width", plugWidth);
+        file->setValue("height", plugHeight);
     }
     settings.saveIfNeeded();
 }
@@ -303,7 +306,7 @@ void GATE12AudioProcessor::onSlider()
     if (trigger != ltrigger) {
         auto latency = getLatencySamples();
         setLatencySamples(trigger == Trigger::Audio 
-            ? static_cast<int>(getSampleRate() * globals::LATENCY_MILLIS / 1000.0) 
+            ? static_cast<int>(getSampleRate() * LATENCY_MILLIS / 1000.0) 
             : 0
         );
         if (getLatencySamples() != latency && playing) {
@@ -764,7 +767,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             {
                 transDetectorL.startCooldown();
                 transDetectorR.startCooldown();
-                int offset = (int)(params.getRawParameterValue("offset")->load() * globals::LATENCY_MILLIS / 1000.f * srate);
+                int offset = (int)(params.getRawParameterValue("offset")->load() * LATENCY_MILLIS / 1000.f * srate);
                 audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
                 hitamp = std::max(std::fabs(monSampleL), std::fabs(monSampleR));
             }

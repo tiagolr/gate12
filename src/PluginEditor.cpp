@@ -13,7 +13,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioProcessor.params.addParameterListener("trigger", this);
     audioProcessor.params.addParameterListener("pattern", this);
 
-    setSize (PLUG_WIDTH, PLUG_HEIGHT);
+    setResizable(true, false);
+    setResizeLimits(PLUG_WIDTH, PLUG_HEIGHT, MAX_PLUG_WIDTH, MAX_PLUG_HEIGHT);
+
+    setSize (audioProcessor.plugWidth, audioProcessor.plugHeight);
     setScaleFactor(audioProcessor.scale);
     auto col = PLUG_PADDING;
     auto row = PLUG_PADDING;
@@ -438,6 +441,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     customLookAndFeel = new CustomLookAndFeel();
     setLookAndFeel(customLookAndFeel);
 
+    init = true;
+    resized();
     toggleUIComponents();
 }
 
@@ -662,4 +667,44 @@ void GATE12AudioProcessorEditor::drawUndoButton(Graphics& g, juce::Rectangle<flo
 
 void GATE12AudioProcessorEditor::resized()
 {
+    if (!init) return; // defer resized() call during constructor
+
+    // layout only right aligned components and view
+    auto col = getWidth() - PLUG_PADDING;
+
+    // first row
+    auto bounds = settingsButton->getBounds();
+    settingsButton->setBounds(bounds.withX(col - bounds.getWidth()));
+
+    // knobs row
+    bounds = audioDisplay->getBounds();
+    audioDisplay->setBounds(bounds.withRight(col - useSidechain.getBounds().getWidth() - 10));
+    bounds = useSidechain.getBounds();
+    useSidechain.setBounds(bounds.withX(col - bounds.getWidth()));
+    bounds = useMonitor.getBounds();
+    useMonitor.setBounds(bounds.withX(col - bounds.getWidth()));
+
+    // third row
+    bounds = snapButton.getBounds();
+    auto dx = (col - bounds.getWidth()) - bounds.getX();
+    snapButton.setBounds(snapButton.getBounds().translated(dx, 0));
+    gridSelector->setBounds(gridSelector->getBounds().translated(dx, 0));
+    nudgeLeftButton.setBounds(nudgeLeftButton.getBounds().translated(dx, 0));
+    nudgeRightButton.setBounds(nudgeRightButton.getBounds().translated(dx, 0));
+    redoButton.setBounds(redoButton.getBounds().translated(dx, 0));
+    undoButton.setBounds(undoButton.getBounds().translated(dx, 0));
+
+    // view
+    bounds = view->getBounds();
+    view->setBounds(bounds.withWidth(getWidth()).withHeight(getHeight() - bounds.getY()));
+
+    bounds = latencyWarning.getBounds();
+    latencyWarning.setBounds(bounds
+        .withX(view->getBounds().getCentreX() - bounds.getWidth() / 2)
+        .withY(getHeight() - 20 - bounds.getHeight())
+    );
+
+    audioProcessor.plugWidth = getWidth();
+    audioProcessor.plugHeight = getHeight();
+    audioProcessor.saveSettings();
 }

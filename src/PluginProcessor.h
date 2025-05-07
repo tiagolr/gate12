@@ -16,6 +16,9 @@
 #include "Presets.h"
 #include <atomic>
 #include <deque>
+#include "Globals.h"
+
+using namespace globals;
 
 struct MIDIMsg {
     int offset;
@@ -84,6 +87,8 @@ public:
 
     // Plugin settings
     float scale = 1.0f; // UI scale factor
+    int plugWidth = PLUG_WIDTH;
+    int plugHeight = PLUG_HEIGHT;
 
     // Instance Settings
     bool alwaysPlaying = false;

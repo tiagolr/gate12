@@ -35,6 +35,7 @@ public:
     void drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color);
 
 private:
+    bool init = false;
     GATE12AudioProcessor& audioProcessor;
     CustomLookAndFeel* customLookAndFeel = nullptr;
     std::unique_ptr<About> about;
@@ -88,7 +89,6 @@ private:
     ComboBox triggerMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> triggerAttachment;
     ImageButton audioSettingsLogo;
-    Label gridLabel;
     TextButton snapButton;
     std::unique_ptr<GridSelector> gridSelector;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;

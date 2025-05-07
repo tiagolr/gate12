@@ -31,13 +31,12 @@
 
   * **Cross-platform** available on Windows, macOS and Linux
   * **Presets** included
-  * Built with **JUCE**
   * **Audio trigger** use audio transients to trigger the envelope
   * **Pattern sync** changes to beat position
   * **Multi-point** selection dragging, scaling and skewing
   * **Rotate patterns** no longer constrained by start and end points
   * **Undo & Redo** added
-  * Other **fixes and improvements**
+  * Other **improvements and fixes**
 
 ## Features
 
