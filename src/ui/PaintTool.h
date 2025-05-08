@@ -8,6 +8,8 @@ class GATE12AudioProcessor;
 
 class PaintTool {
 public:
+    bool dragging = false;
+
     PaintTool(GATE12AudioProcessor& p) : audioProcessor(p) {}
     ~PaintTool() {}
 
@@ -18,20 +20,23 @@ public:
     void mouseMove(const MouseEvent& e);
     void mouseDrag(const MouseEvent& e);
     void mouseDown(const MouseEvent& e);
+    void mouseUp(const MouseEvent& e);
 
 private:
     int paintW = 50;
     int paintH = 100;
+    int startW = 50;
+    int startH = 100;
     int winx = 0;
     int winy = 0;
     int winw = 0;
     int winh = 0;
     bool invertx = false;
     bool inverty = false;
-    bool dragging = false;
+    bool snap = false;
     Point<int> mousePos;
     GATE12AudioProcessor& audioProcessor;
 
-    Rectangle<int> getBounds(bool snap);
+    Rectangle<double> getBounds();
     bool isSnapping(const MouseEvent& e);
 };

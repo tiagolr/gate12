@@ -11,7 +11,7 @@
 #include "../PluginProcessor.h"
 #include <utility>
 
-View::View(GATE12AudioProcessor& p) : audioProcessor(p), multiselect(p), painttool(p)
+View::View(GATE12AudioProcessor& p) : audioProcessor(p), multiselect(p), paintTool(p)
 {
     setWantsKeyboardFocus(true);
     startTimerHz(60);
@@ -23,6 +23,14 @@ View::~View()
 
 void View::timerCallback()
 {
+    paintEdit = audioProcessor.isPaintEdit();
+    paintMode = audioProcessor.isPaintMode();
+
+    if (paintMode && !lpaintMode) {
+        multiselect.clearSelection();
+    }
+    lpaintMode = paintMode;
+
     if (patternID != audioProcessor.viewPattern->versionID) {
         preSelectionStart = Point<int>(-1,-1);
         selectedMidpoint = -1;
@@ -32,6 +40,9 @@ void View::timerCallback()
         hoverMidpoint = -1;
         multiselect.recalcSelectionArea();
         patternID = audioProcessor.viewPattern->versionID;
+    }
+    if (audioProcessor.isPaintMode() && !multiselect.selectionPoints.empty()) {
+        multiselect.clearSelection();
     }
     if (audioProcessor.queuedPattern && isEnabled()) {
         setAlpha(0.5f);
@@ -52,16 +63,14 @@ void View::resized()
     winw = bounds.getWidth() - PLUG_PADDING * 2;
     winh = bounds.getHeight() - PLUG_PADDING * 2;
     multiselect.setViewBounds(winx, winy, winw, winh);
-    painttool.setViewBounds(winx, winy, winw, winh);
+    paintTool.setViewBounds(winx, winy, winw, winh);
     MessageManager::callAsync([this] {
         audioProcessor.viewW = winw;
     });
 }
 
 void View::paint(Graphics& g) {
-    bool paintMode = audioProcessor.isPaintMode();
-
-    if (paintMode) {
+    if (paintEdit) {
         g.setColour(Colours::blue.withAlpha(0.05f));
         g.fillRect(winx, winy, winw, winh);
     }
@@ -69,7 +78,7 @@ void View::paint(Graphics& g) {
     g.fillRect(winx + winw/4, winy, winw/4, winh);
     g.fillRect(winx + winw - winw/4, winy, winw/4, winh);
 
-    if (!paintMode) {
+    if (!paintEdit) {
         drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
         drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
     }
@@ -77,15 +86,20 @@ void View::paint(Graphics& g) {
     drawGrid(g);
     multiselect.drawBackground(g);
     drawSegments(g);
-    drawMidPoints(g);
-    drawPoints(g);
-    if (isMouseOver()) {
-        painttool.draw(g);
+
+    if (!paintMode) {
+        drawMidPoints(g);
+        drawPoints(g);
     }
+
+    if (paintMode && (isMouseOver() || paintTool.dragging)) {
+        paintTool.draw(g);
+    }
+
     drawPreSelection(g);
     multiselect.draw(g);
 
-    if (!paintMode) {
+    if (!paintEdit) {
         drawSeek(g);
     }
 }
@@ -348,7 +362,12 @@ void View::mouseDown(const juce::MouseEvent& e)
     int x = pos.x;
     int y = pos.y;
 
-    if (e.mods.isLeftButtonDown()) {
+    if (paintMode) {
+        setMouseCursor(MouseCursor::NoCursor);
+        e.source.enableUnboundedMouseMovement(true);
+        paintTool.mouseDown(e);
+    }
+    else if (e.mods.isLeftButtonDown()) {
         if (multiselect.mouseHover > -1) {
             setMouseCursor(MouseCursor::NoCursor);
             multiselect.mouseDown(e);
@@ -394,14 +413,19 @@ void View::mouseDown(const juce::MouseEvent& e)
 void View::mouseUp(const juce::MouseEvent& e)
 {
     setMouseCursor(MouseCursor::NormalCursor);
+    e.source.enableUnboundedMouseMovement(false);
+
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    if (selectedPoint > -1) { // finished dragging point
+    if (paintMode) {
+        Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
+        paintTool.mouseUp(e);
+    }
+    else if (selectedPoint > -1) { // finished dragging point
         // ----
     }
     else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
-        e.source.enableUnboundedMouseMovement(false);
         auto& mpoint = getPointFromMidpoint(selectedMidpoint);
         auto& next = getPointFromMidpoint(selectedMidpoint + 1);
         double midx = (mpoint.x + next.x) / 2.;
@@ -435,9 +459,12 @@ void View::mouseMove(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    auto pos = e.getPosition();
+    if (paintMode) {
+        paintTool.mouseMove(e);
+        return;
+    }
 
-    painttool.mouseMove(e);
+    auto pos = e.getPosition();
 
     // if currently dragging a point ignore mouse over events
     if (selectedPoint > -1 || selectedMidpoint > -1) {
@@ -452,7 +479,6 @@ void View::mouseMove(const juce::MouseEvent& e)
 
     int x = pos.x;
     int y = pos.y;
-
     hoverPoint = getHoveredPoint(x , y);
     if (hoverPoint == -1)
         hoverMidpoint = getHoveredMidpoint(x, y);
@@ -462,6 +488,11 @@ void View::mouseDrag(const juce::MouseEvent& e)
 {
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
+
+    if (paintMode) {
+        paintTool.mouseDrag(e);
+        return;
+    }
 
     Point pos = e.getPosition();
     int x = pos.x;
@@ -534,6 +565,10 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 {
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
+
+    if (paintMode) {
+        return;
+    }
 
     if (e.mods.isRightButtonDown()) {
         return;
@@ -655,27 +690,27 @@ void View::applyPaintTool(int x, int y, const MouseEvent& e)
         mousey = std::round(mousey * gridsegs) / gridsegs;
     }
     double seg = std::floor(mousex * gridsegs);
-    int paintMode = (int)audioProcessor.params.getRawParameterValue("paint")->load();
+    int paintmode = (int)audioProcessor.params.getRawParameterValue("paint")->load();
 
-    if (paintMode == 0 || e.mods.isAltDown()) {  // erase mode
+    if (paintmode == 0 || e.mods.isAltDown()) {  // erase mode
         audioProcessor.viewPattern->removePointsInRange(seg / gridsegs, (seg + 1) / gridsegs);
     }
-    else if (paintMode == 1) { // line mode
+    else if (paintmode == 1) { // line mode
         audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
         audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, mousey, 0, 1);
         audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, mousey, 0, 1);
     }
-    else if (paintMode == 2) { // saw up
+    else if (paintmode == 2) { // saw up
         audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
         audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, 1, 0, 1);
         audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, mousey, 0, 1);
     }
-    else if (paintMode == 3) { // saw down
+    else if (paintmode == 3) { // saw down
         audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
         audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, mousey, 0, 1);
         audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, 1, 0, 1);
     }
-    else if (paintMode == 4) { // triangle
+    else if (paintmode == 4) { // triangle
         audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
         audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, 1, 0, 1);
         audioProcessor.viewPattern->insertPoint(seg / gridsegs + (((seg + 1) / gridsegs - seg / gridsegs) / 2), mousey, 0, 1);

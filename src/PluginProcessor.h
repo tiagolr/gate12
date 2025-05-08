@@ -168,8 +168,9 @@ public:
     int getCurrentGrid();
     void createUndoPoint(int patindex = -1);
     void createUndoPointFromSnapshot(std::vector<PPoint> snapshot);
+    bool isPaintEdit();
     bool isPaintMode();
-    void togglePaintMode();
+    void togglePaintEdit();
     Pattern* getPaintPatern(int index);
     void setViewPattern(int index);
     void setPaintTool(int index);

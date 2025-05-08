@@ -163,23 +163,28 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
     }
 }
 
-bool GATE12AudioProcessor::isPaintMode()
+bool GATE12AudioProcessor::isPaintEdit()
 {
     return viewPattern->index >= PAINT_PATS_IDX && 
         viewPattern->index < PAINT_PATS_IDX + PAINT_PATS;
 }
 
-void GATE12AudioProcessor::togglePaintMode()
+bool GATE12AudioProcessor::isPaintMode()
+{
+    return !isPaintEdit() && showPaintWidget;
+}
+
+void GATE12AudioProcessor::togglePaintEdit()
 {
     if (paintTool < 0 || paintTool >= PAINT_PATS)
         return; // safeguard
 
     MessageManager::callAsync([this]() {
-        viewPattern = isPaintMode()
+        viewPattern = isPaintEdit()
             ? pattern
             : paintPatterns[paintTool];
 
-        if (isPaintMode()) { // always show paint widget when editing the tool
+        if (isPaintEdit()) { // always show paint widget when editing the tool
             showPaintWidget = true;
         }
         sendChangeMessage();
@@ -204,7 +209,7 @@ void GATE12AudioProcessor::setViewPattern(int index)
 void GATE12AudioProcessor::setPaintTool(int index) 
 {
     paintTool = index;
-    if (isPaintMode()) {
+    if (isPaintEdit()) {
         viewPattern = paintPatterns[index];
     }
 }
@@ -292,7 +297,7 @@ void GATE12AudioProcessor::loadProgram (int index)
         loadPreset(*pattern, index - 1);
     }
 
-    viewPattern = pattern; // exit paintMode if on
+    viewPattern = pattern; // exit paintEdit if on
     sendChangeMessage(); // UI Repaint
 }
 

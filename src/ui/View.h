@@ -67,6 +67,9 @@ private:
     int hoverPoint = -1;
     int hoverMidpoint = -1;
     int rmousePoint = -1;
+    bool paintEdit = false;
+    bool paintMode = false; // paint mode is mutually exclusive with paintEditMode
+    bool lpaintMode = false;
 
     GATE12AudioProcessor& audioProcessor;
     double origTension = 0;
@@ -81,5 +84,5 @@ private:
     Point<int> preSelectionEnd = Point(-1,-1);
 
     // PaintTool
-    PaintTool painttool;
+    PaintTool paintTool;
 };

@@ -44,7 +44,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
             oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
         }
         DBG(oss.str() << "\n");
-        audioProcessor.togglePaintMode();
     };
 #endif
 
@@ -277,42 +276,25 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // THIRD ROW
     col = PLUG_PADDING;
     row += 75;
-    juce::MemoryInputStream paintInputStream(BinaryData::paint_png, BinaryData::paint_pngSize, false);
-    juce::Image paintImage = juce::ImageFileFormat::loadFrom(paintInputStream);
-    if (paintImage.isValid()) {
-        paintLogo.setImages(false, true, true,
-            paintImage, 1.0f, juce::Colours::transparentBlack,
-            paintImage, 1.0f, juce::Colours::transparentBlack,
-            paintImage, 1.0f, juce::Colours::transparentBlack
-        );
-    }
-    addAndMakeVisible(paintLogo);
-    paintLogo.setBounds(col, row, 25, 25);
-    col += 25+10;
-
-    addAndMakeVisible(paintMenu);
-    paintMenu.setTooltip("Paint mode\nRight click on view to paint\nAlt + right click to erase points");
-    paintMenu.addItem("Erase", 1);
-    paintMenu.addItem("Line", 2);
-    paintMenu.addItem("Saw Up", 3);
-    paintMenu.addItem("Saw Down", 4);
-    paintMenu.addItem("Triangle", 5);
-    paintMenu.setBounds(col, row, 90, 25);
-    paintAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "paint", paintMenu);
+    addAndMakeVisible(paintButton);
+    paintButton.setButtonText("Paint");
+    paintButton.setComponentID("button");
+    paintButton.setBounds(col, row, 90, 25);
+    paintButton.onClick = [this]() {
+        if (audioProcessor.isPaintEdit()) {
+            audioProcessor.togglePaintEdit();
+        }
+        audioProcessor.showPaintWidget = !audioProcessor.showPaintWidget;
+        toggleUIComponents();
+    };
     col += 100;
 
-    juce::MemoryInputStream pointInputStream(BinaryData::point_png, BinaryData::point_pngSize, false);
-    juce::Image pointImage = juce::ImageFileFormat::loadFrom(pointInputStream);
-    if (pointImage.isValid()) {
-        pointLogo.setImages(false, true, true,
-            pointImage, 1.0f, juce::Colours::transparentBlack,
-            pointImage, 1.0f, juce::Colours::transparentBlack,
-            pointImage, 1.0f, juce::Colours::transparentBlack
-        );
-    }
-    addAndMakeVisible(pointLogo);
-    pointLogo.setBounds(col, row, 25, 25);
-    col += 25+10;
+    addAndMakeVisible(pointLabel);
+    pointLabel.setText("Point", dontSendNotification);
+    pointLabel.setColour(Label::textColourId, Colour(COLOR_NEUTRAL));
+    pointLabel.setFont(FontOptions(16.f));
+    pointLabel.setBounds(col,row,45,25);
+    col += 55;
 
     addAndMakeVisible(pointMenu);
     pointMenu.setTooltip("Point mode\nRight click points to change mode");
@@ -415,9 +397,18 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     // PAINT TOOL
     col = PLUG_PADDING;
+    addAndMakeVisible(paintEditButton);
+    paintEditButton.setButtonText("Edit");
+    paintEditButton.setComponentID("button");
+    paintEditButton.setBounds(col, row+40/2-25/2, 50, 25);
+    paintEditButton.onClick = [this]() {
+        audioProcessor.togglePaintEdit();
+    };
+    col += 60;
+
     paintToolWidget = std::make_unique<PaintToolWidget>(p);
     addAndMakeVisible(*paintToolWidget);
-    paintToolWidget->setBounds(col,row,getWidth() - PLUG_PADDING * 2, 40);
+    paintToolWidget->setBounds(col,row,getWidth() - PLUG_PADDING - col, 40);
 
     // VIEW
     col = 0;
@@ -547,11 +538,15 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
     latencyWarning.setVisible(audioProcessor.showLatencyWarning);
     paintToolWidget->setVisible(audioProcessor.showPaintWidget);
+    paintEditButton.setVisible(audioProcessor.showPaintWidget);
+    paintEditButton.setToggleState(audioProcessor.isPaintEdit(), dontSendNotification);
 
     view->setBounds(view->getBounds().withTop(paintToolWidget->isVisible() 
         ? paintToolWidget->getBounds().getBottom()
         : paintToolWidget->getBounds().getY() - 10)
     );
+
+    paintButton.setToggleState(audioProcessor.showPaintWidget, dontSendNotification);
 
     repaint();
 }

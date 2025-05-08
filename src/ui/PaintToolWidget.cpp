@@ -81,7 +81,7 @@ void PaintToolWidget::mouseDown(const juce::MouseEvent& e)
     for (int i = 0; i < (int)rects.size(); ++i) {
         if (rects[i].contains(e.getPosition())) {
             audioProcessor.paintTool = i;
-            if (audioProcessor.isPaintMode()) {
+            if (audioProcessor.isPaintEdit()) {
                 audioProcessor.setViewPattern(audioProcessor.getPaintPatern(i)->index);
             }
         }

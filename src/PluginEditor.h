@@ -80,13 +80,12 @@ private:
     TextButton nudgeLeftButton;
     TextButton undoButton;
     TextButton redoButton;
-    ImageButton paintLogo;
-    ComboBox paintMenu;
     std::unique_ptr<AudioDisplay> audioDisplay;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> paintAttachment;
-    ImageButton pointLogo;
+    TextButton paintButton;
+    TextButton paintEditButton;
     ComboBox pointMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
+    Label pointLabel;
     TextButton loopButton;
     Label triggerLabel;
     ComboBox triggerMenu;
