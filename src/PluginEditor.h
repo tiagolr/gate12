@@ -32,7 +32,9 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void changeListenerCallback(ChangeBroadcaster* source) override;
+    void drawGear(Graphics&g, Rectangle<int> bounds, float radius, int segs, Colour color, Colour bg);
     void drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color);
+
 
 private:
     bool init = false;
@@ -88,7 +90,7 @@ private:
     Label triggerLabel;
     ComboBox triggerMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> triggerAttachment;
-    ImageButton audioSettingsLogo;
+    TextButton audioSettingsButton;
     TextButton snapButton;
     std::unique_ptr<GridSelector> gridSelector;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;

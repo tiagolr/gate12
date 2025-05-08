@@ -100,21 +100,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     algoAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "algo", algoMenu);
     col += 100;
 
-    juce::MemoryInputStream audioInputStream(BinaryData::gear_png, BinaryData::gear_pngSize, false);
-    juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
-    if (audioImage.isValid()) {
-        audioSettingsLogo.setImages(false, true, true,
-            audioImage, 1.0f, juce::Colours::transparentBlack,
-            audioImage, 1.0f, juce::Colours::transparentBlack,
-            audioImage, 1.0f, juce::Colours::transparentBlack
-        );
-    }
-    addAndMakeVisible(audioSettingsLogo);
-    audioSettingsLogo.setBounds(col+4, row+4, 25-8, 25-8);
-    audioSettingsLogo.onClick = [this]() {
+    addAndMakeVisible(audioSettingsButton);
+    audioSettingsButton.setBounds(col, row, 25, 25);
+    audioSettingsButton.onClick = [this]() {
         audioProcessor.showAudioKnobs = !audioProcessor.showAudioKnobs;
         toggleUIComponents();
     };
+    audioSettingsButton.setAlpha(0.0f);
     col += 35;
 
     col = getWidth() - PLUG_PADDING - 25;
@@ -478,26 +470,12 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     triggerMenu.setColour(ComboBox::arrowColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::textColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::outlineColourId, Colour(triggerColor));
-    audioSettingsLogo.setVisible(trigger == Trigger::Audio);
     algoMenu.setVisible(trigger == Trigger::Audio);
-    if (!audioSettingsLogo.isVisible()) {
+    audioSettingsButton.setVisible(trigger == Trigger::Audio);
+    if (!audioSettingsButton.isVisible()) {
         audioProcessor.showAudioKnobs = false;
     }
-    else {
-        juce::MemoryInputStream audioInputStream(
-            audioProcessor.showAudioKnobs ? BinaryData::geardark_png : BinaryData::gear_png,
-            audioProcessor.showAudioKnobs ? BinaryData::geardark_pngSize : BinaryData::gear_pngSize,
-            false
-        );
-        juce::Image audioImage = juce::ImageFileFormat::loadFrom(audioInputStream);
-        if (audioImage.isValid()) {
-            audioSettingsLogo.setImages(false, true, true,
-                audioImage, 1.0f, juce::Colours::transparentBlack,
-                audioImage, 1.0f, juce::Colours::transparentBlack,
-                audioImage, 1.0f, juce::Colours::transparentBlack
-            );
-        }
-    }
+
     loopButton.setVisible(trigger > 0);
 
     int sync = (int)audioProcessor.params.getRawParameterValue("sync")->load();
@@ -591,9 +569,13 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 
     // draw audio settings button outline
     g.setColour(Colour(COLOR_ACTIVE));
-    if (audioSettingsLogo.isVisible() && audioProcessor.showAudioKnobs) {
+    if (audioSettingsButton.isVisible() && audioProcessor.showAudioKnobs) {
         g.setColour(Colour(COLOR_AUDIO));
-        g.fillRoundedRectangle(audioSettingsLogo.getBounds().expanded(4,4).toFloat(), 3.0f);
+        g.fillRoundedRectangle(audioSettingsButton.getBounds().toFloat(), 3.0f);
+        drawGear(g, audioSettingsButton.getBounds(), 10, 6, Colour(COLOR_BG), Colour(COLOR_AUDIO));
+    }
+    else if (audioSettingsButton.isVisible()) {
+        drawGear(g, audioSettingsButton.getBounds(), 10, 6, Colour(COLOR_AUDIO), Colour(COLOR_BG));
     }
 
     // draw phase nudge buttons
@@ -624,6 +606,29 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? COLOR_ACTIVE : COLOR_NEUTRAL));
 }
 
+void GATE12AudioProcessorEditor::drawGear(Graphics& g, Rectangle<int> bounds, float radius, int segs, Colour color, Colour background)
+{
+    float x = bounds.toFloat().getCentreX();
+    float y = bounds.toFloat().getCentreY();
+    float oradius = radius;
+    float iradius = radius / 3.f;
+    float cradius = iradius / 1.5f; 
+    float coffset = MathConstants<float>::twoPi;
+    float inc = MathConstants<float>::twoPi / segs;
+
+    g.setColour(color);
+    g.fillEllipse(x-oradius,y-oradius,oradius*2.f,oradius*2.f);
+
+    g.setColour(background);
+    for (int i = 0; i < segs; i++) {
+        float angle = coffset + i * inc;
+        float cx = x + std::cos(angle) * oradius;
+        float cy = y + std::sin(angle) * oradius;
+        g.fillEllipse(cx - cradius, cy - cradius, cradius * 2, cradius * 2);
+    }
+    g.fillEllipse(x-iradius, y-iradius, iradius*2.f, iradius*2.f);
+}
+
 void GATE12AudioProcessorEditor::drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color)
 {
         auto bounds = area;
@@ -645,7 +650,7 @@ void GATE12AudioProcessorEditor::drawUndoButton(Graphics& g, juce::Rectangle<flo
         // shaft
         float radius = (bottom - centerY);
         arrowPath.startNewSubPath(right, centerY);
-        arrowPath.lineTo(left + radius, centerY);
+        arrowPath.lineTo(left + radius - 1, centerY);
 
         // semi circle
         arrowPath.startNewSubPath(left + radius, centerY);
@@ -669,10 +674,9 @@ void GATE12AudioProcessorEditor::resized()
 {
     if (!init) return; // defer resized() call during constructor
 
-    // layout only right aligned components and view
-    auto col = getWidth() - PLUG_PADDING;
-
+    // layout right aligned components and view
     // first row
+    auto col = getWidth() - PLUG_PADDING;
     auto bounds = settingsButton->getBounds();
     settingsButton->setBounds(bounds.withX(col - bounds.getWidth()));
 
