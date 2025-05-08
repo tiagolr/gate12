@@ -124,7 +124,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
         btn->setRadioGroupId (1337);
-        btn->setToggleState(audioProcessor.audioPattern->index == i, dontSendNotification);
+        btn->setToggleState(audioProcessor.pattern->index == i, dontSendNotification);
         btn->setClickingTogglesState (false);
         btn->setColour (TextButton::textColourOffId,  Colour(COLOR_BG));
         btn->setColour (TextButton::textColourOnId,   Colour(COLOR_BG));

@@ -100,7 +100,7 @@ public:
     bool useSidechain = false;
 
     // State
-    Pattern* audioPattern; // current pattern used for audio processing
+    Pattern* pattern; // current pattern used for audio processing
     Pattern* viewPattern; // pattern being edited on the view, usually the audio pattern but can also be a paint mode pattern
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied

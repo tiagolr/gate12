@@ -71,8 +71,8 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         paintPatterns[i]->buildSegments();
     }
 
-    audioPattern = patterns[0];
-    viewPattern = audioPattern;
+    pattern = patterns[0];
+    viewPattern = pattern;
     preSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= viewport width 
     postSamples.resize(MAX_PLUG_WIDTH, 0);
     monSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
@@ -150,11 +150,11 @@ void GATE12AudioProcessor::createUndoPoint(int patindex)
 */
 void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snapshot)
 {
-    if (!Pattern::comparePoints(snapshot, audioPattern->points)) {
-        auto points = audioPattern->points;
-        audioPattern->points = snapshot;
+    if (!Pattern::comparePoints(snapshot, pattern->points)) {
+        auto points = pattern->points;
+        pattern->points = snapshot;
         createUndoPoint();
-        audioPattern->points = points;
+        pattern->points = points;
     }
 }
 
@@ -238,10 +238,10 @@ void GATE12AudioProcessor::loadProgram (int index)
         }
     }
     else {
-        loadPreset(*audioPattern, index - 1);
+        loadPreset(*pattern, index - 1);
     }
 
-    viewPattern = audioPattern; // exit paintMode if on
+    viewPattern = pattern; // exit paintMode if on
     sendChangeMessage(); // UI Repaint
 }
 
@@ -342,14 +342,14 @@ void GATE12AudioProcessor::onSlider()
         audioTrigger = false;
 
     int pat = (int)params.getRawParameterValue("pattern")->load();
-    if (pat != audioPattern->index + 1 && pat != queuedPattern) {
+    if (pat != pattern->index + 1 && pat != queuedPattern) {
         queuePattern(pat);
     }
 
     auto tension = (double)params.getRawParameterValue("tension")->load();
-    if (audioPattern->getTension() != tension) {
-        audioPattern->setTension(tension);
-        audioPattern->buildSegments();
+    if (pattern->getTension() != tension) {
+        pattern->setTension(tension);
+        pattern->buildSegments();
     }
 
     auto sync = (int)params.getRawParameterValue("sync")->load();
@@ -470,7 +470,7 @@ void GATE12AudioProcessor::toggleMonitorSidechain()
 
 double inline GATE12AudioProcessor::getY(double x, double min, double max)
 {
-    return min + (max - min) * (1 - audioPattern->get_y_at(x));
+    return min + (max - min) * (1 - pattern->get_y_at(x));
 }
 
 void GATE12AudioProcessor::setSmooth() 
@@ -685,11 +685,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         // process queued pattern
         if (queuedPattern) {
             if (!playing || queuedPatternCountdown == 0) {
-                audioPattern = patterns[queuedPattern - 1];
-                viewPattern = audioPattern;
+                pattern = patterns[queuedPattern - 1];
+                viewPattern = pattern;
                 auto tension = (double)params.getRawParameterValue("tension")->load();
-                audioPattern->setTension(tension);
-                audioPattern->buildSegments();
+                pattern->setTension(tension);
+                pattern->buildSegments();
                 MessageManager::callAsync([this]() {
                     sendChangeMessage();
                 });
