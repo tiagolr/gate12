@@ -100,7 +100,8 @@ public:
     bool useSidechain = false;
 
     // State
-    Pattern* pattern; // current pattern
+    Pattern* audioPattern; // current pattern used for audio processing
+    Pattern* viewPattern; // pattern being edited on the view, usually the audio pattern but can also be a paint mode pattern
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
     int currentProgram = -1;
@@ -188,19 +189,19 @@ public:
     void toggleMonitorSidechain();
     double getY(double x, double min, double max);
     void queuePattern(int patidx);
-    //==============================================================================
 
+    //==============================================================================
     void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     template <typename FloatType>
     void processBlockByType(AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages);
+
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
     //==============================================================================
     const juce::String getName() const override;
-
     bool acceptsMidi() const override;
     bool producesMidi() const override;
     bool isMidiEffect() const override;
@@ -218,11 +219,16 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    //=========================================================
+    Pattern* getPaintPaterns();
+    void setViewPattern(int index);
+
     juce::AudioProcessorValueTreeState params;
     juce::UndoManager undoManager;
 
 private:
-    Pattern* patterns[12];
+    Pattern* patterns[12]; // audio process patterns
+    Pattern* paintPatterns[8]; // paint mode patterns
     Transient transDetectorL;
     Transient transDetectorR;
     bool paramChanged = false; // flag that triggers on any param change

@@ -38,7 +38,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     presetExport.setBounds(10, 10, 100, 25);
     presetExport.onClick = [this] {
         std::ostringstream oss;
-        auto points = audioProcessor.pattern->points;
+        auto points = audioProcessor.viewPattern->points;
         for (const auto& point : points) {
             oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
         }
@@ -124,7 +124,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
         btn->setRadioGroupId (1337);
-        btn->setToggleState(audioProcessor.pattern->index == i, dontSendNotification);
+        btn->setToggleState(audioProcessor.audioPattern->index == i, dontSendNotification);
         btn->setClickingTogglesState (false);
         btn->setColour (TextButton::textColourOffId,  Colour(COLOR_BG));
         btn->setColour (TextButton::textColourOnId,   Colour(COLOR_BG));
@@ -363,9 +363,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.getCurrentGrid();
-            auto snapshot = audioProcessor.pattern->points;
-            audioProcessor.pattern->rotate(1.0/grid);
-            audioProcessor.pattern->buildSegments();
+            auto snapshot = audioProcessor.viewPattern->points;
+            audioProcessor.viewPattern->rotate(1.0/grid);
+            audioProcessor.viewPattern->buildSegments();
             audioProcessor.createUndoPointFromSnapshot(snapshot);
         });
     };
@@ -377,9 +377,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             double grid = (double)audioProcessor.getCurrentGrid();
-            auto snapshot = audioProcessor.pattern->points;
-            audioProcessor.pattern->rotate(-1.0/grid);
-            audioProcessor.pattern->buildSegments();
+            auto snapshot = audioProcessor.viewPattern->points;
+            audioProcessor.viewPattern->rotate(-1.0/grid);
+            audioProcessor.viewPattern->buildSegments();
             audioProcessor.createUndoPointFromSnapshot(snapshot);
         });
     };
@@ -392,7 +392,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     redoButton.setAlpha(0.f);
     redoButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            audioProcessor.pattern->redo();
+            audioProcessor.viewPattern->redo();
             repaint();
         });
     };
@@ -405,7 +405,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     undoButton.setAlpha(0.f);
     undoButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            audioProcessor.pattern->undo();
+            audioProcessor.viewPattern->undo();
             repaint();
         });
     };
@@ -600,8 +600,8 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     g.fillPath(nudgeRightTriangle);
 
     // draw undo redo buttons
-    auto canUndo = !audioProcessor.pattern->undoStack.empty();
-    auto canRedo = !audioProcessor.pattern->redoStack.empty();
+    auto canUndo = !audioProcessor.viewPattern->undoStack.empty();
+    auto canRedo = !audioProcessor.viewPattern->redoStack.empty();
     drawUndoButton(g, undoButton.getBounds().toFloat(), true, Colour(canUndo ? COLOR_ACTIVE : COLOR_NEUTRAL));
     drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? COLOR_ACTIVE : COLOR_NEUTRAL));
 }

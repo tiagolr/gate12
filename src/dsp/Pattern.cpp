@@ -14,7 +14,7 @@
 
 std::vector<PPoint> Pattern::copy_pattern;
 
-Pattern::Pattern(GATE12AudioProcessor& p, int i) : gate(p)
+Pattern::Pattern(int i)
 {
     index = i;
     incrementVersion();

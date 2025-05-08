@@ -242,7 +242,7 @@ void Multiselect::makeSelection(const MouseEvent& e, Point<int>selectionStart, P
     );
 
 
-    auto points = audioProcessor.pattern->points;
+    auto points = audioProcessor.viewPattern->points;
     for (size_t i = 0; i < points.size(); ++i) {
         auto& p = points[i];
         auto id = p.id;
@@ -278,7 +278,7 @@ void Multiselect::recalcSelectionArea()
 {
     // the pattern may have changed, first update the selected points
     std::vector<SelPoint> selPoints;
-    std::vector<PPoint> patPoints = audioProcessor.pattern->points;
+    std::vector<PPoint> patPoints = audioProcessor.viewPattern->points;
     for (auto i = patPoints.begin(); i < patPoints.end(); ++i) {
         for (auto j = selectionPoints.begin(); j < selectionPoints.end(); ++j) {
             if (i->id == j->id) {
@@ -516,7 +516,7 @@ void Multiselect::updatePointsToSelection()
         p.y = newpos.y;
 
         // update pattern point
-        auto& points = audioProcessor.pattern->points;
+        auto& points = audioProcessor.viewPattern->points;
         for (size_t j = 0; j < points.size(); ++j) {
             auto& pp = points[j];
             if (pp.id == p.id) {
@@ -527,24 +527,24 @@ void Multiselect::updatePointsToSelection()
         }
     }
 
-    audioProcessor.pattern->sortPoints();
-    audioProcessor.pattern->buildSegments();
+    audioProcessor.viewPattern->sortPoints();
+    audioProcessor.viewPattern->buildSegments();
 }
 
 void Multiselect::deleteSelectedPoints()
 {
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
-        auto& points = audioProcessor.pattern->points;
+        auto& points = audioProcessor.viewPattern->points;
         for (size_t j = 0; j < points.size(); ++j) {
             if (points[j].id == p.id) {
-                audioProcessor.pattern->removePoint(static_cast<int>(j));
+                audioProcessor.viewPattern->removePoint(static_cast<int>(j));
                 break;
             }
         }
     }
     clearSelection();
-    audioProcessor.pattern->buildSegments();
+    audioProcessor.viewPattern->buildSegments();
 }
 
 Quad Multiselect::getQuadExpanded(double expand)

@@ -12,8 +12,6 @@
 #include <mutex>
 #include <atomic>
 
-class GATE12AudioProcessor;
-
 enum PointType {
     Hold,
     Curve,
@@ -55,7 +53,7 @@ public:
     std::vector<std::vector<PPoint>> undoStack;
     std::vector<std::vector<PPoint>> redoStack;
 
-    Pattern(GATE12AudioProcessor&, int);
+    Pattern(int index);
     void incrementVersion(); // generates a new unique ID for this pattern
 
     int insertPoint(double x, double y, double tension, int type);
@@ -96,6 +94,5 @@ private:
     static inline uint64_t versionIDCounter = 1; // static global ID counter
     static inline uint64_t pointsIDCounter = 1; // static global ID counter
     std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
-    GATE12AudioProcessor& gate;
     std::mutex mtx;
 };

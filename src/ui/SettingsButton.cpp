@@ -101,7 +101,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 		.withTargetScreenArea({menuPos.getX() -110, menuPos.getY(), 1, 1}),
 		[this](int result) {
 			if (result == 0) return;
-			auto snapshot = audioProcessor.pattern->points;
+			auto snapshot = audioProcessor.viewPattern->points;
 
 			if (result >= 1 && result <= 5) { // UI Scale
 				audioProcessor.setScale(result == 5 ? 2.0f : result == 4 ? 1.75f : result == 3 ? 1.5f : result == 2 ? 1.25f : 1.0f);
@@ -115,26 +115,26 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 				toggleUIComponents();
 			}
 			if (result == 50) {
-				audioProcessor.pattern->invert();
-				audioProcessor.pattern->buildSegments();
+				audioProcessor.viewPattern->invert();
+				audioProcessor.viewPattern->buildSegments();
 				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 51) {
-				audioProcessor.pattern->reverse();
-				audioProcessor.pattern->buildSegments();
+				audioProcessor.viewPattern->reverse();
+				audioProcessor.viewPattern->buildSegments();
 				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 52) {
-				audioProcessor.pattern->clear();
-				audioProcessor.pattern->buildSegments();
+				audioProcessor.viewPattern->clear();
+				audioProcessor.viewPattern->buildSegments();
 				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 53) {
-				audioProcessor.pattern->copy();
+				audioProcessor.viewPattern->copy();
 			}
 			if (result == 54) {
-				audioProcessor.pattern->paste();
-				audioProcessor.pattern->buildSegments();
+				audioProcessor.viewPattern->paste();
+				audioProcessor.viewPattern->buildSegments();
 				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}
 			if (result == 109) {
@@ -142,17 +142,17 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			}
 			if (result >= 100 && result <= 200) { // load
 				if (result == 100) { // load sine
-					audioProcessor.pattern->loadSine();
-					audioProcessor.pattern->buildSegments();
+					audioProcessor.viewPattern->loadSine();
+					audioProcessor.viewPattern->buildSegments();
 				}
 				if (result == 101) { // load triangle
-					audioProcessor.pattern->loadTriangle();
-					audioProcessor.pattern->buildSegments();
+					audioProcessor.viewPattern->loadTriangle();
+					audioProcessor.viewPattern->buildSegments();
 				}
 				if (result == 102) { // load random
 					int grid = audioProcessor.getCurrentGrid();
-					audioProcessor.pattern->loadRandom(grid);
-					audioProcessor.pattern->buildSegments();
+					audioProcessor.viewPattern->loadRandom(grid);
+					audioProcessor.viewPattern->buildSegments();
 				}
 				if (result >= 110 && result < 150) {
 					MessageManager::callAsync([this, result]() {

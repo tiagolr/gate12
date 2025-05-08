@@ -72,7 +72,7 @@ private:
     int dragStartY = 0; // used for midpoint dragging
     uint64_t patternID = 0; // used to detect pattern changes
     std::vector<PPoint> snapshot; // used for undo after drag
-    int snapshotIdx; // used for undo after drag
+    int snapshotIdx = 0; // used for undo after drag
 
     // Multiselect
     Multiselect multiselect;
