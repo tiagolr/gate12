@@ -16,7 +16,7 @@ void PaintToolWidget::paint(Graphics& g)
 {
     auto rects = getPatRects();
     for (int i = 0; i < (int)rects.size(); ++i) {
-        auto color = i + 100 == audioProcessor.viewPattern->index ? Colours::white : Colour(COLOR_NEUTRAL);
+        auto color = i == audioProcessor.paintTool ? Colours::white : Colour(COLOR_NEUTRAL);
         g.setColour(color);
         g.drawRect(rects[i]);
         g.setColour(Colours::black.withAlpha(0.05f));
@@ -28,7 +28,7 @@ void PaintToolWidget::paint(Graphics& g)
 std::vector<Rectangle<int>> PaintToolWidget::getPatRects()
 {
     auto bounds = getLocalBounds();
-    int patnum = 8;
+    int patnum = PAINT_PATS;
     float gap = 5.0f;
 
     float totalWidth = bounds.toFloat().getWidth();
@@ -80,7 +80,10 @@ void PaintToolWidget::mouseDown(const juce::MouseEvent& e)
     auto rects = getPatRects();
     for (int i = 0; i < (int)rects.size(); ++i) {
         if (rects[i].contains(e.getPosition())) {
-            audioProcessor.setPaintTool(i);
+            audioProcessor.paintTool = i;
+            if (audioProcessor.isPaintMode()) {
+                audioProcessor.setViewPattern(audioProcessor.getPaintPatern(i)->index);
+            }
         }
     }
 }

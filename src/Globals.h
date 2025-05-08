@@ -28,4 +28,8 @@ namespace globals {
 	inline const int POINT_RADIUS = 4;
 	inline const int MPOINT_RADIUS = 3;
 	inline const int MSEL_PADDING = 8;
+
+	// paint mode
+	inline const int PAINT_PATS_IDX = 100; // starting index of paint patterns, audio patterns always range 0..11
+	inline const int PAINT_PATS = 8;
 };

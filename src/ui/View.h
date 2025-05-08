@@ -12,6 +12,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../dsp/Pattern.h"
 #include "Multiselect.h"
+#include "PaintTool.h"
 #include "../Globals.h"
 
 class GATE12AudioProcessor;
@@ -78,4 +79,7 @@ private:
     Multiselect multiselect;
     Point<int> preSelectionStart = Point(-1,-1);
     Point<int> preSelectionEnd = Point(-1,-1);
+
+    // PaintTool
+    PaintTool painttool;
 };

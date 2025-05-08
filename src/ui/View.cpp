@@ -11,7 +11,7 @@
 #include "../PluginProcessor.h"
 #include <utility>
 
-View::View(GATE12AudioProcessor& p) : audioProcessor(p), multiselect(p)
+View::View(GATE12AudioProcessor& p) : audioProcessor(p), multiselect(p), painttool(p)
 {
     setWantsKeyboardFocus(true);
     startTimerHz(60);
@@ -52,6 +52,7 @@ void View::resized()
     winw = bounds.getWidth() - PLUG_PADDING * 2;
     winh = bounds.getHeight() - PLUG_PADDING * 2;
     multiselect.setViewBounds(winx, winy, winw, winh);
+    painttool.setViewBounds(winx, winy, winw, winh);
     MessageManager::callAsync([this] {
         audioProcessor.viewW = winw;
     });
@@ -78,6 +79,9 @@ void View::paint(Graphics& g) {
     drawSegments(g);
     drawMidPoints(g);
     drawPoints(g);
+    if (isMouseOver()) {
+        painttool.draw(g);
+    }
     drawPreSelection(g);
     multiselect.draw(g);
 
@@ -133,9 +137,8 @@ void View::drawGrid(Graphics& g)
     for (int i = 0; i < grid + 1; ++i) {
         auto score = getScore(i);
         g.setColour(Colours::white.withAlpha(0.025f + score * (0.15f - 0.025f))); // map score into min + score * (max - min)
-        float y = std::round((float)(winy + gridy * i)) + 0.5f; // +0.5f removes aliasing
-        float x = std::round((float)(winx + gridx * i)) + 0.5f;
-
+        float y = (float)(winy + std::round(gridy * i) + 0.5f); // 0.5 removes aliasing
+        float x = (float)(winx + std::round(gridx * i) + 0.5f);
 
         g.drawLine(x, (float)winy, x, (float)winy + winh);
         g.drawLine((float)winx, y, (float)winx + winw, y);
@@ -423,8 +426,6 @@ void View::mouseUp(const juce::MouseEvent& e)
     selectedPoint = -1;
 }
 
-
-
 void View::mouseMove(const juce::MouseEvent& e)
 {
     hoverPoint = -1;
@@ -435,6 +436,8 @@ void View::mouseMove(const juce::MouseEvent& e)
         return;
 
     auto pos = e.getPosition();
+
+    painttool.mouseMove(e);
 
     // if currently dragging a point ignore mouse over events
     if (selectedPoint > -1 || selectedMidpoint > -1) {

@@ -35,7 +35,7 @@
   * **Pattern sync** changes to beat position
   * **Multi-point** selection dragging, scaling and skewing
   * **Rotate patterns** no longer constrained by start and end points
-  * **Undo & Redo** added
+  * **Undo & Redo** supported
   * Other **improvements and fixes**
 
 ## Features
@@ -64,7 +64,7 @@ With version 2 this plugin was rebuilt from scratch using JUCE for its cross-pla
 
 ### Features
 
-#### Multiple point types
+#### Point types
 
 Like GrossBeat, GATE-12 includes 8 point types that can be changed by right clicking a point, the default point type can also be changed in the tools-bar.
 
@@ -74,7 +74,7 @@ Like GrossBeat, GATE-12 includes 8 point types that can be changed by right clic
 
 Patterns are not constrained by start and endpoints like they used to, they can have only one point or no points, this mainly allows patterns to be seamlessly rotated to create new rhythm variations.
 
-#### Multiple point selections
+#### Multi-point selections
 
 Multiple points can be selected and moved around, the selections can also be scaled and skewed by holding `Alt + drag` the leftmost or rightmost handles, this allows to quickly make rising or falling wedges as well as compress or expand sets of points.
 

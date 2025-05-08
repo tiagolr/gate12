@@ -98,6 +98,7 @@ public:
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
     bool useMonitor = false;
     bool useSidechain = false;
+    int paintTool = 0; // index of pattern used for paint mode
 
     // State
     Pattern* pattern; // current pattern used for audio processing
@@ -114,9 +115,9 @@ public:
     bool midiTrigger = false; // flag midi has triggered envelope
     int winpos = 0;
     int lwinpos = 0;
+    double ltension = -1.0;
     RCSmoother* value; // smooths envelope value
     bool showLatencyWarning = false;
-    int selectedPaintTool = 0; // index of pattern used for paint mode
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope
@@ -155,6 +156,7 @@ public:
     int lmonpos = 0; // last index
     int monW = 1; // audio monitor width used to rotate monitor samples buffer
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
+    bool showPaintWidget = true;
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -167,6 +169,10 @@ public:
     void createUndoPoint(int patindex = -1);
     void createUndoPointFromSnapshot(std::vector<PPoint> snapshot);
     bool isPaintMode();
+    void togglePaintMode();
+    Pattern* getPaintPatern(int index);
+    void setViewPattern(int index);
+    void setPaintTool(int index);
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -222,9 +228,6 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //=========================================================
-    Pattern* getPaintPatern(int index);
-    void setViewPattern(int index);
-    void setPaintTool(int index);
 
     juce::AudioProcessorValueTreeState params;
     juce::UndoManager undoManager;

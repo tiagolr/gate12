@@ -64,8 +64,8 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     }
 
     // init paintMode Patterns
-    for (int i = 0; i < 8; ++i) {
-        paintPatterns[i] = new Pattern(i + 100);
+    for (int i = 0; i < PAINT_PATS; ++i) {
+        paintPatterns[i] = new Pattern(i + PAINT_PATS_IDX);
         paintPatterns[i]->insertPoint(0, 1, 0, 1);
         paintPatterns[i]->insertPoint(1, 0, 0, 1);
         paintPatterns[i]->buildSegments();
@@ -104,6 +104,9 @@ void GATE12AudioProcessor::loadSettings ()
         scale = (float)file->getDoubleValue("scale", 1.0f);
         plugWidth = file->getIntValue("width", PLUG_WIDTH);
         plugHeight = file->getIntValue("height", PLUG_HEIGHT);
+        // load paint patterns
+        // clear patterns undo
+        // set patterns tension
     }
 }
 
@@ -147,12 +150,12 @@ void GATE12AudioProcessor::createUndoPoint(int patindex)
 
 /*
     Used to create an undo point from a previously saved state
-    First assign the snapshot points to the pattern temporarily
-    Then create an undo point which will be discarded if nothing has changed
+    Assigns the snapshot points to the pattern temporarily
+    Creates an undo point and finally replaces back the points
 */
 void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snapshot)
 {
-    if (!Pattern::comparePoints(snapshot, pattern->points)) {
+    if (!Pattern::comparePoints(snapshot, viewPattern->points)) {
         auto points = viewPattern->points;
         viewPattern->points = snapshot;
         createUndoPoint();
@@ -162,7 +165,48 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
 
 bool GATE12AudioProcessor::isPaintMode()
 {
-    return viewPattern->index >= 100 && viewPattern->index < 108;
+    return viewPattern->index >= PAINT_PATS_IDX && 
+        viewPattern->index < PAINT_PATS_IDX + PAINT_PATS;
+}
+
+void GATE12AudioProcessor::togglePaintMode()
+{
+    if (paintTool < 0 || paintTool >= PAINT_PATS)
+        return; // safeguard
+
+    MessageManager::callAsync([this]() {
+        viewPattern = isPaintMode()
+            ? pattern
+            : paintPatterns[paintTool];
+
+        if (isPaintMode()) { // always show paint widget when editing the tool
+            showPaintWidget = true;
+        }
+        sendChangeMessage();
+    });
+}
+
+Pattern* GATE12AudioProcessor::getPaintPatern(int index)
+{
+    return paintPatterns[index];
+}
+
+void GATE12AudioProcessor::setViewPattern(int index)
+{
+    if (index >= 0 && index < 12) {
+        viewPattern = patterns[index];
+    }
+    else if (index >= PAINT_PATS && index < PAINT_PATS_IDX + PAINT_PATS) {
+        viewPattern = paintPatterns[index - PAINT_PATS_IDX];
+    }
+}
+
+void GATE12AudioProcessor::setPaintTool(int index) 
+{
+    paintTool = index;
+    if (isPaintMode()) {
+        viewPattern = paintPatterns[index];
+    }
 }
 
 //==============================================================================
@@ -354,10 +398,15 @@ void GATE12AudioProcessor::onSlider()
     }
 
     auto tension = (double)params.getRawParameterValue("tension")->load();
-    if (pattern->getTension() != tension) {
+    if (tension != ltension) {
         pattern->setTension(tension);
         pattern->buildSegments();
+        for (int i = 0; i < PAINT_PATS; ++i) {
+            paintPatterns[i]->setTension(tension);
+            paintPatterns[i]->buildSegments();
+        }
     }
+    ltension = tension;
 
     auto sync = (int)params.getRawParameterValue("sync")->load();
     if (sync == 0) syncQN = 1.; // not used
@@ -890,6 +939,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("triggerChn",triggerChn, nullptr);
     state.setProperty("useMonitor",useMonitor, nullptr);
     state.setProperty("useSidechain",useSidechain, nullptr);
+    state.setProperty("paintTool", paintTool, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -921,6 +971,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         triggerChn = (int)state.getProperty("triggerChn");
         useMonitor = (bool)state.getProperty("useMonitor");
         useSidechain = (bool)state.getProperty("useSidechain");
+        paintTool = (int)state.getProperty("paintTool");
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();
@@ -939,29 +990,6 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
     }
 
     sendChangeMessage();
-}
-
-Pattern* GATE12AudioProcessor::getPaintPatern(int index)
-{
-    return paintPatterns[index];
-}
-
-void GATE12AudioProcessor::setViewPattern(int index)
-{
-    if (index >= 0 && index < 12) {
-        viewPattern = patterns[index];
-    }
-    else if (index >= 100 && index < 108) {
-        viewPattern = paintPatterns[index - 100];
-    }
-}
-
-void GATE12AudioProcessor::setPaintTool(int index) 
-{
-    selectedPaintTool = index;
-    if (isPaintMode()) {
-        viewPattern = paintPatterns[index];
-    }
 }
 
 //==============================================================================

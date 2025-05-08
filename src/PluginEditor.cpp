@@ -8,6 +8,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     : AudioProcessorEditor (&p)
     , audioProcessor (p)
 {
+    audioProcessor.loadSettings(); // load saved paint patterns from other plugin instances
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("trigger", this);
@@ -43,8 +44,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
             oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
         }
         DBG(oss.str() << "\n");
-        audioProcessor.setViewPattern(100);
-        audioProcessor.sendChangeMessage();
+        audioProcessor.togglePaintMode();
     };
 #endif
 
@@ -449,6 +449,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
 GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
 {
+    audioProcessor.saveSettings(); // save paint patterns to disk
     setLookAndFeel(nullptr);
     delete customLookAndFeel;
     audioProcessor.params.removeParameterListener("sync", this);
@@ -545,10 +546,12 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     useMonitor.setToggleState(audioProcessor.useMonitor, dontSendNotification);
 
     latencyWarning.setVisible(audioProcessor.showLatencyWarning);
-    bool paintMode = audioProcessor.isPaintMode();
-    paintToolWidget->setVisible(paintMode);
+    paintToolWidget->setVisible(audioProcessor.showPaintWidget);
 
-    view->setBounds(view->getBounds().withTop(paintMode ? paintToolWidget->getBounds().getBottom() : paintToolWidget->getBounds().getY() - 10));
+    view->setBounds(view->getBounds().withTop(paintToolWidget->isVisible() 
+        ? paintToolWidget->getBounds().getBottom()
+        : paintToolWidget->getBounds().getY() - 10)
+    );
 
     repaint();
 }
