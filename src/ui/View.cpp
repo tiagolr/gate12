@@ -726,7 +726,7 @@ void View::applyPaintTool(int x, int y, const MouseEvent& e)
 
 bool View::isSnapping(const MouseEvent& e) {
   bool snap = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
-  return (snap && !e.mods.isCtrlDown()) || (!snap && e.mods.isCtrlDown());
+  return (snap && !e.mods.isShiftDown()) || (!snap && e.mods.isShiftDown());
 }
 
 bool View::isCollinear(Segment seg)

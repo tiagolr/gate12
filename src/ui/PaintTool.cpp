@@ -46,14 +46,6 @@ void PaintTool::draw(Graphics& g)
     }
     g.fillEllipse(x0- POINT_RADIUS,(float)y + (float)h * y0 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS*2.f);
     g.fillEllipse(x1 - POINT_RADIUS,(float)y + (float)h * y1 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS * 2.f);
-
-    //g.setColour(Colours::red);
-    //auto b = bounds.toNearestInt();
-    //g.drawRect(b);
-    //g.fillEllipse(b.getTopLeft().x - 2.f, b.getTopLeft().y - 2.f, 4.f, 4.f);
-    //g.fillEllipse(b.getTopRight().x - 2.f, b.getTopRight().y - 2.f, 4.f, 4.f);
-    //g.fillEllipse(b.getBottomLeft().x - 2.f, b.getBottomLeft().y - 2.f, 4.f, 4.f);
-    //g.fillEllipse(b.getBottomRight().x - 2.f, b.getBottomRight().y - 2.f, 4.f, 4.f);
 }
 
 void PaintTool::mouseMove(const MouseEvent& e)
@@ -185,5 +177,5 @@ Rectangle<double> PaintTool::getBounds()
 
 bool PaintTool::isSnapping(const MouseEvent& e) {
     bool snapping = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
-    return (snapping && !e.mods.isCtrlDown()) || (!snapping && e.mods.isCtrlDown());
+    return (snapping && !e.mods.isShiftDown()) || (!snapping && e.mods.isShiftDown());
 }

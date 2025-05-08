@@ -99,7 +99,7 @@ void Rotary::mouseDown(const juce::MouseEvent& e)
 
 void Rotary::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
-    auto speed = (event.mods.isCtrlDown() ? 0.01f : 0.05f);
+    auto speed = (event.mods.isShiftDown() ? 0.01f : 0.05f);
     auto slider_change = wheel.deltaY > 0 ? speed : wheel.deltaY < 0 ? -speed : 0;
     auto param = audioProcessor.params.getParameter(paramId);
     param->beginChangeGesture();
@@ -130,7 +130,7 @@ void Rotary::mouseDoubleClick(const juce::MouseEvent& e) {
 void Rotary::mouseDrag(const juce::MouseEvent& e) {
     auto change = e.getPosition() - last_mouse_position;
     last_mouse_position = e.getPosition();
-    auto speed = (e.mods.isCtrlDown() ? 40.0f : 4.0f) * pixels_per_percent;
+    auto speed = (e.mods.isShiftDown() ? 40.0f : 4.0f) * pixels_per_percent;
     auto slider_change = float(change.getX() - change.getY()) / speed;
     cur_normed_value += slider_change;
     auto param = audioProcessor.params.getParameter(paramId);

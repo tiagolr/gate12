@@ -559,7 +559,7 @@ Quad Multiselect::getQuadExpanded(double expand)
 
 bool Multiselect::isSnapping(const MouseEvent& e) {
     bool snap = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
-    return (snap && !e.mods.isCtrlDown()) || (!snap && e.mods.isCtrlDown());
+    return (snap && !e.mods.isShiftDown()) || (!snap && e.mods.isShiftDown());
 }
 
 Vec2 Multiselect::pointToVec(Point<double> p)
