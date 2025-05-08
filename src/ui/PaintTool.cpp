@@ -64,6 +64,12 @@ void PaintTool::mouseDrag(const MouseEvent& e)
     inverty = startH - dy < 0;
     paintW = std::abs(startW + dx);
     paintH = std::abs(startH - dy);
+    if (snap) {
+        // apply snapping to bounds to fix the size at snapped values
+        auto bounds = getBounds().toNearestInt();
+        paintW = bounds.getWidth();
+        paintH = bounds.getHeight();
+    }
 }
 
 void PaintTool::mouseDown(const MouseEvent& e)
