@@ -58,7 +58,7 @@ void View::resized()
 }
 
 void View::paint(Graphics& g) {
-    bool paintMode = isPaintMode();
+    bool paintMode = audioProcessor.isPaintMode();
 
     if (paintMode) {
         g.setColour(Colours::blue.withAlpha(0.05f));
@@ -700,9 +700,3 @@ bool View::pointInRect(int x, int y, int xx, int yy, int w, int h)
 {
   return x >= xx && x <= xx + w && y >= yy && y <= yy + h;
 };
-
-bool View::isPaintMode()
-{
-    int idx = audioProcessor.viewPattern->index;
-    return idx >= 100 && idx < 108;
-}

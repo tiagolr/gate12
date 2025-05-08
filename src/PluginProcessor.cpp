@@ -160,6 +160,11 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
     }
 }
 
+bool GATE12AudioProcessor::isPaintMode()
+{
+    return viewPattern->index >= 100 && viewPattern->index < 108;
+}
+
 //==============================================================================
 const juce::String GATE12AudioProcessor::getName() const
 {
@@ -936,9 +941,9 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
     sendChangeMessage();
 }
 
-Pattern* GATE12AudioProcessor::getPaintPaterns()
+Pattern* GATE12AudioProcessor::getPaintPatern(int index)
 {
-    return *paintPatterns;
+    return paintPatterns[index];
 }
 
 void GATE12AudioProcessor::setViewPattern(int index)
@@ -948,6 +953,14 @@ void GATE12AudioProcessor::setViewPattern(int index)
     }
     else if (index >= 100 && index < 108) {
         viewPattern = paintPatterns[index - 100];
+    }
+}
+
+void GATE12AudioProcessor::setPaintTool(int index) 
+{
+    selectedPaintTool = index;
+    if (isPaintMode()) {
+        viewPattern = paintPatterns[index];
     }
 }
 

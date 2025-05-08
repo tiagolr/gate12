@@ -116,6 +116,7 @@ public:
     int lwinpos = 0;
     RCSmoother* value; // smooths envelope value
     bool showLatencyWarning = false;
+    int selectedPaintTool = 0; // index of pattern used for paint mode
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope
@@ -165,6 +166,7 @@ public:
     int getCurrentGrid();
     void createUndoPoint(int patindex = -1);
     void createUndoPointFromSnapshot(std::vector<PPoint> snapshot);
+    bool isPaintMode();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -220,8 +222,9 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //=========================================================
-    Pattern* getPaintPaterns();
+    Pattern* getPaintPatern(int index);
     void setViewPattern(int index);
+    void setPaintTool(int index);
 
     juce::AudioProcessorValueTreeState params;
     juce::UndoManager undoManager;

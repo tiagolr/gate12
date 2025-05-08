@@ -75,6 +75,10 @@ source_group(Source\\ui
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SettingsButton.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/AudioDisplay.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/AudioDisplay.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PaintTool.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PaintTool.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PaintToolWidget.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PaintToolWidget.cpp
 )
 
 source_group(Source\\dsp

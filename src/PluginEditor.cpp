@@ -44,6 +44,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         }
         DBG(oss.str() << "\n");
         audioProcessor.setViewPattern(100);
+        audioProcessor.sendChangeMessage();
     };
 #endif
 
@@ -410,10 +411,17 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
             repaint();
         });
     };
+    row += 35;
+
+    // PAINT TOOL
+    col = PLUG_PADDING;
+    paintToolWidget = std::make_unique<PaintToolWidget>(p);
+    addAndMakeVisible(*paintToolWidget);
+    paintToolWidget->setBounds(col,row,getWidth() - PLUG_PADDING * 2, 40);
 
     // VIEW
-    row += 25;
     col = 0;
+    row += 50;
     view = std::make_unique<View>(p);
     addAndMakeVisible(*view);
     view->setBounds(col,row,getWidth(), getHeight() - row);
@@ -537,6 +545,11 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     useMonitor.setToggleState(audioProcessor.useMonitor, dontSendNotification);
 
     latencyWarning.setVisible(audioProcessor.showLatencyWarning);
+    bool paintMode = audioProcessor.isPaintMode();
+    paintToolWidget->setVisible(paintMode);
+
+    view->setBounds(view->getBounds().withTop(paintMode ? paintToolWidget->getBounds().getBottom() : paintToolWidget->getBounds().getY() - 10));
+
     repaint();
 }
 

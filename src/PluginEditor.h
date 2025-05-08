@@ -17,6 +17,7 @@
 #include "ui/View.h"
 #include "ui/SettingsButton.h"
 #include "ui/AudioDisplay.h"
+#include "ui/PaintToolWidget.h"
 
 using namespace globals;
 
@@ -96,6 +97,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;
     std::unique_ptr<View> view;
     Label latencyWarning;
+    std::unique_ptr<PaintToolWidget> paintToolWidget;
 
     TooltipWindow tooltipWindow;
 

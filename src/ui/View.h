@@ -78,6 +78,4 @@ private:
     Multiselect multiselect;
     Point<int> preSelectionStart = Point(-1,-1);
     Point<int> preSelectionEnd = Point(-1,-1);
-
-    bool isPaintMode();
 };
