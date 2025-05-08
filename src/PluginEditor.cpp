@@ -43,6 +43,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
             oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
         }
         DBG(oss.str() << "\n");
+        audioProcessor.setViewPattern(100);
     };
 #endif
 

@@ -65,7 +65,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
 
     // init paintMode Patterns
     for (int i = 0; i < 8; ++i) {
-        paintPatterns[i] = new Pattern(i);
+        paintPatterns[i] = new Pattern(i + 100);
         paintPatterns[i]->insertPoint(0, 1, 0, 1);
         paintPatterns[i]->insertPoint(1, 0, 0, 1);
         paintPatterns[i]->buildSegments();
@@ -147,14 +147,16 @@ void GATE12AudioProcessor::createUndoPoint(int patindex)
 
 /*
     Used to create an undo point from a previously saved state
+    First assign the snapshot points to the pattern temporarily
+    Then create an undo point which will be discarded if nothing has changed
 */
 void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snapshot)
 {
     if (!Pattern::comparePoints(snapshot, pattern->points)) {
-        auto points = pattern->points;
-        pattern->points = snapshot;
+        auto points = viewPattern->points;
+        viewPattern->points = snapshot;
         createUndoPoint();
-        pattern->points = points;
+        viewPattern->points = points;
     }
 }
 

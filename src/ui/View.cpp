@@ -58,12 +58,21 @@ void View::resized()
 }
 
 void View::paint(Graphics& g) {
-    g.setColour(Colour(COLOR_BG).darker(0.2f));
+    bool paintMode = isPaintMode();
+
+    if (paintMode) {
+        g.setColour(Colours::blue.withAlpha(0.05f));
+        g.fillRect(winx, winy, winw, winh);
+    }
+    g.setColour(Colours::black.withAlpha(0.1f));
     g.fillRect(winx + winw/4, winy, winw/4, winh);
     g.fillRect(winx + winw - winw/4, winy, winw/4, winh);
 
-    drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
-    drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
+    if (!paintMode) {
+        drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
+        drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
+    }
+
     drawGrid(g);
     multiselect.drawBackground(g);
     drawSegments(g);
@@ -71,7 +80,10 @@ void View::paint(Graphics& g) {
     drawPoints(g);
     drawPreSelection(g);
     multiselect.draw(g);
-    drawSeek(g);
+
+    if (!paintMode) {
+        drawSeek(g);
+    }
 }
 
 void View::drawWave(Graphics& g, std::vector<double>& samples, Colour color) const
@@ -688,3 +700,9 @@ bool View::pointInRect(int x, int y, int xx, int yy, int w, int h)
 {
   return x >= xx && x <= xx + w && y >= yy && y <= yy + h;
 };
+
+bool View::isPaintMode()
+{
+    int idx = audioProcessor.viewPattern->index;
+    return idx >= 100 && idx < 108;
+}
