@@ -6,7 +6,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(BUILD_STANDALONE "Build Standalone plugin format" ON) # Allow overriding from the command line
 
-project(GATE12 VERSION 0.3.1)
+project(GATE12 VERSION 0.3.2)
 
 add_compile_definitions(PROJECT_VERSION="${PROJECT_VERSION}")
 set(CMAKE_CXX_STANDARD 17)
