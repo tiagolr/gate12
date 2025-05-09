@@ -36,7 +36,6 @@ public:
     void drawGear(Graphics&g, Rectangle<int> bounds, float radius, int segs, Colour color, Colour bg);
     void drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color);
 
-
 private:
     bool init = false;
     GATE12AudioProcessor& audioProcessor;

@@ -110,6 +110,7 @@ void GATE12AudioProcessor::parameterGestureChanged (int parameterIndex, bool ges
 
 void GATE12AudioProcessor::loadSettings ()
 {
+    settings.closeFiles(); // FIX
     if (auto* file = settings.getUserSettings()) {
         scale = (float)file->getDoubleValue("scale", 1.0f);
         plugWidth = file->getIntValue("width", PLUG_WIDTH);
@@ -138,6 +139,7 @@ void GATE12AudioProcessor::loadSettings ()
 
 void GATE12AudioProcessor::saveSettings ()
 {
+    settings.closeFiles(); // FIX
     if (auto* file = settings.getUserSettings()) {
         file->setValue("scale", scale);
         file->setValue("width", plugWidth);
