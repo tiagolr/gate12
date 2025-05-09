@@ -12,7 +12,7 @@
 #include <mutex>
 #include <atomic>
 
-enum PointType {
+enum class PointType {
     hold,
     curve,
     sCurve,

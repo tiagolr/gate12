@@ -28,13 +28,13 @@ struct MIDIMsg {
     int channel;
 };
 
-enum Trigger {
+enum class Trigger {
     sync,
     MIDI,
     audio
 };
 
-enum PatSync {
+enum class PatSync {
     off,
     quarterBeat,
     halfBeat,
@@ -80,7 +80,7 @@ public:
 class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener, public juce::ChangeBroadcaster
 {
 public:
-    static constexpr int GRID_SIZES[] = { 
+    static constexpr int GRID_SIZES[] = {
         8, 16, 32, 64, // Straight
         12, 24, 48,  // Triplet
     };
@@ -134,7 +134,7 @@ public:
     Filter hpFilterL{};
     Filter hpFilterR{};
     double hitamp = 0.0;
-    
+
     // PlayHead state
     bool playing = false;
     int64_t timeInSamples = 0;
