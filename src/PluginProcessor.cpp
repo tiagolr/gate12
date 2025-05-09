@@ -38,6 +38,12 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("lowcut", "Audio LowCut", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f) , 20.f),
         std::make_unique<juce::AudioParameterFloat>("highcut", "Audio HighCut", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.3f) , 20000.f),
         std::make_unique<juce::AudioParameterFloat>("offset", "Audio Offset", -1.0f, 1.0f, 0.0f),
+
+        std::make_unique<juce::AudioParameterFloat>("randminb", "Rand Min Bottom", 0.0f, 1.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("randmint", "Rand Min Top", 0.0f, 1.0f, 0.5f),
+        std::make_unique<juce::AudioParameterFloat>("randmaxb", "Rand Max Bottom", 0.0f, 1.0f, 0.5f),
+        std::make_unique<juce::AudioParameterFloat>("randmaxt", "Rand Max Top", 0.0f, 1.0f, 1.0f),
+        std::make_unique<juce::AudioParameterFloat>("randprob", "Rand Probability", 0.0f, 1.0f, 1.0f),
     })
 #endif
 {

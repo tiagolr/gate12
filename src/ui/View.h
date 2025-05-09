@@ -61,6 +61,8 @@ public:
     bool isCollinear(Segment seg);
     bool pointInRect(int x, int y, int xx, int yy, int w, int h);
 
+    PaintTool paintTool;
+
 private:
     int selectedPoint = -1;
     int selectedMidpoint = -1;
@@ -82,7 +84,4 @@ private:
     Multiselect multiselect;
     Point<int> preSelectionStart = Point(-1,-1);
     Point<int> preSelectionEnd = Point(-1,-1);
-
-    // PaintTool
-    PaintTool paintTool;
 };

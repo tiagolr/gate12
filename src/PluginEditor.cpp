@@ -40,12 +40,15 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     presetExport.setButtonText("Export");
     presetExport.setBounds(10, 10, 100, 25);
     presetExport.onClick = [this] {
-        std::ostringstream oss;
-        auto points = audioProcessor.viewPattern->points;
-        for (const auto& point : points) {
-            oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
-        }
-        DBG(oss.str() << "\n");
+        //std::ostringstream oss;
+        //auto points = audioProcessor.viewPattern->points;
+        //for (const auto& point : points) {
+        //    oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
+        //}
+        //DBG(oss.str() << "\n");
+        MessageManager::callAsync([this]() {
+            view->paintTool.applyRandom();
+        });
     };
 #endif
 
@@ -218,6 +221,24 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tensionrel = std::make_unique<Rotary>(p, "tensionrel", "T.Release", LabelFormat::percx100, true);
     addAndMakeVisible(*tensionrel);
     tensionrel->setBounds(col,row,80,65);
+    col += 75;
+
+    col = 500;
+    randminb = std::make_unique<Rotary>(p, "randminb", "Rminb", LabelFormat::percx100, false);
+    addAndMakeVisible(*randminb);
+    randminb->setBounds(col,row,80,65);
+    col += 75;
+    randmint = std::make_unique<Rotary>(p, "randmint", "Rmint", LabelFormat::percx100, false);
+    addAndMakeVisible(*randmint);
+    randmint->setBounds(col,row,80,65);
+    col += 75;
+    randmaxb = std::make_unique<Rotary>(p, "randmaxb", "Rmaxb", LabelFormat::percx100, false);
+    addAndMakeVisible(*randmaxb);
+    randmaxb->setBounds(col,row,80,65);
+    col += 75;
+    randmaxt = std::make_unique<Rotary>(p, "randmaxt", "Rmaxt", LabelFormat::percx100, false);
+    addAndMakeVisible(*randmaxt);
+    randmaxt->setBounds(col,row,80,65);
     col += 75;
 
     // AUDIO KNOBS

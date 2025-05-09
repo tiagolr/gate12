@@ -17,7 +17,8 @@ public:
     void setViewBounds(int _x, int _y, int _w, int _h);
 
     void draw(Graphics& g);
-    void apply();
+    void apply(Rectangle<double> bounds, bool buildSegments = true);
+    void applyRandom();
     void mouseMove(const MouseEvent& e);
     void mouseDrag(const MouseEvent& e);
     void mouseDown(const MouseEvent& e);

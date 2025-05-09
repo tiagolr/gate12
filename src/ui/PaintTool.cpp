@@ -108,12 +108,11 @@ void PaintTool::mouseUp(const MouseEvent& e)
     int dx = std::abs(e.getDistanceFromDragStartX());
     int dy = std::abs(e.getDistanceFromDragStartY());
     if (dx < 5 && dy < 5 && e.mods.isLeftButtonDown())
-        apply();
+        apply(getBounds());
 }
 
-void PaintTool::apply()
+void PaintTool::apply(Rectangle<double> bounds, bool buildSegments)
 {
-    auto bounds = getBounds();
     double rx = bounds.getX();
     double ry = bounds.getY();
     double rw = bounds.getWidth();
@@ -151,7 +150,49 @@ void PaintTool::apply()
         audioProcessor.viewPattern->insertPoint(px, py, point.tension, point.type);
     }
 
+    if (buildSegments) 
+        audioProcessor.viewPattern->buildSegments();
+}
+
+void PaintTool::applyRandom()
+{
+    bool linvertx = invertx;
+    bool linverty = inverty;
+    double minb = (double)audioProcessor.params.getRawParameterValue("randminb")->load();
+    double mint = (double)audioProcessor.params.getRawParameterValue("randmint")->load();
+    double maxb = (double)audioProcessor.params.getRawParameterValue("randmaxb")->load();
+    double maxt = (double)audioProcessor.params.getRawParameterValue("randmaxt")->load();
+    //double prob = (double)audioProcessor.params.getRawParameterValue("randprob")->load();
+    double grid = std::min(32.0, (double)audioProcessor.getCurrentGrid());
+    double gridx = winw / grid;
+    auto bounds = Rectangle<double>();
+
+    audioProcessor.viewPattern->clear();
+
+    for (int seg = 0; seg < (int)grid; ++seg) {
+        invertx = false;
+        inverty = false;
+        auto x = winx + seg * gridx;
+        auto w = gridx;
+        auto y = (maxb + (maxt - maxb) * ((double)(rand())/RAND_MAX));
+        auto b = (minb + (mint - minb) * ((double)(rand())/RAND_MAX));
+        y = 1.0 - y; // y coordinates are inverted
+        b = 1.0 - b;
+        if (y > b) {
+            std::swap(y,b);
+            invertx = true;
+            inverty = true;
+        }
+        y = winy + y * winh;
+        b = winy + b * winh;
+        auto h = b - y;
+        bounds = Rectangle<double>(x,y,w,h);
+        apply(bounds, false);
+    }
+    
     audioProcessor.viewPattern->buildSegments();
+    invertx = linvertx;
+    inverty = linverty;
 }
 
 Rectangle<double> PaintTool::getBounds()

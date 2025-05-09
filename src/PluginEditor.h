@@ -71,6 +71,12 @@ private:
     std::unique_ptr<Rotary> lowcut;
     std::unique_ptr<Rotary> highcut;
     std::unique_ptr<Rotary> offset;
+
+    std::unique_ptr<Rotary> randminb;
+    std::unique_ptr<Rotary> randmint;
+    std::unique_ptr<Rotary> randmaxb;
+    std::unique_ptr<Rotary> randmaxt;
+
     
     ComboBox algoMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> algoAttachment;
