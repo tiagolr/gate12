@@ -31,7 +31,7 @@
 
   * **Cross-platform** available on Windows, macOS and Linux
   * **Presets** included
-  * **Audio trigger** use audio transients to trigger the envelope
+  * **Audio trigger** uses audio transients to trigger the envelope
   * **Pattern sync** changes to beat position
   * **Multi-point** selection dragging, scaling and skewing
   * **Paint-mode** revamped with user patterns painted on view
@@ -73,7 +73,7 @@ Like GrossBeat, GATE-12 includes 8 point types that can be changed by right clic
 
 #### Paint mode
 
-Paint mode was completely remade in version 2, it now works with custom patterns that can be edited like the main audio patterns and rescaled before placing on view.
+Paint mode was remade in version 2, it now works with custom patterns that can be edited like the main audio patterns and rescaled before placing on view.
 
 This mode has to be activated by clicking the `Paint` button, a list of patterns will show above the editor window.
 
@@ -109,12 +109,12 @@ Using right click on the view, the current selected paint tool will be applied t
 
 ### Tips
 
-  * `Shift` for fine slider adjustments
-  * `Shift` to toggle snap on/off
-  * `Mouse wheel` on view to change grid size
-  * `Right click` points to change point type
-  * `Alt + drag` selection handles to skew/deform the selected points
-  * `Right click + drag` in paint mode to change paint tool tension
+  - `Shift` for fine slider adjustments.
+	- `Shift` toggles snap on/off.
+	- `Mouse wheel` on view changes grid size
+	- `Right click` points changes point type.
+	- `Alt + drag` selection handles skews selected points.
+	- `Right click + drag` in paint mode changes paint tool tension.
 
 ## MacOS
 
