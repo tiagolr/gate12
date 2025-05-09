@@ -99,6 +99,7 @@ public:
     bool useMonitor = false;
     bool useSidechain = false;
     int paintTool = 0; // index of pattern used for paint mode
+    int paintPage = 0;
 
     // State
     Pattern* pattern; // current pattern used for audio processing
@@ -235,7 +236,7 @@ public:
 
 private:
     Pattern* patterns[12]; // audio process patterns
-    Pattern* paintPatterns[8]; // paint mode patterns
+    Pattern* paintPatterns[PAINT_PATS]; // paint mode patterns
     Transient transDetectorL;
     Transient transDetectorR;
     bool paramChanged = false; // flag that triggers on any param change

@@ -400,15 +400,43 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(paintEditButton);
     paintEditButton.setButtonText("Edit");
     paintEditButton.setComponentID("button");
-    paintEditButton.setBounds(col, row+40/2-25/2, 50, 25);
+    paintEditButton.setBounds(col, row+40/2-25/2, 60, 25);
     paintEditButton.onClick = [this]() {
         audioProcessor.togglePaintEdit();
     };
-    col += 60;
 
-    paintToolWidget = std::make_unique<PaintToolWidget>(p);
-    addAndMakeVisible(*paintToolWidget);
-    paintToolWidget->setBounds(col,row,getWidth() - PLUG_PADDING - col, 40);
+    col += 65;
+    addAndMakeVisible(paintPrevButton);
+    paintPrevButton.setBounds(col+2, row+2, 20, 20);
+    paintPrevButton.setAlpha(0.f);
+    paintPrevButton.onClick = [this]() {
+        int page = audioProcessor.paintPage - 1;
+        if (page < 0) page = 3;
+        audioProcessor.paintPage = page;
+        toggleUIComponents();
+    };
+
+    addAndMakeVisible(paintPageLabel);
+    paintPageLabel.setText("16-24", dontSendNotification);
+    paintPageLabel.setJustificationType(Justification::centred);
+    paintPageLabel.setColour(Label::textColourId, Colour(COLOR_NEUTRAL));
+    paintPageLabel.setBounds(col, row+25-2, 45, 16);
+
+    col += 25;
+    addAndMakeVisible(paintNextButton);
+    paintNextButton.setBounds(col-2, row+2, 20, 20);
+    paintNextButton.setAlpha(0.f);
+    paintNextButton.onClick = [this]() {
+        int page = audioProcessor.paintPage + 1;
+        if (page > 3) page = 0;
+        audioProcessor.paintPage = page;
+        toggleUIComponents();
+    };
+
+    col += 25;
+    paintWidget = std::make_unique<PaintToolWidget>(p);
+    addAndMakeVisible(*paintWidget);
+    paintWidget->setBounds(col,row,getWidth() - PLUG_PADDING - col, 40);
 
     // VIEW
     col = 0;
@@ -537,16 +565,19 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     useMonitor.setToggleState(audioProcessor.useMonitor, dontSendNotification);
 
     latencyWarning.setVisible(audioProcessor.showLatencyWarning);
-    paintToolWidget->setVisible(audioProcessor.showPaintWidget);
-    paintEditButton.setVisible(audioProcessor.showPaintWidget);
-    paintEditButton.setToggleState(audioProcessor.isPaintEdit(), dontSendNotification);
 
-    view->setBounds(view->getBounds().withTop(paintToolWidget->isVisible() 
-        ? paintToolWidget->getBounds().getBottom()
-        : paintToolWidget->getBounds().getY() - 10)
+    paintWidget->setVisible(audioProcessor.showPaintWidget);
+    view->setBounds(view->getBounds().withTop(paintWidget->isVisible() 
+        ? paintWidget->getBounds().getBottom()
+        : paintWidget->getBounds().getY() - 10)
     );
 
     paintButton.setToggleState(audioProcessor.showPaintWidget, dontSendNotification);
+    paintEditButton.setVisible(audioProcessor.showPaintWidget);
+    paintEditButton.setToggleState(audioProcessor.isPaintEdit(), dontSendNotification);
+    int firstPaintPat = audioProcessor.paintPage * 8 + 1;
+    paintPageLabel.setText(String(firstPaintPat) + "-" + String(firstPaintPat+7), dontSendNotification);
+    paintPageLabel.setVisible(audioProcessor.showPaintWidget);
 
     repaint();
 }
@@ -590,7 +621,7 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
         drawGear(g, audioSettingsButton.getBounds(), 10, 6, Colour(COLOR_AUDIO), Colour(COLOR_BG));
     }
 
-    // draw phase nudge buttons
+    // draw rotate pat triangles
     g.setColour(Colour(COLOR_ACTIVE));
     auto triCenter = nudgeLeftButton.getBounds().toFloat().getCentre();
     auto triRadius = 5.f;
@@ -610,6 +641,29 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
         triCenter.translated(triRadius, 0)
     );
     g.fillPath(nudgeRightTriangle);
+
+    // draw rotate paint page triangles
+    if (audioProcessor.showPaintWidget) {
+        g.setColour(Colour(COLOR_ACTIVE));
+        triCenter = paintNextButton.getBounds().toFloat().getCentre();
+        triRadius = 5.f;
+        juce::Path paintNextTriangle;
+        paintNextTriangle.addTriangle(
+            triCenter.translated(-triRadius, -triRadius),
+            triCenter.translated(-triRadius, triRadius),
+            triCenter.translated(triRadius, 0)
+        );
+        g.fillPath(paintNextTriangle);
+
+        triCenter = paintPrevButton.getBounds().toFloat().getCentre();
+        juce::Path paintPrevTriangle;
+        paintPrevTriangle.addTriangle(
+            triCenter.translated(-triRadius, 0),
+            triCenter.translated(triRadius, -triRadius),
+            triCenter.translated(triRadius, triRadius)
+        );
+        g.fillPath(paintPrevTriangle);
+    }   
 
     // draw undo redo buttons
     auto canUndo = !audioProcessor.viewPattern->undoStack.empty();

@@ -66,9 +66,15 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     // init paintMode Patterns
     for (int i = 0; i < PAINT_PATS; ++i) {
         paintPatterns[i] = new Pattern(i + PAINT_PATS_IDX);
-        auto preset = Presets::getPaintPreset(i);
-        for (auto& point : preset) {
-            paintPatterns[i]->insertPoint(point.x, point.y, point.tension, point.type);
+        if (i < 8) {
+            auto preset = Presets::getPaintPreset(i);
+            for (auto& point : preset) {
+                paintPatterns[i]->insertPoint(point.x, point.y, point.tension, point.type);
+            }
+        }
+        else {
+            paintPatterns[i]->insertPoint(0.0, 1.0, 0.0, 1);
+            paintPatterns[i]->insertPoint(1.0, 0.0, 0.0, 1);
         }
         paintPatterns[i]->buildSegments();
     }

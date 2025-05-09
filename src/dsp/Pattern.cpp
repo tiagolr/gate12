@@ -154,9 +154,8 @@ void Pattern::buildSegments()
 
 void Pattern::loadSine() {
     clear();
-    insertPoint(0, 1, 0.33, 2);
-    insertPoint(0.5, 0, 0.33, 2);
-    insertPoint(1, 1, 0.33, 2);
+    insertPoint(0, 1, 0.2, 2);
+    insertPoint(0.5, 0, 0.2, 2);
     rotate(0.25);
 }
 

@@ -83,6 +83,9 @@ private:
     std::unique_ptr<AudioDisplay> audioDisplay;
     TextButton paintButton;
     TextButton paintEditButton;
+    TextButton paintNextButton;
+    TextButton paintPrevButton;
+    Label paintPageLabel;
     ComboBox pointMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
     Label pointLabel;
@@ -96,7 +99,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> snapAttachment;
     std::unique_ptr<View> view;
     Label latencyWarning;
-    std::unique_ptr<PaintToolWidget> paintToolWidget;
+    std::unique_ptr<PaintToolWidget> paintWidget;
 
     TooltipWindow tooltipWindow;
 
