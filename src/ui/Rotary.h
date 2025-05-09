@@ -7,7 +7,7 @@
 using namespace globals;
 class GATE12AudioProcessor;
 
-enum class LabelFormat {
+enum LabelFormat {
     hz,
     hzLp,
     hzHp,

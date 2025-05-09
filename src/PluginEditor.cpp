@@ -511,8 +511,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     triggerMenu.setColour(ComboBox::arrowColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::textColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::outlineColourId, Colour(triggerColor));
-    algoMenu.setVisible(trigger == Trigger::audio);
-    audioSettingsButton.setVisible(trigger == Trigger::audio);
+    algoMenu.setVisible(trigger == Trigger::Audio);
+    audioSettingsButton.setVisible(trigger == Trigger::Audio);
     if (!audioSettingsButton.isVisible()) {
         audioProcessor.showAudioKnobs = false;
     }
@@ -607,7 +607,7 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
 
     // draw loop play button
-    if (trigger != Trigger::sync) {
+    if (trigger != Trigger::Sync) {
         if (audioProcessor.alwaysPlaying) {
             g.setColour(Colours::yellow);
             auto loopBounds = loopButton.getBounds().expanded(-5);

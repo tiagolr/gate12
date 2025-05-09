@@ -263,7 +263,7 @@ void View::drawMidPoints(Graphics& g)
     // draw midpoints
     g.setColour(Colour(COLOR_ACTIVE));
     for (auto seg = segs.begin(); seg != segs.end(); ++seg) {
-        if (!isCollinear(*seg) && seg->type != PointType::hold) {
+        if (!isCollinear(*seg) && seg->type != PointType::Hold) {
             auto xy = getMidpointXY(*seg);
             g.drawEllipse((float)xy[0] - MPOINT_RADIUS, (float)xy[1] - MPOINT_RADIUS, (float)MPOINT_RADIUS * 2.f, (float)MPOINT_RADIUS * 2.f, 2.f);
         }
@@ -328,7 +328,7 @@ int View::getHoveredMidpoint(int x, int y)
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);
-        if (!isCollinear(seg) && seg.type != PointType::hold && pointInRect(x, y, (int)xy[0] - MPOINT_RADIUS, (int)xy[1] - MPOINT_RADIUS, MPOINT_RADIUS * 2, MPOINT_RADIUS * 2)) {
+        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - MPOINT_RADIUS, (int)xy[1] - MPOINT_RADIUS, MPOINT_RADIUS * 2, MPOINT_RADIUS * 2)) {
             return i;
         }
     }

@@ -12,15 +12,15 @@
 #include <mutex>
 #include <atomic>
 
-enum class PointType {
-    hold,
-    curve,
-    sCurve,
-    pulse,
-    wave,
-    triangle,
-    stairs,
-    smoothSt,
+enum PointType {
+    Hold,
+    Curve,
+    SCurve,
+    Pulse,
+    Wave,
+    Triangle,
+    Stairs,
+    SmoothSt,
 };
 
 struct PPoint {

@@ -372,7 +372,7 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 {
     (void)samplesPerBlock;
     int trigger = (int)params.getRawParameterValue("trigger")->load();
-    setLatencySamples(trigger == Trigger::audio 
+    setLatencySamples(trigger == Trigger::Audio 
         ? static_cast<int>(sampleRate * 0.004) 
         : 0
     );
@@ -426,7 +426,7 @@ void GATE12AudioProcessor::onSlider()
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger) {
         auto latency = getLatencySamples();
-        setLatencySamples(trigger == Trigger::audio 
+        setLatencySamples(trigger == Trigger::Audio 
             ? static_cast<int>(getSampleRate() * LATENCY_MILLIS / 1000.0) 
             : 0
         );
@@ -437,13 +437,13 @@ void GATE12AudioProcessor::onSlider()
         clearLatencyBuffers();
         ltrigger = trigger;
     }
-    if (trigger == Trigger::sync && alwaysPlaying) 
+    if (trigger == Trigger::Sync && alwaysPlaying) 
         alwaysPlaying = false; // force alwaysPlaying off when trigger is not MIDI or Audio
 
     if (trigger != Trigger::MIDI && midiTrigger)
         midiTrigger = false;
 
-    if (trigger != Trigger::audio && audioTrigger)
+    if (trigger != Trigger::Audio && audioTrigger)
         audioTrigger = false;
 
     int pat = (int)params.getRawParameterValue("pattern")->load();
@@ -614,15 +614,15 @@ void GATE12AudioProcessor::queuePattern(int patidx)
     queuedPatternCountdown = 0;
     int patsync = (int)params.getRawParameterValue("patsync")->load();
 
-    if (playing && patsync != PatSync::off) {
+    if (playing && patsync != PatSync::Off) {
         int interval = samplesPerBeat;
-        if (patsync == PatSync::quarterBeat) 
+        if (patsync == PatSync::QuarterBeat) 
             interval = interval / 4;
-        else if (patsync == PatSync::halfBeat)
+        else if (patsync == PatSync::HalfBeat)
             interval = interval / 2;
-        else if (patsync == PatSync::beat_x2)
+        else if (patsync == PatSync::Beat_x2)
             interval = interval * 2;
-        else if (patsync == PatSync::beat_x4)
+        else if (patsync == PatSync::Beat_x4)
             interval = interval * 4;
         queuedPatternCountdown = (interval - timeInSamples % interval) % interval;
     }
@@ -825,7 +825,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // Sync mode
-        if (trigger == Trigger::sync) {
+        if (trigger == Trigger::Sync) {
             xpos = sync > 0 
                 ? beatPos / syncQN + phase
                 : ratePos + phase;
@@ -872,7 +872,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // Audio mode
-        else if (trigger == Trigger::audio) {
+        else if (trigger == Trigger::Audio) {
             int latency = (int)latBufferL.size();
             
             // read audio samples
@@ -979,7 +979,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             timeInSamples += 1;
     }
 
-    drawSeek.store(playing && (trigger == Trigger::sync || midiTrigger || audioTrigger));
+    drawSeek.store(playing && (trigger == Trigger::Sync || midiTrigger || audioTrigger));
 }
 
 //==============================================================================

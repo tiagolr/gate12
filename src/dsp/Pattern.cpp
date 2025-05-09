@@ -220,11 +220,11 @@ double Pattern::get_y_curve(Segment seg, double x)
 
 int Pattern::getWaveCount(Segment seg)
 {
-    if (seg.type == PointType::pulse) return (int)(std::max(std::floor(std::pow(seg.tension,2) * 100), 1.0));
-    if (seg.type == PointType::wave) return (int)(std::floor(std::fabs(std::pow(seg.tension,2) * 100) + 1) - 1);
-    if (seg.type == PointType::triangle) return (int)(std::floor(std::fabs(std::pow(seg.tension,2) * 100) + 1) - 1.0);
-    if (seg.type == PointType::stairs) return (int)(std::max(std::floor(std::pow(seg.tension,2) * 150), 2.));
-    if (seg.type == PointType::smoothSt) return (int)(std::max(floor(std::pow(seg.tension,2) * 150), 1.0));
+    if (seg.type == PointType::Pulse) return (int)(std::max(std::floor(std::pow(seg.tension,2) * 100), 1.0));
+    if (seg.type == PointType::Wave) return (int)(std::floor(std::fabs(std::pow(seg.tension,2) * 100) + 1) - 1);
+    if (seg.type == PointType::Triangle) return (int)(std::floor(std::fabs(std::pow(seg.tension,2) * 100) + 1) - 1.0);
+    if (seg.type == PointType::Stairs) return (int)(std::max(std::floor(std::pow(seg.tension,2) * 150), 2.));
+    if (seg.type == PointType::SmoothSt) return (int)(std::max(floor(std::pow(seg.tension,2) * 150), 1.0));
     return 0;
 }
 
@@ -348,14 +348,14 @@ double Pattern::get_y_at(double x)
     std::lock_guard<std::mutex> lock(mtx); // prevents crash while building segments
     for (auto seg = segments.begin(); seg != segments.end(); ++seg) {
         if (seg->x1 <= x && seg->x2 >= x) {
-            if (seg->type == PointType::hold) return seg->y1; // hold
-            if (seg->type == PointType::curve) return get_y_curve(*seg, x);
-            if (seg->type == PointType::sCurve) return get_y_scurve(*seg, x);
-            if (seg->type == PointType::pulse) return get_y_pulse(*seg, x);
-            if (seg->type == PointType::wave) return get_y_wave(*seg, x);
-            if (seg->type == PointType::triangle) return get_y_triangle(*seg, x);
-            if (seg->type == PointType::stairs) return get_y_stairs(*seg, x);
-            if (seg->type == PointType::smoothSt) return get_y_smooth_stairs(*seg, x);
+            if (seg->type == PointType::Hold) return seg->y1; // hold
+            if (seg->type == PointType::Curve) return get_y_curve(*seg, x);
+            if (seg->type == PointType::SCurve) return get_y_scurve(*seg, x);
+            if (seg->type == PointType::Pulse) return get_y_pulse(*seg, x);
+            if (seg->type == PointType::Wave) return get_y_wave(*seg, x);
+            if (seg->type == PointType::Triangle) return get_y_triangle(*seg, x);
+            if (seg->type == PointType::Stairs) return get_y_stairs(*seg, x);
+            if (seg->type == PointType::SmoothSt) return get_y_smooth_stairs(*seg, x);
         }
     }
 

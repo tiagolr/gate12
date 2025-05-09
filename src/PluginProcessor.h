@@ -28,19 +28,19 @@ struct MIDIMsg {
     int channel;
 };
 
-enum class Trigger {
-    sync,
+enum Trigger {
+    Sync,
     MIDI,
-    audio
+    Audio
 };
 
-enum class PatSync {
-    off,
-    quarterBeat,
-    halfBeat,
-    beat_x1,
-    beat_x2,
-    beat_x4
+enum PatSync {
+    Off,
+    QuarterBeat,
+    HalfBeat,
+    Beat_x1,
+    Beat_x2,
+    Beat_x4
 };
 
 /*
