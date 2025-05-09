@@ -465,6 +465,15 @@ void Multiselect::dragQuad(const MouseEvent& e)
     auto mouse = e.getPosition();
     auto mouseDown = e.getMouseDownPosition();
     auto selectionArea = quadToRect(quad);
+    auto snap = isSnapping(e);
+
+    if (snap) {
+        double grid = (double)audioProcessor.getCurrentGrid();
+        double gridx = double(winw) / grid;
+        double gridy = double(winh) / grid;
+        mouse.y = (int)(std::round((mouse.y - winy) / gridy) * gridy + winy);
+        mouseDown.y = (int)(std::round((mouseDown.y - winy) / gridy) * gridy + winy);
+    }
 
     double dy = (double)(mouse.y - mouseDown.y);
 
