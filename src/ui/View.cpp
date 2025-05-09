@@ -403,10 +403,6 @@ void View::mouseDown(const juce::MouseEvent& e)
         if (rmousePoint > -1) {
             showPointContextMenu(e);
         }
-        else {
-            multiselect.clearSelection();
-            applyPaintTool(x, y, e);
-        }
     }
 }
 
@@ -508,7 +504,6 @@ void View::mouseDrag(const juce::MouseEvent& e)
     }
 
     if (rmousePoint == -1 && e.mods.isRightButtonDown()) {
-        applyPaintTool(x, y, e);
         return;
     }
 
@@ -679,47 +674,6 @@ void View::showPointContextMenu(const juce::MouseEvent& event)
             audioProcessor.viewPattern->buildSegments();
         }
     });
-}
-
-void View::applyPaintTool(int x, int y, const MouseEvent& e)
-{
-    double mousex = std::min(std::max(double(x - winx) / (double)winw, 0.), 0.9999999);
-    double mousey = std::min(std::max(double(y - winy) / (double)winh, 0.), 1.);
-    double gridsegs = (double)audioProcessor.getCurrentGrid();
-    if (isSnapping(e)) {
-        mousey = std::round(mousey * gridsegs) / gridsegs;
-    }
-    double seg = std::floor(mousex * gridsegs);
-    int paintmode = (int)audioProcessor.params.getRawParameterValue("paint")->load();
-
-    if (paintmode == 0 || e.mods.isAltDown()) {  // erase mode
-        audioProcessor.viewPattern->removePointsInRange(seg / gridsegs, (seg + 1) / gridsegs);
-    }
-    else if (paintmode == 1) { // line mode
-        audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
-        audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, mousey, 0, 1);
-        audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, mousey, 0, 1);
-    }
-    else if (paintmode == 2) { // saw up
-        audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
-        audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, 1, 0, 1);
-        audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, mousey, 0, 1);
-    }
-    else if (paintmode == 3) { // saw down
-        audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
-        audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, mousey, 0, 1);
-        audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, 1, 0, 1);
-    }
-    else if (paintmode == 4) { // triangle
-        audioProcessor.viewPattern->removePointsInRange(seg / gridsegs + 0.00001, (seg + 1) / gridsegs - 0.00001);
-        audioProcessor.viewPattern->insertPoint(seg / gridsegs + 0.00001, 1, 0, 1);
-        audioProcessor.viewPattern->insertPoint(seg / gridsegs + (((seg + 1) / gridsegs - seg / gridsegs) / 2), mousey, 0, 1);
-        audioProcessor.viewPattern->insertPoint((seg + 1) / gridsegs - 0.00001, 1, 0, 1);
-    }
-
-    hoverPoint = -1;
-    hoverMidpoint = -1;
-    audioProcessor.viewPattern->buildSegments();
 }
 
 // ==================================================
