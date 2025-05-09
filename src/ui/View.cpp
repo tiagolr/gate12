@@ -642,8 +642,10 @@ bool View::keyPressed(const juce::KeyPress& key)
     // remove selected points
     if (key == KeyPress::deleteKey && !multiselect.selectionPoints.empty())
     {
-        audioProcessor.createUndoPoint();
-        multiselect.deleteSelectedPoints();
+        MessageManager::callAsync([this]() {
+            audioProcessor.createUndoPoint();
+            multiselect.deleteSelectedPoints();
+        });
         return true;
     }
 
@@ -665,7 +667,8 @@ void View::mouseExit(const MouseEvent& event)
 void View::showPointContextMenu(const juce::MouseEvent& event)
 {
     (void)event;
-    int type = audioProcessor.viewPattern->points[rmousePoint].type;
+    auto point = rmousePoint;
+    int type = audioProcessor.viewPattern->points[point].type;
     PopupMenu menu;
     menu.addItem(1, "Hold", true, type == 0);
     menu.addItem(2, "Curve", true, type == 1);
@@ -675,10 +678,12 @@ void View::showPointContextMenu(const juce::MouseEvent& event)
     menu.addItem(6, "Triangle", true, type == 5);
     menu.addItem(7, "Stairs", true, type == 6);
     menu.addItem(8, "Smooth stairs", true, type == 7);
-    menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this](int result) {
+    menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this, point](int result) {
         if (result > 0) {
-            audioProcessor.viewPattern->points[rmousePoint].type = result - 1;
-            audioProcessor.viewPattern->buildSegments();
+            MessageManager::callAsync([this, result, point]() {
+                audioProcessor.viewPattern->points[point].type = result - 1;
+                audioProcessor.viewPattern->buildSegments();
+            });
         }
     });
 }
@@ -703,17 +708,23 @@ void View::showContextMenu(const juce::MouseEvent& event)
         if (result == 1) multiselect.selectAll();
         if (result == 2) multiselect.clearSelection();
         if (result == 3) {
-            auto snapshot = audioProcessor.viewPattern->points;
-            audioProcessor.viewPattern->clear();
-            audioProcessor.viewPattern->buildSegments();
-            audioProcessor.createUndoPointFromSnapshot(snapshot);
+            MessageManager::callAsync([this]() {
+                auto snapshot = audioProcessor.viewPattern->points;
+                audioProcessor.viewPattern->clear();
+                audioProcessor.viewPattern->buildSegments();
+                audioProcessor.createUndoPointFromSnapshot(snapshot);
+            });
         }
         if (result == 4 && !multiselect.selectionPoints.empty()) {
-            audioProcessor.createUndoPoint();
-            multiselect.deleteSelectedPoints();
+            MessageManager::callAsync([this]() {
+                audioProcessor.createUndoPoint();
+                multiselect.deleteSelectedPoints();
+            });
         }
         if (result == 5) {
-            paintTool.resetPatternTension();
+            MessageManager::callAsync([this]() {
+                paintTool.resetPatternTension();
+            });
         }
     });
 }
