@@ -52,7 +52,6 @@ void Multiselect::draw(Graphics& g)
         quadPath.lineTo((float)q[2].x, (float)q[2].y);
         quadPath.closeSubPath();
         g.strokePath(quadPath, PathStrokeType(1.0f));
-
         
         drawHandles(g);
     }
@@ -162,7 +161,9 @@ void Multiselect::applyRelativeQuadCoords(Rectangle<double> area)
 {
     const double x = area.getX();
     const double y = area.getY();
-    const double w = area.getWidth();
+    const double w = area.getRight() == winx + winw 
+        ? area.getWidth() - 1e-8 // FIX - glitch where area right overlaps the last point at x=1.0
+        : area.getWidth(); 
     const double h = area.getHeight();
 
     Quad rel = quadrel;
@@ -469,7 +470,6 @@ void Multiselect::dragQuad(const MouseEvent& e)
 
     if (snap) {
         double grid = (double)audioProcessor.getCurrentGrid();
-        double gridx = double(winw) / grid;
         double gridy = double(winh) / grid;
         mouse.y = (int)(std::round((mouse.y - winy) / gridy) * gridy + winy);
         mouseDown.y = (int)(std::round((mouseDown.y - winy) / gridy) * gridy + winy);

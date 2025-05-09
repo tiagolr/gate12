@@ -93,9 +93,7 @@ public:
     // Instance Settings
     bool alwaysPlaying = false;
     bool dualSmooth = true; // use either single smooth or attack and release
-    bool dualTension = true;
-    bool MIDIHoldEnvelopeTail = true; // MIDI trigger - keep processing last position after envelope finishes
-    bool AudioHoldEnvelopeTail = false; // Audio trigger - keep processing last position after envelope finishes
+    bool dualTension = false;
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
     bool useMonitor = false;
     bool useSidechain = false;

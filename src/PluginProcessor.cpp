@@ -1003,8 +1003,6 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("alwaysPlaying",alwaysPlaying, nullptr);
     state.setProperty("dualSmooth",dualSmooth, nullptr);
     state.setProperty("dualTension",dualTension, nullptr);
-    state.setProperty("MIDIHoldEnvelopeTail",MIDIHoldEnvelopeTail, nullptr);
-    state.setProperty("AudioHoldEnvelopeTail",AudioHoldEnvelopeTail, nullptr);
     state.setProperty("triggerChn",triggerChn, nullptr);
     state.setProperty("useMonitor",useMonitor, nullptr);
     state.setProperty("useSidechain",useSidechain, nullptr);
@@ -1037,8 +1035,6 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         alwaysPlaying = (bool)state.getProperty("alwaysPlaying");
         dualSmooth = (bool)state.getProperty("dualSmooth");
         dualTension = (bool)state.getProperty("dualTension");
-        MIDIHoldEnvelopeTail = (bool)state.getProperty("MIDIHoldEnvelopeTail");
-        AudioHoldEnvelopeTail = (bool)state.getProperty("AudioHoldEnvelopeTail");
         triggerChn = (int)state.getProperty("triggerChn");
         useMonitor = (bool)state.getProperty("useMonitor");
         useSidechain = (bool)state.getProperty("useSidechain");
