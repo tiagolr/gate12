@@ -953,6 +953,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("useMonitor",useMonitor, nullptr);
     state.setProperty("useSidechain",useSidechain, nullptr);
     state.setProperty("paintTool", paintTool, nullptr);
+    state.setProperty("paintPage", paintPage, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -985,6 +986,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         useMonitor = (bool)state.getProperty("useMonitor");
         useSidechain = (bool)state.getProperty("useSidechain");
         paintTool = (int)state.getProperty("paintTool");
+        paintPage = (int)state.getProperty("paintPage");
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();
