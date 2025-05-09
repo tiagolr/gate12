@@ -14,7 +14,28 @@ public:
 		return parsePreset(presets[index]);
 	}
 
+	static std::vector<PPoint> getPaintPreset(int index) {
+		const auto& presets = getPaintPresets();
+		if (index < 0 || index >= static_cast<int>(presets.size()))
+			return {};
+		return parsePreset(presets[index]);
+	}
+
 private:
+	static const std::vector<std::string>& getPaintPresets() {
+		static const std::vector<std::string> presets = {
+			"0 1 0 1 1 0 0 1", // line
+			"0.005 1 0 1 0.995 0 0 1", // Saw
+			"0 1 0 1 0.5 0 0 1 1 1 0 1", // triangle
+			"0.005 1 0 3 0.995 0 0 1", // square
+			"0 1 0.35 1 0.5 0 0.35 1 1 1 0 1", // Fin
+			"0.005 1 0.35 2 0.995 0 0 1", // S-Curve
+			"0 1 0 1 0.125 0 0 1 0.25 0.5 0 1 0.5 0.5 -0.2 1 1 1 0 1", // adsr
+			"0 1 0 1 0 0 -0.25 1 0.25 1 0 1 0.25 0.375 -0.25 1 0.5 1 0 1 0.5 0 -0.25 1 0.75 1 0 1 0.75 0.375 -0.25 1", // waves
+		};
+		return presets;
+	}
+
 	static const std::vector<std::string>& getPresets() {
 		static const std::vector<std::string> presets = {
 			"",

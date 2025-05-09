@@ -156,7 +156,7 @@ public:
     int lmonpos = 0; // last index
     int monW = 1; // audio monitor width used to rotate monitor samples buffer
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
-    bool showPaintWidget = true;
+    bool showPaintWidget = false;
 
     //==============================================================================
     GATE12AudioProcessor();
