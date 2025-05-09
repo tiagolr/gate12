@@ -490,10 +490,6 @@ void View::mouseDrag(const juce::MouseEvent& e)
         return;
     }
 
-    Point pos = e.getPosition();
-    int x = pos.x;
-    int y = pos.y;
-
     if (multiselect.mouseHover > -1 && e.mods.isRightButtonDown()) {
         return;
     }
@@ -503,26 +499,30 @@ void View::mouseDrag(const juce::MouseEvent& e)
         return;
     }
 
-    if (rmousePoint == -1 && e.mods.isRightButtonDown()) {
+    if (e.mods.isRightButtonDown()) {
         return;
     }
 
-    auto& points = audioProcessor.viewPattern->points;
-    double grid = (double)audioProcessor.getCurrentGrid();
-    double gridx = double(winw) / grid;
-    double gridy = double(winh) / grid;
-    double xx = (double)x;
-    double yy = (double)y;
-    if (isSnapping(e)) {
-        xx = std::round((xx - winx) / gridx) * gridx + winx;
-        yy = std::round((yy - winy) / gridy) * gridy + winy;
-    }
-    xx = (xx - winx) / winw;
-    yy = (yy - winy) / winh;
-    if (yy > 1) yy = 1.0;
-    if (yy < 0) yy = 0.0;
+    Point pos = e.getPosition();
+    int x = pos.x;
+    int y = pos.y;
 
     if (selectedPoint > -1) {
+        auto& points = audioProcessor.viewPattern->points;
+        double grid = (double)audioProcessor.getCurrentGrid();
+        double gridx = double(winw) / grid;
+        double gridy = double(winh) / grid;
+        double xx = (double)x;
+        double yy = (double)y;
+        if (isSnapping(e)) {
+            xx = std::round((xx - winx) / gridx) * gridx + winx;
+            yy = std::round((yy - winy) / gridy) * gridy + winy;
+        }
+        xx = (xx - winx) / winw;
+        yy = (yy - winy) / winh;
+        if (yy > 1) yy = 1.0;
+        if (yy < 0) yy = 0.0;
+
         auto& point = points[selectedPoint];
         point.y = yy;
         point.x = xx;
@@ -536,6 +536,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
             auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
             if (point.x <= prev.x) point.x = prev.x + 1e-8;
         }
+        audioProcessor.viewPattern->buildSegments();
     }
 
     else if (selectedMidpoint > -1) {
@@ -547,13 +548,12 @@ void View::mouseDrag(const juce::MouseEvent& e)
         if (tension > 1) tension = 1;
         if (tension < -1) tension = -1;
         mpoint.tension = tension;
+        audioProcessor.viewPattern->buildSegments();
     }
 
     else if (preSelectionStart.x > -1) {
         preSelectionEnd = e.getPosition();
     }
-
-    audioProcessor.viewPattern->buildSegments();
 }
 
 void View::mouseDoubleClick(const juce::MouseEvent& e)

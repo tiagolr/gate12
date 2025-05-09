@@ -436,7 +436,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 25;
     paintWidget = std::make_unique<PaintToolWidget>(p);
     addAndMakeVisible(*paintWidget);
-    paintWidget->setBounds(col,row,getWidth() - PLUG_PADDING - col, 40);
+    paintWidget->setBounds(col,row,PLUG_WIDTH - PLUG_PADDING - col, 40);
 
     // VIEW
     col = 0;

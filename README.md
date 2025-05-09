@@ -34,6 +34,7 @@
   * **Audio trigger** use audio transients to trigger the envelope
   * **Pattern sync** changes to beat position
   * **Multi-point** selection dragging, scaling and skewing
+  * **Paint-mode** revamped with user patterns painted on view
   * **Rotate patterns** no longer constrained by start and end points
   * **Undo & Redo** supported
   * Other **improvements and fixes**
@@ -42,7 +43,7 @@
 
   * Multi-segment editor
   * 12 patterns triggered by midi notes
-  * Paint mode - erase, line, saw up, saw down ..
+  * Paint mode with user defined patterns
   * Point type - hold, curve, s-curve, stairs ..
   * Tempo sync or lfo rate (Hz)
   * Attack and release smooth
@@ -69,6 +70,16 @@ With version 2 this plugin was rebuilt from scratch using JUCE for its cross-pla
 Like GrossBeat, GATE-12 includes 8 point types that can be changed by right clicking a point, the default point type can also be changed in the tools-bar.
 
 ![curves](/doc/curves.png)
+
+#### Paint mode
+
+Paint mode was completely remade in version 2, it now works with custom patterns that can be edited like the main audio patterns and rescaled before placing on view.
+
+This mode has to be activated by clicking the `Paint` button, a list of patterns will show above the editor window.
+
+![patterns](/doc/patterns.png)
+
+There are 32 patterns that can be used and edited, these patterns are saved in the settings file and shared by any instances of the plugin.
 
 #### Self repeating patterns
 
@@ -98,14 +109,12 @@ Using right click on the view, the current selected paint tool will be applied t
 
 ### Tips
 
-  * `Ctrl` for fine slider adjustments
-  * `Ctrl` to toggle snap on/off
+  * `Shift` for fine slider adjustments
+  * `Shift` to toggle snap on/off
   * `Mouse wheel` on view to change grid size
   * `Right click` points to change point type
-  * `Right click` view to paint using paint tool
-  * `Ctrl + right click` view to erase points
-  * `Alt + right click` to erase points
   * `Alt + drag` selection handles to skew/deform the selected points
+  * `Alt + drag` in paint *edit* mode to apply tension to all points
 
 ## MacOS
 

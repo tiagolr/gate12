@@ -17,11 +17,12 @@ void PaintToolWidget::paint(Graphics& g)
     auto rects = getPatRects();
     for (int i = 0; i < (int)rects.size(); ++i) {
         int pati = i + audioProcessor.paintPage * 8;
-        auto color = pati == audioProcessor.paintTool ? Colours::white : Colour(COLOR_NEUTRAL);
+        bool isSelected = pati == audioProcessor.paintTool;
+        g.setColour(isSelected && audioProcessor.isPaintEdit() ? Colours::blue.withAlpha(0.05f) : Colours::black.withAlpha(0.1f));
+        g.fillRect(rects[i]);
+        auto color = isSelected ? Colours::white : Colour(COLOR_NEUTRAL);
         g.setColour(color);
         g.drawRect(rects[i]);
-        g.setColour(Colours::black.withAlpha(0.05f));
-        g.fillRect(rects[i]);
         drawPattern(g, rects[i].expanded(-4, -4), pati, color);
     }
 }

@@ -23,10 +23,10 @@ public:
     void mouseUp(const MouseEvent& e);
 
 private:
-    int paintW = 50;
-    int paintH = 100;
-    int startW = 50;
-    int startH = 100;
+    int paintW = 100;
+    int paintH = 150;
+    int startW = 100;
+    int startH = 150;
     int winx = 0;
     int winy = 0;
     int winw = 0;
