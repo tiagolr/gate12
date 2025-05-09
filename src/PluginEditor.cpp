@@ -8,7 +8,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     : AudioProcessorEditor (&p)
     , audioProcessor (p)
 {
-    audioProcessor.loadSettings(); // load saved paint patterns from other plugin instances
+    MessageManager::callAsync([this]() {
+        audioProcessor.loadSettings(); // load saved paint patterns from other plugin instances
+    });
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("trigger", this);
@@ -776,5 +778,4 @@ void GATE12AudioProcessorEditor::resized()
 
     audioProcessor.plugWidth = getWidth();
     audioProcessor.plugHeight = getHeight();
-    audioProcessor.saveSettings();
 }

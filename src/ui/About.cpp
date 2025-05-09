@@ -20,7 +20,9 @@ void About::paint(Graphics& g)
 	g.drawText(std::string("v") + PROJECT_VERSION, bounds.removeFromTop(25), Justification::centred);
 	g.setFont(FontOptions(20.0f));
 	g.drawText("Copyright (C) Tilr 2025", bounds.removeFromTop(25), Justification::centred);
+	g.setColour(Colour(COLOR_ACTIVE));
 	g.drawText("github.com/tiagolr/gate12", bounds.removeFromTop(25), Justification::centred);
+	g.setColour(Colours::white);
 	bounds.removeFromTop(40);
 	g.drawText("- Shift for fine slider adjustments.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Shift toggles snap on/off.", bounds.removeFromTop(25), Justification::centredLeft);

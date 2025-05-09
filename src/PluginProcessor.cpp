@@ -112,9 +112,24 @@ void GATE12AudioProcessor::loadSettings ()
         scale = (float)file->getDoubleValue("scale", 1.0f);
         plugWidth = file->getIntValue("width", PLUG_WIDTH);
         plugHeight = file->getIntValue("height", PLUG_HEIGHT);
-        // load paint patterns
-        // clear patterns undo
-        // set patterns tension
+        
+        for (int i = 0; i < PAINT_PATS; ++i) {
+            paintPatterns[i]->clear();
+            paintPatterns[i]->clearUndo();
+
+            auto str = file->getValue("paintpat" + String(i),"").toStdString();
+            if (!str.empty()) {
+                double x, y, tension;
+                int type;
+                std::istringstream iss(str);
+                while (iss >> x >> y >> tension >> type) {
+                    paintPatterns[i]->insertPoint(x,y,tension,type);
+                }
+            }
+            auto tension = (double)params.getRawParameterValue("tension")->load();
+            paintPatterns[i]->setTension(tension);
+            paintPatterns[i]->buildSegments();
+        }
     }
 }
 
@@ -124,6 +139,14 @@ void GATE12AudioProcessor::saveSettings ()
         file->setValue("scale", scale);
         file->setValue("width", plugWidth);
         file->setValue("height", plugHeight);
+        for (int i = 0; i < PAINT_PATS; ++i) {
+            std::ostringstream oss;
+            auto points = paintPatterns[i]->points;
+            for (const auto& point : points) {
+                oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
+            }
+            file->setValue("paintpat"+juce::String(i), var(oss.str()));
+        }
     }
     settings.saveIfNeeded();
 }
@@ -1004,6 +1027,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();
+            patterns[i]->clearUndo();
 
             auto str = state.getProperty("pattern" + String(i)).toString().toStdString();
             if (!str.empty()) {
@@ -1014,6 +1038,9 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
                     patterns[i]->insertPoint(x,y,tension,type);
                 }
             }
+
+            auto tension = (double)params.getRawParameterValue("tension")->load();
+            patterns[i]->setTension(tension);
             patterns[i]->buildSegments();
         }
     }

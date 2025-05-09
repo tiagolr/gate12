@@ -1,7 +1,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "../Globals.h"
 
+using namespace globals;
 class RipplerXAudioProcessor;
 
 class About : public juce::Component {
