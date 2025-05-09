@@ -114,25 +114,24 @@ void GATE12AudioProcessor::loadSettings ()
         scale = (float)file->getDoubleValue("scale", 1.0f);
         plugWidth = file->getIntValue("width", PLUG_WIDTH);
         plugHeight = file->getIntValue("height", PLUG_HEIGHT);
-        
-        for (int i = 0; i < PAINT_PATS; ++i) {
-            paintPatterns[i]->clear();
-            paintPatterns[i]->clearUndo();
+        auto tensionparam = (double)params.getRawParameterValue("tension")->load();
+        auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
+        auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
 
+        for (int i = 0; i < PAINT_PATS; ++i) {
             auto str = file->getValue("paintpat" + String(i),"").toStdString();
             if (!str.empty()) {
+                paintPatterns[i]->clear();
+                paintPatterns[i]->clearUndo();
                 double x, y, tension;
                 int type;
                 std::istringstream iss(str);
                 while (iss >> x >> y >> tension >> type) {
                     paintPatterns[i]->insertPoint(x,y,tension,type);
                 }
+                paintPatterns[i]->setTension(tensionparam, tensionatk, tensionrel, dualTension);
+                paintPatterns[i]->buildSegments();
             }
-            auto tension = (double)params.getRawParameterValue("tension")->load();
-            auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
-            auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
-            paintPatterns[i]->setTension(tension, tensionatk, tensionrel, dualTension);
-            paintPatterns[i]->buildSegments();
         }
     }
 }
