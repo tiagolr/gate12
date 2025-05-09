@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../Globals.h"
+#include "../dsp/Pattern.h"
 
 using namespace globals;
 class GATE12AudioProcessor;
@@ -10,7 +11,7 @@ class PaintTool {
 public:
     bool dragging = false;
 
-    PaintTool(GATE12AudioProcessor& p) : audioProcessor(p) {}
+    PaintTool(GATE12AudioProcessor& p);
     ~PaintTool() {}
 
     void setViewBounds(int _x, int _y, int _w, int _h);
@@ -23,6 +24,7 @@ public:
     void mouseUp(const MouseEvent& e);
 
 private:
+    Pattern* pat;
     int paintW = 100;
     int paintH = 150;
     int startW = 100;
@@ -35,6 +37,7 @@ private:
     bool inverty = false;
     bool snap = false;
     Point<int> mousePos;
+    Point<int> lmousePos;
     GATE12AudioProcessor& audioProcessor;
 
     Rectangle<double> getBounds();

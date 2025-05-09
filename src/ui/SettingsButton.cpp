@@ -80,9 +80,15 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	patterns3.addItem(147, "Fade OutIn");
 	patterns3.addItem(148, "Mute");
 
+	PopupMenu loadOther;
+	loadOther.addItem(150, "Restore paint patterns");
+
 	load.addSubMenu("Patterns 01-12", patterns1);
 	load.addSubMenu("Patterns 13-25", patterns2);
 	load.addSubMenu("Patterns 26-38", patterns3);
+	load.addSeparator();
+	load.addSubMenu("Other", loadOther);
+	
 
 	PopupMenu menu;
 	auto menuPos = localPointToGlobal(getLocalBounds().getBottomRight());
@@ -158,6 +164,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 					MessageManager::callAsync([this, result]() {
 						audioProcessor.loadProgram(result-110+1);
 					});
+				}
+				if (result == 150) {
+					audioProcessor.restorePaintPatterns();
 				}
 			}
 			if (result == 1000) {

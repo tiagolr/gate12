@@ -1,6 +1,11 @@
 #include "PaintTool.h"
 #include "../PluginProcessor.h"
 
+PaintTool::PaintTool(GATE12AudioProcessor& p) : audioProcessor(p) 
+{
+    pat = new Pattern(-1);
+}
+
 void PaintTool::setViewBounds(int _x, int _y, int _w, int _h)
 {
     winx = _x;
@@ -12,23 +17,36 @@ void PaintTool::setViewBounds(int _x, int _y, int _w, int _h)
 void PaintTool::draw(Graphics& g)
 {
     auto bounds = getBounds();
-    auto pattern = audioProcessor.getPaintPatern(audioProcessor.paintTool);
+    pat->points = audioProcessor.getPaintPatern(audioProcessor.paintTool)->points;
+
+    if (invertx) {
+        pat->reverse();
+    }
+    if (inverty) {
+        pat->invert();
+    }
+
+    pat->buildSegments();
 
     double x = bounds.getX();
     double y = bounds.getY();
     double w = std::max(1.0, bounds.getWidth());
     double h = bounds.getHeight();
 
-    double lastX = x;
-    double lastY = pattern->get_y_at(invertx != inverty ? 1.0 : 0.0) * h + y;
+    double minx = pat->points.front().x;
+    double maxx = pat->points.back().x;
+
     Path path;
-    path.startNewSubPath((float)lastX, (float)lastY);
+    double startX = x + minx * w;
+    double startY = y + pat->get_y_at(minx) * h;
+    path.startNewSubPath((float)startX, (float)startY);
 
     for (int i = 0; i < (int)w + 1; ++i) {
         double px = i / w;
-        if (invertx) px = 1.0 - px;
-        double py = pattern->get_y_at(px);
-        if (inverty) py = 1.0 - py;
+        if (px < minx || px > maxx) {
+            continue;
+        }
+        double py = pat->get_y_at(px);
         py = py * h + y;
         path.lineTo((float)(i + x), (float)py);
     }
@@ -36,15 +54,11 @@ void PaintTool::draw(Graphics& g)
     g.setColour(Colours::white.withAlpha(0.75f));
     g.strokePath(path, PathStrokeType(1.f));
 
-    float y0 = (float)pattern->get_y_at(0.0);
-    float y1 = (float)pattern->get_y_at(1.0);
-    float x0 = invertx ? (float)x+(float)w : (float)x;
-    float x1 = invertx ? (float)x : (float)x+(float)w;
-    if (inverty) {
-        y0 = 1.0f - y0;
-        y1 = 1.0f - y1;
-    }
-    g.fillEllipse(x0- POINT_RADIUS,(float)y + (float)h * y0 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS*2.f);
+    float y0 = (float)pat->get_y_at(minx);
+    float y1 = (float)pat->get_y_at(maxx);
+    float x0 = (float)x;
+    float x1 = (float)x+(float)w;
+    g.fillEllipse(x0 - POINT_RADIUS,(float)y + (float)h * y0 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS*2.f);
     g.fillEllipse(x1 - POINT_RADIUS,(float)y + (float)h * y1 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS * 2.f);
 }
 
@@ -57,6 +71,19 @@ void PaintTool::mouseMove(const MouseEvent& e)
 void PaintTool::mouseDrag(const MouseEvent& e)
 {
     dragging = true;
+    if (e.mods.isRightButtonDown()) {
+        double speed = (e.mods.isShiftDown() ? 40.0 : 4.0) * 100;
+        auto diff = e.getPosition() - lmousePos;
+        double change = double(diff.getX() - diff.getY()) / speed;
+        auto pattern = audioProcessor.getPaintPatern(audioProcessor.paintTool);
+        for (auto& point : pattern->points) {
+            point.tension = jlimit(-1.0,1.0,point.tension+change);
+        }
+        pattern->buildSegments();
+        lmousePos = e.getPosition();
+        return;
+    }
+
     snap = isSnapping(e);
     int dx = e.getDistanceFromDragStartX();
     int dy = e.getDistanceFromDragStartY();
@@ -75,6 +102,7 @@ void PaintTool::mouseDrag(const MouseEvent& e)
 void PaintTool::mouseDown(const MouseEvent& e)
 {
     mousePos = e.getPosition();
+    lmousePos = e.getPosition();
     snap = isSnapping(e);
     startW = invertx ? -paintW : paintW;
     startH = inverty ? -paintH : paintH;
@@ -92,9 +120,6 @@ void PaintTool::mouseUp(const MouseEvent& e)
 void PaintTool::apply()
 {
     auto bounds = getBounds();
-    auto pattern = audioProcessor.getPaintPatern(audioProcessor.paintTool);
-    auto points = pattern->points;
-
     double rx = bounds.getX();
     double ry = bounds.getY();
     double rw = bounds.getWidth();
@@ -107,19 +132,28 @@ void PaintTool::apply()
 
     audioProcessor.viewPattern->removePointsInRange(x1, x2);
 
+    auto points = audioProcessor.getPaintPatern(audioProcessor.paintTool)->points;
+
     // when the bounds are flat (no width or height) apply only first and last points
     if (rw == 0 && rh == 0 && !points.empty()) {
         points = { points.front() };
     }
-    else if (rw == 0 || rh == 0 && points.size() > 1) {
+    else if ((rw == 0 || rh == 0) && points.size() > 1) {
         points = { points.front(), points.back() };
     }
 
-    for (auto& point : points) {
-        double px = rx + ((invertx ? 1.0 - point.x : point.x) * rw); // map points to rectangle bounds
-        double py = ry + ((inverty ? 1.0 - point.y : point.y) * rh);
+    pat->points = points;
+    if (invertx) pat->reverse();
+    if (inverty) pat->invert();
+    pat->buildSegments();
+
+    for (auto& point : pat->points) {
+        double px = rx + point.x * rw; // map points to rectangle bounds
+        double py = ry + point.y * rh;
         px = (px - winx) / winw; // normalize again 
         py = (py - winy) / winh;
+        px = jlimit(0.0, 1.0, px);
+        py = jlimit(0.0, 1.0, py);
         audioProcessor.viewPattern->insertPoint(px, py, point.tension, point.type);
     }
 

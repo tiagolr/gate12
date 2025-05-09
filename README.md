@@ -114,7 +114,7 @@ Using right click on the view, the current selected paint tool will be applied t
   * `Mouse wheel` on view to change grid size
   * `Right click` points to change point type
   * `Alt + drag` selection handles to skew/deform the selected points
-  * `Alt + drag` in paint *edit* mode to apply tension to all points
+  * `Right click + drag` in paint mode to change paint tool tension
 
 ## MacOS
 

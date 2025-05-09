@@ -94,11 +94,19 @@ void Pattern::reverse()
 {
     std::reverse(points.begin(), points.end());
 
+    double t0 = !points.empty() ? points[0].tension : 0.0;
+    int type0 = !points.empty() ? points[0].type : 1;
     for (size_t i = 0; i < points.size(); ++i) {
         auto& p = points[i];
         p.x = 1 - p.x;
-        if (i < points.size() - 1)
-          p.tension = points[i + 1].tension * -1;
+        if (i < points.size() - 1) {
+            p.tension = points[i + 1].tension * -1;
+            p.type = points[i + 1].type;
+        }
+        else {
+            p.tension = t0 * -1;
+            p.type = type0;
+        }
     }
     incrementVersion();
 };

@@ -175,6 +175,7 @@ public:
     Pattern* getPaintPatern(int index);
     void setViewPattern(int index);
     void setPaintTool(int index);
+    void restorePaintPatterns();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

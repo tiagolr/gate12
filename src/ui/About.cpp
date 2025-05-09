@@ -1,12 +1,12 @@
 #include "About.h"
 
-void About::mouseDown(const juce::MouseEvent& e) 
+void About::mouseDown(const juce::MouseEvent& e)
 {
 	(void)e;
 	setVisible(false);
 };
 
-void About::paint(Graphics& g) 
+void About::paint(Graphics& g)
 {
 	auto bounds = getBounds();
 	g.setColour(Colour(0xdd000000));
@@ -22,13 +22,11 @@ void About::paint(Graphics& g)
 	g.drawText("Copyright (C) Tilr 2025", bounds.removeFromTop(22), Justification::centred);
 	g.drawText("github.com/tiagolr/gate12", bounds.removeFromTop(22), Justification::centred);
 	bounds.removeFromTop(40);
-	g.drawText("- Ctrl for fine slider adjustments.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Ctrl toggles snap on/off.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Shift for fine slider adjustments.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Shift toggles snap on/off.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Mouse wheel on view to change grid size.", bounds.removeFromTop(22), Justification::centredLeft);
 	g.drawText("- Right click points to change point type.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Right click view to use paint tool.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Alt + Right click to erase points.", bounds.removeFromTop(22), Justification::centredLeft);
-	g.drawText("- Alt + drag on selection handles to skew/deform the selected points.", bounds.removeFromTop(22), Justification::centredLeft);
-
+	g.drawText("- Alt + drag selection handles to skew selected points.", bounds.removeFromTop(22), Justification::centredLeft);
+	g.drawText("- Right click + drag in paint mode to change paint tool tension", bounds.removeFromTop(22), Justification::centredLeft);
 };
 

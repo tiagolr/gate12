@@ -222,6 +222,20 @@ void GATE12AudioProcessor::setPaintTool(int index)
     }
 }
 
+void GATE12AudioProcessor::restorePaintPatterns()
+{
+    for (int i = 0; i < 8; ++i) {
+        paintPatterns[i]->clear();
+        paintPatterns[i]->clearUndo();
+        auto preset = Presets::getPaintPreset(i);
+        for (auto& point : preset) {
+            paintPatterns[i]->insertPoint(point.x, point.y, point.tension, point.type);
+        }
+        paintPatterns[i]->buildSegments();
+    }
+    sendChangeMessage();
+}
+
 //==============================================================================
 const juce::String GATE12AudioProcessor::getName() const
 {

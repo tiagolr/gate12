@@ -67,6 +67,7 @@ void View::resized()
     MessageManager::callAsync([this] {
         audioProcessor.viewW = winw;
     });
+    multiselect.recalcSelectionArea();
 }
 
 void View::paint(Graphics& g) {
