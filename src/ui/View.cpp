@@ -263,7 +263,7 @@ void View::drawMidPoints(Graphics& g)
     // draw midpoints
     g.setColour(Colour(COLOR_ACTIVE));
     for (auto seg = segs.begin(); seg != segs.end(); ++seg) {
-        if (!isCollinear(*seg) && seg->type != PointType::Hold) {
+        if (!isCollinear(*seg) && seg->type != PointType::hold) {
             auto xy = getMidpointXY(*seg);
             g.drawEllipse((float)xy[0] - MPOINT_RADIUS, (float)xy[1] - MPOINT_RADIUS, (float)MPOINT_RADIUS * 2.f, (float)MPOINT_RADIUS * 2.f, 2.f);
         }
@@ -328,7 +328,7 @@ int View::getHoveredMidpoint(int x, int y)
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);
-        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - MPOINT_RADIUS, (int)xy[1] - MPOINT_RADIUS, MPOINT_RADIUS * 2, MPOINT_RADIUS * 2)) {
+        if (!isCollinear(seg) && seg.type != PointType::hold && pointInRect(x, y, (int)xy[0] - MPOINT_RADIUS, (int)xy[1] - MPOINT_RADIUS, MPOINT_RADIUS * 2, MPOINT_RADIUS * 2)) {
             return i;
         }
     }
@@ -415,28 +415,33 @@ void View::mouseUp(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    if (paintMode) {
-        Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
-        paintTool.mouseUp(e);
+    if (e.mods.isRightButtonDown() && rmousePoint == -1) {
+        if (std::abs(e.getDistanceFromDragStartX()) < 4 && std::abs(e.getDistanceFromDragStartY()) < 4)
+            showContextMenu(e);
     }
-    else if (selectedPoint > -1) { // finished dragging point
-        // ----
+    else {
+        if (paintMode) {
+            Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
+            paintTool.mouseUp(e);
+        }
+        else if (selectedPoint > -1) { // finished dragging point
+            // ----
+        }
+        else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
+            auto& mpoint = getPointFromMidpoint(selectedMidpoint);
+            auto& next = getPointFromMidpoint(selectedMidpoint + 1);
+            double midx = (mpoint.x + next.x) / 2.;
+            int x = (int)(midx * winw + winx) + getScreenPosition().x;
+            int y = (int)(audioProcessor.viewPattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
+            Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
+        }
+        else if (preSelectionStart.x > -1) { // finished creating selection
+            multiselect.makeSelection(e, preSelectionStart, preSelectionEnd);
+        }
+        else if (!multiselect.selectionPoints.empty()) { // finished dragging selection
+            multiselect.mouseUp(e); // FIX - points may have been inverted due to selection drag
+        }   
     }
-    else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
-        auto& mpoint = getPointFromMidpoint(selectedMidpoint);
-        auto& next = getPointFromMidpoint(selectedMidpoint + 1);
-        double midx = (mpoint.x + next.x) / 2.;
-        int x = (int)(midx * winw + winx) + getScreenPosition().x;
-        int y = (int)(audioProcessor.viewPattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
-        Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
-    }
-    else if (preSelectionStart.x > -1) { // finished creating selection
-        multiselect.makeSelection(e, preSelectionStart, preSelectionEnd);
-    }
-    else if (!multiselect.selectionPoints.empty()) { // finished dragging selection
-        multiselect.mouseUp(e); // FIX - points may have been inverted due to selection drag
-    }
-    
     // if there were changes on mouseup, create undo point from previous snapshot
     if (snapshotIdx == audioProcessor.viewPattern->index) {
         audioProcessor.createUndoPointFromSnapshot(snapshot);
@@ -445,6 +450,7 @@ void View::mouseUp(const juce::MouseEvent& e)
     preSelectionStart = Point<int>(-1,-1);
     selectedMidpoint = -1;
     selectedPoint = -1;
+    rmousePoint = -1;
 }
 
 void View::mouseMove(const juce::MouseEvent& e)
@@ -673,6 +679,41 @@ void View::showPointContextMenu(const juce::MouseEvent& event)
         if (result > 0) {
             audioProcessor.viewPattern->points[rmousePoint].type = result - 1;
             audioProcessor.viewPattern->buildSegments();
+        }
+    });
+}
+
+void View::showContextMenu(const juce::MouseEvent& event)
+{
+    (void)event;
+    PopupMenu menu;
+    menu.addItem(1, "Select all");
+    menu.addItem(2, "Deselect");
+    menu.addSeparator();
+    menu.addItem(3, "Clear");
+    if (!multiselect.selectionPoints.empty()) {
+        menu.addItem(4, "Delete points");
+    }
+    if (audioProcessor.isPaintMode() && !audioProcessor.isPaintEdit()) {
+        menu.addItem(5, "Reset paint tension");
+    }
+
+    menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this](int result) {
+        if (result == 0) return;
+        if (result == 1) multiselect.selectAll();
+        if (result == 2) multiselect.clearSelection();
+        if (result == 3) {
+            auto snapshot = audioProcessor.viewPattern->points;
+            audioProcessor.viewPattern->clear();
+            audioProcessor.viewPattern->buildSegments();
+            audioProcessor.createUndoPointFromSnapshot(snapshot);
+        }
+        if (result == 4 && !multiselect.selectionPoints.empty()) {
+            audioProcessor.createUndoPoint();
+            multiselect.deleteSelectedPoints();
+        }
+        if (result == 5) {
+            paintTool.resetPatternTension();
         }
     });
 }

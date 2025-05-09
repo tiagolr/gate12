@@ -25,6 +25,8 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("attack", "Attack", 0.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("release", "Release", 0.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tension", "Tension", -1.0f, 1.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("tensionatk", "Attack Tension", -1.0f, 1.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("tensionrel", "Release Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterChoice>("paint", "Paint", StringArray { "Erase", "Line", "Saw Up", "Saw Down", "Triangle" }, 1),
         std::make_unique<juce::AudioParameterChoice>("point", "Point", StringArray { "Hold", "Curve", "S-Curve", "Pulse", "Wave", "Triangle", "Stairs", "Smooth St" }, 1),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
@@ -127,7 +129,9 @@ void GATE12AudioProcessor::loadSettings ()
                 }
             }
             auto tension = (double)params.getRawParameterValue("tension")->load();
-            paintPatterns[i]->setTension(tension);
+            auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
+            auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
+            paintPatterns[i]->setTension(tension, tensionatk, tensionrel, dualTension);
             paintPatterns[i]->buildSegments();
         }
     }
@@ -368,7 +372,7 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 {
     (void)samplesPerBlock;
     int trigger = (int)params.getRawParameterValue("trigger")->load();
-    setLatencySamples(trigger == Trigger::Audio 
+    setLatencySamples(trigger == Trigger::audio 
         ? static_cast<int>(sampleRate * 0.004) 
         : 0
     );
@@ -422,7 +426,7 @@ void GATE12AudioProcessor::onSlider()
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger) {
         auto latency = getLatencySamples();
-        setLatencySamples(trigger == Trigger::Audio 
+        setLatencySamples(trigger == Trigger::audio 
             ? static_cast<int>(getSampleRate() * LATENCY_MILLIS / 1000.0) 
             : 0
         );
@@ -433,13 +437,13 @@ void GATE12AudioProcessor::onSlider()
         clearLatencyBuffers();
         ltrigger = trigger;
     }
-    if (trigger == Trigger::Sync && alwaysPlaying) 
+    if (trigger == Trigger::sync && alwaysPlaying) 
         alwaysPlaying = false; // force alwaysPlaying off when trigger is not MIDI or Audio
 
     if (trigger != Trigger::MIDI && midiTrigger)
         midiTrigger = false;
 
-    if (trigger != Trigger::Audio && audioTrigger)
+    if (trigger != Trigger::audio && audioTrigger)
         audioTrigger = false;
 
     int pat = (int)params.getRawParameterValue("pattern")->load();
@@ -448,15 +452,14 @@ void GATE12AudioProcessor::onSlider()
     }
 
     auto tension = (double)params.getRawParameterValue("tension")->load();
-    if (tension != ltension) {
-        pattern->setTension(tension);
-        pattern->buildSegments();
-        for (int i = 0; i < PAINT_PATS; ++i) {
-            paintPatterns[i]->setTension(tension);
-            paintPatterns[i]->buildSegments();
-        }
+    auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
+    auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
+    if (tension != ltension || tensionatk != ltensionatk || tensionrel != ltensionrel) {
+        onTensionChange();
+        ltensionatk = tensionatk;
+        ltensionrel = tensionrel;
+        ltension = tension;
     }
-    ltension = tension;
 
     auto sync = (int)params.getRawParameterValue("sync")->load();
     if (sync == 0) syncQN = 1.; // not used
@@ -484,6 +487,19 @@ void GATE12AudioProcessor::onSlider()
     lpFilterR.lp(srate, highcut, 0.707);
     hpFilterL.hp(srate, lowcut, 0.707);
     hpFilterR.hp(srate, lowcut, 0.707);
+}
+
+void GATE12AudioProcessor::onTensionChange()
+{
+    auto tension = (double)params.getRawParameterValue("tension")->load();
+    auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
+    auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
+    pattern->setTension(tension, tensionatk, tensionrel, dualTension);
+    pattern->buildSegments();
+    for (int i = 0; i < PAINT_PATS; ++i) {
+        paintPatterns[i]->setTension(tension, tensionatk, tensionrel, dualTension);
+        paintPatterns[i]->buildSegments();
+    }
 }
 
 void GATE12AudioProcessor::onPlay()
@@ -598,15 +614,15 @@ void GATE12AudioProcessor::queuePattern(int patidx)
     queuedPatternCountdown = 0;
     int patsync = (int)params.getRawParameterValue("patsync")->load();
 
-    if (playing && patsync != PatSync::Off) {
+    if (playing && patsync != PatSync::off) {
         int interval = samplesPerBeat;
-        if (patsync == PatSync::QuarterBeat) 
+        if (patsync == PatSync::quarterBeat) 
             interval = interval / 4;
-        else if (patsync == PatSync::HalfBeat)
+        else if (patsync == PatSync::halfBeat)
             interval = interval / 2;
-        else if (patsync == PatSync::Beat_x2)
+        else if (patsync == PatSync::beat_x2)
             interval = interval * 2;
-        else if (patsync == PatSync::Beat_x4)
+        else if (patsync == PatSync::beat_x4)
             interval = interval * 4;
         queuedPatternCountdown = (interval - timeInSamples % interval) % interval;
     }
@@ -794,7 +810,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 pattern = patterns[queuedPattern - 1];
                 viewPattern = pattern;
                 auto tension = (double)params.getRawParameterValue("tension")->load();
-                pattern->setTension(tension);
+                auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
+                auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
+                pattern->setTension(tension, tensionatk, tensionrel, dualTension);
                 pattern->buildSegments();
                 MessageManager::callAsync([this]() {
                     sendChangeMessage();
@@ -807,7 +825,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // Sync mode
-        if (trigger == Trigger::Sync) {
+        if (trigger == Trigger::sync) {
             xpos = sync > 0 
                 ? beatPos / syncQN + phase
                 : ratePos + phase;
@@ -854,7 +872,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
 
         // Audio mode
-        else if (trigger == Trigger::Audio) {
+        else if (trigger == Trigger::audio) {
             int latency = (int)latBufferL.size();
             
             // read audio samples
@@ -961,7 +979,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             timeInSamples += 1;
     }
 
-    drawSeek.store(playing && (trigger == Trigger::Sync || midiTrigger || audioTrigger));
+    drawSeek.store(playing && (trigger == Trigger::sync || midiTrigger || audioTrigger));
 }
 
 //==============================================================================
@@ -984,6 +1002,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("currentProgram", currentProgram, nullptr);
     state.setProperty("alwaysPlaying",alwaysPlaying, nullptr);
     state.setProperty("dualSmooth",dualSmooth, nullptr);
+    state.setProperty("dualTension",dualTension, nullptr);
     state.setProperty("MIDIHoldEnvelopeTail",MIDIHoldEnvelopeTail, nullptr);
     state.setProperty("AudioHoldEnvelopeTail",AudioHoldEnvelopeTail, nullptr);
     state.setProperty("triggerChn",triggerChn, nullptr);
@@ -1017,6 +1036,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         currentProgram = (int)state.getProperty("currentProgram");
         alwaysPlaying = (bool)state.getProperty("alwaysPlaying");
         dualSmooth = (bool)state.getProperty("dualSmooth");
+        dualTension = (bool)state.getProperty("dualTension");
         MIDIHoldEnvelopeTail = (bool)state.getProperty("MIDIHoldEnvelopeTail");
         AudioHoldEnvelopeTail = (bool)state.getProperty("AudioHoldEnvelopeTail");
         triggerChn = (int)state.getProperty("triggerChn");
@@ -1040,7 +1060,9 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
             }
 
             auto tension = (double)params.getRawParameterValue("tension")->load();
-            patterns[i]->setTension(tension);
+            auto tensionatk = (double)params.getRawParameterValue("tensionatk")->load();
+            auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
+            patterns[i]->setTension(tension, tensionatk, tensionrel, dualTension);
             patterns[i]->buildSegments();
         }
     }

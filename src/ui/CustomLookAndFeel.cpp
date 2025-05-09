@@ -44,6 +44,14 @@ void CustomLookAndFeel::drawButtonBackground (Graphics& g, Button& button, const
         else {
             g.drawRoundedRectangle(bounds.reduced(0.5, 0.5), cornerSize, 1.0f);
         }
+        //if (isButtonDown) {
+        //    g.setColour(Colours::black.withAlpha(0.1f));
+        //    g.fillRoundedRectangle(bounds, cornerSize);
+        //}
+        //else if (isMouseOverButton) {
+        //    g.setColour(backgroundColour.withAlpha(0.1f));
+        //    g.fillRoundedRectangle(bounds, cornerSize);
+        //}
 
         return;
     }

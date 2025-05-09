@@ -65,6 +65,8 @@ private:
     std::unique_ptr<Rotary> attack;
     std::unique_ptr<Rotary> release;
     std::unique_ptr<Rotary> tension;
+    std::unique_ptr<Rotary> tensionatk;
+    std::unique_ptr<Rotary> tensionrel;
     std::unique_ptr<Rotary> threshold;
     std::unique_ptr<Rotary> sense;
     std::unique_ptr<Rotary> lowcut;

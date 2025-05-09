@@ -208,6 +208,16 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::percx100, true);
     addAndMakeVisible(*tension);
     tension->setBounds(col,row,80,65);
+    //col += 75;
+
+    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "T.Attack", LabelFormat::percx100, true);
+    addAndMakeVisible(*tensionatk);
+    tensionatk->setBounds(col,row,80,65);
+    col += 75;
+
+    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "T.Release", LabelFormat::percx100, true);
+    addAndMakeVisible(*tensionrel);
+    tensionrel->setBounds(col,row,80,65);
     col += 75;
 
     // AUDIO KNOBS
@@ -374,7 +384,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(redoButton);
     redoButton.setButtonText("redo");
     redoButton.setComponentID("button");
-    redoButton.setBounds(col, row+5, 20, 15);
+    redoButton.setBounds(col, row, 20, 25);
     redoButton.setAlpha(0.f);
     redoButton.onClick = [this]() {
         MessageManager::callAsync([this] {
@@ -387,7 +397,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(undoButton);
     undoButton.setButtonText("undo");
     undoButton.setComponentID("button");
-    undoButton.setBounds(col, row+5, 20, 15);
+    undoButton.setBounds(col, row, 20, 25);
     undoButton.setAlpha(0.f);
     undoButton.onClick = [this]() {
         MessageManager::callAsync([this] {
@@ -501,8 +511,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     triggerMenu.setColour(ComboBox::arrowColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::textColourId, Colour(triggerColor));
     triggerMenu.setColour(ComboBox::outlineColourId, Colour(triggerColor));
-    algoMenu.setVisible(trigger == Trigger::Audio);
-    audioSettingsButton.setVisible(trigger == Trigger::Audio);
+    algoMenu.setVisible(trigger == Trigger::audio);
+    audioSettingsButton.setVisible(trigger == Trigger::audio);
     if (!audioSettingsButton.isVisible()) {
         audioProcessor.showAudioKnobs = false;
     }
@@ -520,7 +530,9 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     smooth->setVisible(!showAudioKnobs);
     attack->setVisible(!showAudioKnobs);
     release->setVisible(!showAudioKnobs);
-    tension->setVisible(!showAudioKnobs);
+    tension->setVisible(!showAudioKnobs && !audioProcessor.dualTension);
+    tensionatk->setVisible(!showAudioKnobs && audioProcessor.dualTension);
+    tensionrel->setVisible(!showAudioKnobs && audioProcessor.dualTension);
 
     threshold->setVisible(showAudioKnobs);
     sense->setVisible(showAudioKnobs);
@@ -559,6 +571,9 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
             col += 75;
         }
         tension->setTopLeftPosition(col, row);
+        tensionatk->setTopLeftPosition(col, row);
+        col += 75;
+        tensionrel->setTopLeftPosition(col, row);
     }
 
     useSidechain.setVisible(showAudioKnobs);
@@ -592,7 +607,7 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
 
     // draw loop play button
-    if (trigger != Trigger::Sync) {
+    if (trigger != Trigger::sync) {
         if (audioProcessor.alwaysPlaying) {
             g.setColour(Colours::yellow);
             auto loopBounds = loopButton.getBounds().expanded(-5);
@@ -703,17 +718,17 @@ void GATE12AudioProcessorEditor::drawUndoButton(Graphics& g, juce::Rectangle<flo
         auto thickness = 2.f;
         float left = bounds.getX();
         float right = bounds.getRight();
-        float top = bounds.getY();
-        float bottom = bounds.getBottom();
+        float top = bounds.getCentreY() - 4;
+        float bottom = bounds.getCentreY() + 4;
         float centerY = bounds.getCentreY();
         float shaftStart = right - 7;
 
         Path arrowPath;
         // arrow head
         arrowPath.startNewSubPath(right, centerY);
-        arrowPath.lineTo(shaftStart, top+4);
+        arrowPath.lineTo(shaftStart, top);
         arrowPath.startNewSubPath(right, centerY);
-        arrowPath.lineTo(shaftStart, bottom-4);
+        arrowPath.lineTo(shaftStart, bottom);
 
         // shaft
         float radius = (bottom - centerY);

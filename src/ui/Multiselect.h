@@ -24,15 +24,15 @@ struct SelPoint {
 };
 
 enum MouseHover {
-    Area,
-    TopLeft,
-    TopMid,
-    TopRight,
-    MidLeft,
-    MidRight,
-    BottomLeft,
-    BottomMid,
-    BottomRight
+    area,
+    topLeft,
+    topMid,
+    topRight,
+    midLeft,
+    midRight,
+    bottomLeft,
+    bottomMid,
+    bottomRight
 };
 
 struct Vec2 {
@@ -75,6 +75,7 @@ public:
     void clearSelection();
     void makeSelection(const MouseEvent& e, Point<int>selectionStart, Point<int>selectionEnd);
     void deleteSelectedPoints();
+    void selectAll();
 
     int mouseHover = -1; // flag for hovering selection drag handles, 0 area, 1 top left corner, 2 top center etc..
     std::vector<SelPoint> selectionPoints;

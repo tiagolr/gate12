@@ -55,6 +55,7 @@ public:
     bool keyPressed(const juce::KeyPress& key) override;
 
     void showPointContextMenu(const juce::MouseEvent& event);
+    void showContextMenu(const MouseEvent& e);
 
     bool isSnapping(const MouseEvent& e);
     bool isCollinear(Segment seg);

@@ -29,18 +29,18 @@ struct MIDIMsg {
 };
 
 enum Trigger {
-    Sync,
+    sync,
     MIDI,
-    Audio
+    audio
 };
 
 enum PatSync {
-    Off,
-    QuarterBeat,
-    HalfBeat,
-    Beat_x1,
-    Beat_x2,
-    Beat_x4
+    off,
+    quarterBeat,
+    halfBeat,
+    beat_x1,
+    beat_x2,
+    beat_x4
 };
 
 /*
@@ -93,6 +93,7 @@ public:
     // Instance Settings
     bool alwaysPlaying = false;
     bool dualSmooth = true; // use either single smooth or attack and release
+    bool dualTension = true;
     bool MIDIHoldEnvelopeTail = true; // MIDI trigger - keep processing last position after envelope finishes
     bool AudioHoldEnvelopeTail = false; // Audio trigger - keep processing last position after envelope finishes
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
@@ -116,7 +117,9 @@ public:
     bool midiTrigger = false; // flag midi has triggered envelope
     int winpos = 0;
     int lwinpos = 0;
-    double ltension = -1.0;
+    double ltension = -10.0;
+    double ltensionatk = -10.0;
+    double ltensionrel = -10.0;
     RCSmoother* value; // smooths envelope value
     bool showLatencyWarning = false;
 
@@ -190,6 +193,7 @@ public:
 
     //==============================================================================
     void onSlider ();
+    void onTensionChange();
     void onPlay ();
     void onStop ();
     void restartEnv (bool fromZero = false);

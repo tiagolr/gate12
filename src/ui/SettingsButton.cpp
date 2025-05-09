@@ -23,6 +23,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	PopupMenu options;
 	options.addSubMenu("Trigger Channel", triggerChn);
 	options.addItem(30, "Dual smooth", true, audioProcessor.dualSmooth);
+	options.addItem(31, "Dual tension", true, audioProcessor.dualTension);
 
 	PopupMenu load;
 	load.addItem(100, "Sine");
@@ -95,11 +96,11 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	menu.addSubMenu("UI Scale", uiScale);
 	menu.addSubMenu("Options", options);
 	menu.addSeparator();
-	menu.addItem(50, "Invert");
-	menu.addItem(51, "Reverse");
-	menu.addItem(52, "Clear");
+	//menu.addItem(50, "Invert");
+	//menu.addItem(51, "Reverse");
 	menu.addItem(53, "Copy");
 	menu.addItem(54, "Paste");
+	menu.addItem(52, "Clear");
 	menu.addSeparator();
 	menu.addSubMenu("Load", load);
 	menu.addItem(1000, "About");
@@ -119,6 +120,13 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			if (result == 30) { // Dual smooth
 				audioProcessor.dualSmooth = !audioProcessor.dualSmooth;
 				toggleUIComponents();
+			}
+			if (result == 31) { // Dual tension
+				MessageManager::callAsync([this]() {
+					audioProcessor.dualTension = !audioProcessor.dualTension;
+					audioProcessor.onTensionChange();
+					toggleUIComponents();
+				});
 			}
 			if (result == 50) {
 				audioProcessor.viewPattern->invert();

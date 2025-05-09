@@ -22,6 +22,7 @@ public:
     void mouseDrag(const MouseEvent& e);
     void mouseDown(const MouseEvent& e);
     void mouseUp(const MouseEvent& e);
+    void resetPatternTension();
 
 private:
     Pattern* pat;

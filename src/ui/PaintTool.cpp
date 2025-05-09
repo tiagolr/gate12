@@ -209,6 +209,15 @@ Rectangle<double> PaintTool::getBounds()
     return Rectangle<double>(x,y,r-x,b-y);
 }
 
+void PaintTool::resetPatternTension()
+{
+    auto pattern = audioProcessor.getPaintPatern(audioProcessor.paintTool);
+    for (auto& point : pattern->points) {
+        point.tension = 0.0;
+    }
+    pattern->buildSegments();
+}
+
 bool PaintTool::isSnapping(const MouseEvent& e) {
     bool snapping = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
     return (snapping && !e.mods.isShiftDown()) || (!snapping && e.mods.isShiftDown());

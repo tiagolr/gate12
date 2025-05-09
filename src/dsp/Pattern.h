@@ -13,14 +13,14 @@
 #include <atomic>
 
 enum PointType {
-    Hold,
-    Curve,
-    SCurve,
-    Pulse,
-    Wave,
-    Triangle,
-    Stairs,
-    SmoothSt,
+    hold,
+    curve,
+    sCurve,
+    pulse,
+    wave,
+    triangle,
+    stairs,
+    smoothSt,
 };
 
 struct PPoint {
@@ -58,8 +58,7 @@ public:
 
     int insertPoint(double x, double y, double tension, int type);
     void sortPoints();
-    void setTension(double t); // sets global tension multiplier
-    double getTension(); // gets global tension multiplier
+    void setTension(double t, double tatk, double trel, bool dual); // sets global tension multiplier
     void removePoint(double x, double y);
     void removePoint(int i);
     void removePointsInRange(double x1, double x2);
@@ -94,5 +93,8 @@ private:
     static inline uint64_t versionIDCounter = 1; // static global ID counter
     static inline uint64_t pointsIDCounter = 1; // static global ID counter
     std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
+    std::atomic<double> tensionAtk = 0.0; // tension multiplier for attack only
+    std::atomic<double> tensionRel = 0.0; // tension multiplier for release only
+    bool dualTension = false;
     std::mutex mtx;
 };
