@@ -18,14 +18,8 @@ void PaintTool::draw(Graphics& g)
 {
     auto bounds = getBounds();
     pat->points = audioProcessor.getPaintPatern(audioProcessor.paintTool)->points;
-
-    if (invertx) {
-        pat->reverse();
-    }
-    if (inverty) {
-        pat->invert();
-    }
-
+    if (invertx) pat->reverse();
+    if (inverty) pat->invert();
     pat->buildSegments();
 
     double x = bounds.getX();
@@ -33,8 +27,8 @@ void PaintTool::draw(Graphics& g)
     double w = std::max(1.0, bounds.getWidth());
     double h = bounds.getHeight();
 
-    double minx = pat->points.front().x;
-    double maxx = pat->points.back().x;
+    double minx = pat->points.empty() ? 0.0 : pat->points.front().x;
+    double maxx = pat->points.empty() ? 0.0 : pat->points.back().x;
 
     Path path;
     double startX = x + minx * w;
@@ -56,8 +50,8 @@ void PaintTool::draw(Graphics& g)
 
     float y0 = (float)pat->get_y_at(minx);
     float y1 = (float)pat->get_y_at(maxx);
-    float x0 = (float)x;
-    float x1 = (float)x+(float)w;
+    float x0 = (float)(x + minx * w);
+    float x1 = (float)(x + maxx * w);
     g.fillEllipse(x0 - POINT_RADIUS,(float)y + (float)h * y0 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS*2.f);
     g.fillEllipse(x1 - POINT_RADIUS,(float)y + (float)h * y1 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS * 2.f);
 }
