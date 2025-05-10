@@ -210,12 +210,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tension->setBounds(col,row,80,65);
     //col += 75;
 
-    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "T.Attack", LabelFormat::percx100, true);
+    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "TAttack", LabelFormat::percx100, true);
     addAndMakeVisible(*tensionatk);
     tensionatk->setBounds(col,row,80,65);
     col += 75;
 
-    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "T.Release", LabelFormat::percx100, true);
+    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "TRelease", LabelFormat::percx100, true);
     addAndMakeVisible(*tensionrel);
     tensionrel->setBounds(col,row,80,65);
     col += 75;
@@ -604,9 +604,20 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(COLOR_BG));
-    auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
+    auto bounds = getLocalBounds().withTop(view->getBounds().getY() + 10).withHeight(3).toFloat();
+
+    auto grad = ColourGradient(
+        Colours::black.withAlpha(0.25f),
+        bounds.getTopLeft(),
+        Colours::transparentBlack,
+        bounds.getBottomLeft(),
+        false
+    );
+    g.setGradientFill(grad);
+    g.fillRect(bounds);
 
     // draw loop play button
+    auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
     if (trigger != Trigger::Sync) {
         if (audioProcessor.alwaysPlaying) {
             g.setColour(Colours::yellow);

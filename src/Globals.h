@@ -1,7 +1,7 @@
 #pragma once
 
 namespace globals {
-	inline unsigned int COLOR_BG = 0xff181614;
+	inline unsigned int COLOR_BG = 0xff181818;
 	inline unsigned int COLOR_ACTIVE = 0xffff8050;
 	inline unsigned int COLOR_ACTIVE_LIGHT = 0xffffb193;
 	inline unsigned int COLOR_ACTIVE_DARK = 0xff88442b;
@@ -20,10 +20,10 @@ namespace globals {
 
 	// view consts
 	inline const int PLUG_WIDTH = 640;
-	inline const int PLUG_HEIGHT = 640;
+	inline const int PLUG_HEIGHT = 650;
 	inline const int MAX_PLUG_WIDTH = 640 * 3;
-	inline const int MAX_PLUG_HEIGHT = 640 * 2;
-	inline const int PLUG_PADDING = 10;
+	inline const int MAX_PLUG_HEIGHT = 650 * 2;
+	inline const int PLUG_PADDING = 15;
 	inline const int HOVER_RADIUS = 8;
 	inline const int POINT_RADIUS = 4;
 	inline const int MPOINT_RADIUS = 3;

@@ -59,9 +59,9 @@ void View::resized()
 {
     auto bounds = getLocalBounds();
     winx = bounds.getX() + PLUG_PADDING;
-    winy = bounds.getY() + PLUG_PADDING;
+    winy = bounds.getY() + PLUG_PADDING + 10;
     winw = bounds.getWidth() - PLUG_PADDING * 2;
-    winh = bounds.getHeight() - PLUG_PADDING * 2;
+    winh = bounds.getHeight() - PLUG_PADDING * 2 - 10;
     multiselect.setViewBounds(winx, winy, winw, winh);
     paintTool.setViewBounds(winx, winy, winw, winh);
     MessageManager::callAsync([this] {
@@ -71,6 +71,8 @@ void View::resized()
 }
 
 void View::paint(Graphics& g) {
+    g.setColour(Colour(COLOR_BG));
+    g.fillRect(winx,winy,winw,winh);
     if (paintEdit) {
         g.setColour(Colours::blue.withAlpha(0.05f));
         g.fillRect(winx, winy, winw, winh);
@@ -640,12 +642,9 @@ bool View::keyPressed(const juce::KeyPress& key)
         return false;
 
     // remove selected points
-    if (key == KeyPress::deleteKey && !multiselect.selectionPoints.empty())
-    {
-        MessageManager::callAsync([this]() {
-            audioProcessor.createUndoPoint();
-            multiselect.deleteSelectedPoints();
-        });
+    if (key == KeyPress::deleteKey && !multiselect.selectionPoints.empty()) {
+        audioProcessor.createUndoPoint();
+        multiselect.deleteSelectedPoints();
         return true;
     }
 
@@ -679,11 +678,11 @@ void View::showPointContextMenu(const juce::MouseEvent& event)
     menu.addItem(7, "Stairs", true, type == 6);
     menu.addItem(8, "Smooth stairs", true, type == 7);
     menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this, point](int result) {
-        if (result > 0) {
-            MessageManager::callAsync([this, result, point]() {
-                audioProcessor.viewPattern->points[point].type = result - 1;
-                audioProcessor.viewPattern->buildSegments();
-            });
+        int type = audioProcessor.viewPattern->points[point].type;
+        if (result > 0 && type != result - 1) {
+            audioProcessor.createUndoPoint();
+            audioProcessor.viewPattern->points[point].type = result - 1;
+            audioProcessor.viewPattern->buildSegments();
         }
     });
 }
@@ -708,23 +707,17 @@ void View::showContextMenu(const juce::MouseEvent& event)
         if (result == 1) multiselect.selectAll();
         if (result == 2) multiselect.clearSelection();
         if (result == 3) {
-            MessageManager::callAsync([this]() {
-                auto snapshot = audioProcessor.viewPattern->points;
-                audioProcessor.viewPattern->clear();
-                audioProcessor.viewPattern->buildSegments();
-                audioProcessor.createUndoPointFromSnapshot(snapshot);
-            });
+            auto snapshot = audioProcessor.viewPattern->points;
+            audioProcessor.viewPattern->clear();
+            audioProcessor.viewPattern->buildSegments();
+            audioProcessor.createUndoPointFromSnapshot(snapshot);
         }
         if (result == 4 && !multiselect.selectionPoints.empty()) {
-            MessageManager::callAsync([this]() {
-                audioProcessor.createUndoPoint();
-                multiselect.deleteSelectedPoints();
-            });
+            audioProcessor.createUndoPoint();
+            multiselect.deleteSelectedPoints();
         }
         if (result == 5) {
-            MessageManager::callAsync([this]() {
-                paintTool.resetPatternTension();
-            });
+            paintTool.resetPatternTension();
         }
     });
 }
