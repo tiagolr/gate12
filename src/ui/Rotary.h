@@ -7,7 +7,7 @@
 using namespace globals;
 class GATE12AudioProcessor;
 
-enum LabelFormat {
+enum RotaryLabel {
     hz,
     hzLp,
     hzHp,
@@ -23,7 +23,7 @@ enum LabelFormat {
 
 class Rotary : public juce::SettableTooltipClient, public juce::Component, private juce::AudioProcessorValueTreeState::Listener {
 public:
-    Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name, LabelFormat format, bool isSymmetric = false, bool isAudioKnob = false);
+    Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name, RotaryLabel format, bool isSymmetric = false, bool isAudioKnob = false);
     ~Rotary() override;
     void paint(juce::Graphics& g) override;
 
@@ -38,7 +38,7 @@ public:
 protected:
     juce::String paramId;
     juce::String name;
-    LabelFormat format;
+    RotaryLabel format;
     GATE12AudioProcessor& audioProcessor;
 
 private:

@@ -112,13 +112,20 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioSettingsButton.setAlpha(0.0f);
     col += 35;
 
-    col = getWidth() - PLUG_PADDING - 25;
+    // FIRST ROW RIGHT
+
+    col = getWidth() - PLUG_PADDING;
     settingsButton = std::make_unique<SettingsButton>(p);
     addAndMakeVisible(*settingsButton);
     settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
     settingsButton->toggleUIComponents = [this]() { toggleUIComponents(); };
     settingsButton->toggleAbout = [this]() { about.get()->setVisible(true); };
-    settingsButton->setBounds(col,row,25,25);
+    settingsButton->setBounds(col-25,row,25,25);
+
+    col -= 35;
+    mixDial = std::make_unique<TextDial>(p, "mix", "Mix ", "", TextDialLabel::tdPercx100, 16.f, COLOR_NEUTRAL_LIGHT);
+    addAndMakeVisible(*mixDial);
+    mixDial->setBounds(col - 65, row, 65, 25);
 
     // SECOND ROW
 
@@ -170,52 +177,52 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // KNOBS ROW
     row += 35;
     col = PLUG_PADDING;
-    rate = std::make_unique<Rotary>(p, "rate", "Rate", LabelFormat::hz1f);
+    rate = std::make_unique<Rotary>(p, "rate", "Rate", RotaryLabel::hz1f);
     addAndMakeVisible(*rate);
     rate->setBounds(col,row,80,65);
     col += 75;
 
-    phase = std::make_unique<Rotary>(p, "phase", "Phase", LabelFormat::percx100);
+    phase = std::make_unique<Rotary>(p, "phase", "Phase", RotaryLabel::percx100);
     addAndMakeVisible(*phase);
     phase->setBounds(col,row,80,65);
     col += 75;
 
-    min = std::make_unique<Rotary>(p, "min", "Min", LabelFormat::percx100);
+    min = std::make_unique<Rotary>(p, "min", "Min", RotaryLabel::percx100);
     addAndMakeVisible(*min);
     min->setBounds(col,row,80,65);
     col += 75;
 
-    max = std::make_unique<Rotary>(p, "max", "Max", LabelFormat::percx100);
+    max = std::make_unique<Rotary>(p, "max", "Max", RotaryLabel::percx100);
     addAndMakeVisible(*max);
     max->setBounds(col,row,80,65);
     col += 75;
 
-    smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", LabelFormat::percx100);
+    smooth = std::make_unique<Rotary>(p, "smooth", "Smooth", RotaryLabel::percx100);
     addAndMakeVisible(*smooth);
     smooth->setBounds(col,row,80,65);
     col += 75;
 
-    attack = std::make_unique<Rotary>(p, "attack", "Attack", LabelFormat::percx100);
+    attack = std::make_unique<Rotary>(p, "attack", "Attack", RotaryLabel::percx100);
     addAndMakeVisible(*attack);
     attack->setBounds(col,row,80,65);
     col += 75;
 
-    release = std::make_unique<Rotary>(p, "release", "Release", LabelFormat::percx100);
+    release = std::make_unique<Rotary>(p, "release", "Release", RotaryLabel::percx100);
     addAndMakeVisible(*release);
     release->setBounds(col,row,80,65);
     col += 75;
 
-    tension = std::make_unique<Rotary>(p, "tension", "Tension", LabelFormat::percx100, true);
+    tension = std::make_unique<Rotary>(p, "tension", "Tension", RotaryLabel::percx100, true);
     addAndMakeVisible(*tension);
     tension->setBounds(col,row,80,65);
     //col += 75;
 
-    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "TAtt", LabelFormat::percx100, true);
+    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "TAtt", RotaryLabel::percx100, true);
     addAndMakeVisible(*tensionatk);
     tensionatk->setBounds(col,row,80,65);
     col += 75;
 
-    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "TRel", LabelFormat::percx100, true);
+    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "TRel", RotaryLabel::percx100, true);
     addAndMakeVisible(*tensionrel);
     tensionrel->setBounds(col,row,80,65);
     col += 75;
@@ -223,27 +230,27 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     // AUDIO KNOBS
     col = PLUG_PADDING;
 
-    threshold = std::make_unique<Rotary>(p, "threshold", "Thres", LabelFormat::gainTodB1f, false, true);
+    threshold = std::make_unique<Rotary>(p, "threshold", "Thres", RotaryLabel::gainTodB1f, false, true);
     addAndMakeVisible(*threshold);
     threshold->setBounds(col,row,80,65);
     col += 75;
 
-    sense = std::make_unique<Rotary>(p, "sense", "Sense", LabelFormat::percx100, false, true);
+    sense = std::make_unique<Rotary>(p, "sense", "Sense", RotaryLabel::percx100, false, true);
     addAndMakeVisible(*sense);
     sense->setBounds(col,row,80,65);
     col += 75;
 
-    lowcut = std::make_unique<Rotary>(p, "lowcut", "Low Cut", LabelFormat::hzHp, false, true);
+    lowcut = std::make_unique<Rotary>(p, "lowcut", "Low Cut", RotaryLabel::hzHp, false, true);
     addAndMakeVisible(*lowcut);
     lowcut->setBounds(col,row,80,65);
     col += 75;
 
-    highcut = std::make_unique<Rotary>(p, "highcut", "Hi Cut", LabelFormat::hzLp, false, true);
+    highcut = std::make_unique<Rotary>(p, "highcut", "Hi Cut", RotaryLabel::hzLp, false, true);
     addAndMakeVisible(*highcut);
     highcut->setBounds(col,row,80,65);
     col += 75;
 
-    offset = std::make_unique<Rotary>(p, "offset", "Offset", LabelFormat::audioOffset, true, true);
+    offset = std::make_unique<Rotary>(p, "offset", "Offset", RotaryLabel::audioOffset, true, true);
     addAndMakeVisible(*offset);
     offset->setBounds(col,row,80,65);
     col += 75;
@@ -773,6 +780,7 @@ void GATE12AudioProcessorEditor::resized()
     auto col = getWidth() - PLUG_PADDING;
     auto bounds = settingsButton->getBounds();
     settingsButton->setBounds(bounds.withX(col - bounds.getWidth()));
+    mixDial->setBounds(mixDial->getBounds().withRightX(settingsButton->getBounds().getX() - 10));
 
     // knobs row
     bounds = audioDisplay->getBounds();

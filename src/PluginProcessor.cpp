@@ -13,6 +13,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
      )
     , settings{}
     , params(*this, &undoManager, "PARAMETERS", {
+        std::make_unique<juce::AudioParameterFloat>("mix", "Mix", 0.0f, 1.0f, 1.0f),
         std::make_unique<juce::AudioParameterInt>("pattern", "Pattern", 1, 12, 1),
         std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
         std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio" }, 0),
@@ -697,6 +698,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     if (!audioInputs || !audioOutputs) 
         return;
     
+    double mix = (double)params.getRawParameterValue("mix")->load();
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     int sync = (int)params.getRawParameterValue("sync")->load();
     double min = (double)params.getRawParameterValue("min")->load();
@@ -751,7 +753,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     // applies envelope to a sample index
     auto applyGain = [&](int sampIdx, double env, double lsample, double rsample) {
         for (int channel = 0; channel < audioOutputs; ++channel) {
-            buffer.setSample(channel, sampIdx, static_cast<FloatType>((channel % 2 ? rsample : lsample) * env));
+            auto wet = (channel == 0 ? lsample : rsample) * env;
+            auto dry = (double)buffer.getSample(channel, sampIdx);
+            buffer.setSample(channel, sampIdx, static_cast<FloatType>(wet * mix + dry * (1.0 - mix)));
         }
     };
 
@@ -921,13 +925,11 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             monSampleL = latMonitorBufferL[readPos];
             monSampleR = latMonitorBufferR[readPos];
 
-            // write delayed monitoring samples into the output buffer 
-            // will be later rewritten with envelope processed ones
+            // write delayed samples to buffer to later apply dry/wet mix
             for (int channel = 0; channel < audioOutputs; ++channel) {
-                buffer.setSample(channel, sample, static_cast<FloatType>(channel % 2 
-                    ? (useMonitor ? monSampleR : rsample)
-                    : (useMonitor ? monSampleL : lsample)));
+                buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? lsample : rsample));
             }
+            
             auto hit = audioTriggerCountdown == 0; // there was an audio transient trigger in this sample
             processMonitorSample(monSampleL, monSampleR, hit);
            
@@ -961,9 +963,16 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             double newypos = getY(xpos, min, max);
             ypos = value->process(newypos, newypos > ypos);    
-            if (!useMonitor) {
+
+            if (useMonitor) {
+                for (int channel = 0; channel < audioOutputs; ++channel) {
+                    buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? monSampleL : monSampleR));
+                }
+            }
+            else {
                 applyGain(sample, ypos, lsample, rsample);
             }
+
             double viewx = (alwaysPlaying || audioTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
             latpos = (latpos + 1) % latency;

@@ -133,7 +133,7 @@ public:
     Filter lpFilterR{};
     Filter hpFilterL{};
     Filter hpFilterR{};
-    double hitamp = 0.0;
+    double hitamp = 0.0; // used to display transient hits on monitor view
 
     // PlayHead state
     bool playing = false;

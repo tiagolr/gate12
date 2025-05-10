@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "ui/Rotary.h"
+#include "ui/TextDial.h"
 #include "ui/GridSelector.h"
 #include "ui/CustomLookAndFeel.h"
 #include "ui/About.h"
@@ -55,6 +56,7 @@ private:
     ComboBox patSyncMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patSyncAttachment;
     std::unique_ptr<SettingsButton> settingsButton;
+    std::unique_ptr<TextDial> mixDial;
 
     std::unique_ptr<Rotary> rate;
     std::unique_ptr<Rotary> phase;
