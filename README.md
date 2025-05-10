@@ -103,10 +103,6 @@ MIDI can be used to trigger the envelope or restart its cycle, it can also be us
 
 Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
 
-#### Paint mode
-
-Using right click on the view, the current selected paint tool will be applied to the selected grid segment. This system is being revised. Using `Alt + right click` will apply the erase tool to the grid segment.
-
 ### Tips
 
   - `Shift` for fine slider adjustments.
