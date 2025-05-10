@@ -143,9 +143,12 @@ void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {
     auto bounds = getBounds();
     const float radius = 16.0f;
     const float angle = -deg130 + slider_pos * (deg130 - -deg130);
+    auto kbounds = Rectangle<float>(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius-8.0f, radius*2.0f, radius*2.0f);
 
-    g.setColour(juce::Colour(COLOR_KNOB));
-    g.fillEllipse(bounds.getWidth()/2.0f-radius, bounds.getHeight()/2.0f-radius - 8.0f, radius*2.0f, radius*2.0f);
+    g.setColour(Colour(COLOR_KNOB).brighter(0.f));
+    g.fillEllipse(kbounds);
+    g.setColour(Colour(0x33000000));  // semi-transparent black
+    g.fillEllipse(kbounds.translated(0, 2.f).reduced(1.0f));
 
     g.setColour(Colour(COLOR_KNOB));
     juce::Path arcKnob;
