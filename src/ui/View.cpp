@@ -23,15 +23,9 @@ View::~View()
 
 void View::timerCallback()
 {
-    paintEdit = audioProcessor.isPaintEdit();
-    paintMode = audioProcessor.isPaintMode();
-
-    if (paintMode && !lpaintMode) {
-        multiselect.clearSelection();
-    }
-    lpaintMode = paintMode;
-
-    if (patternID != audioProcessor.viewPattern->versionID) {
+    if (patternID != audioProcessor.viewPattern->versionID || audioProcessor.uimode != luimode) {
+        if (audioProcessor.uimode != luimode)
+            multiselect.clearSelection();
         preSelectionStart = Point<int>(-1,-1);
         selectedMidpoint = -1;
         selectedPoint = -1;
@@ -41,9 +35,6 @@ void View::timerCallback()
         multiselect.recalcSelectionArea();
         patternID = audioProcessor.viewPattern->versionID;
     }
-    if (audioProcessor.isPaintMode() && !multiselect.selectionPoints.empty()) {
-        multiselect.clearSelection();
-    }
     if (audioProcessor.queuedPattern && isEnabled()) {
         setAlpha(0.5f);
         setEnabled(false);
@@ -52,6 +43,8 @@ void View::timerCallback()
         setAlpha(1.f);
         setEnabled(true);
     }
+
+    luimode = audioProcessor.uimode;
     repaint();
 }
 
@@ -73,7 +66,8 @@ void View::resized()
 void View::paint(Graphics& g) {
     g.setColour(Colour(COLOR_BG));
     g.fillRect(winx,winy,winw,winh);
-    if (paintEdit) {
+    auto uimode = audioProcessor.uimode;
+    if (uimode == UIMode::PaintEdit) {
         g.setColour(Colours::blue.withAlpha(0.05f));
         g.fillRect(winx, winy, winw, winh);
     }
@@ -81,7 +75,7 @@ void View::paint(Graphics& g) {
     g.fillRect(winx + winw/4, winy, winw/4, winh);
     g.fillRect(winx + winw - winw/4, winy, winw/4, winh);
 
-    if (!paintEdit) {
+    if (uimode == UIMode::Normal || uimode == UIMode::Sequencer) {
         drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
         drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
     }
@@ -90,19 +84,19 @@ void View::paint(Graphics& g) {
     multiselect.drawBackground(g);
     drawSegments(g);
 
-    if (!paintMode) {
+    if (uimode == UIMode::Normal || uimode == UIMode::PaintEdit) {
         drawMidPoints(g);
         drawPoints(g);
     }
 
-    if (paintMode && (isMouseOver() || paintTool.dragging)) {
+    if (uimode == UIMode::Paint && (isMouseOver() || paintTool.dragging)) {
         paintTool.draw(g);
     }
 
     drawPreSelection(g);
     multiselect.draw(g);
 
-    if (!paintEdit) {
+    if (uimode != UIMode::PaintEdit) {
         drawSeek(g);
     }
 }
@@ -365,7 +359,7 @@ void View::mouseDown(const juce::MouseEvent& e)
     int x = pos.x;
     int y = pos.y;
 
-    if (paintMode) {
+    if (audioProcessor.uimode == UIMode::Paint) {
         setMouseCursor(MouseCursor::NoCursor);
         e.source.enableUnboundedMouseMovement(true);
         paintTool.mouseDown(e);
@@ -422,7 +416,7 @@ void View::mouseUp(const juce::MouseEvent& e)
             showContextMenu(e);
     }
     else {
-        if (paintMode) {
+        if (audioProcessor.uimode == UIMode::Paint) {
             Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
             paintTool.mouseUp(e);
         }
@@ -464,7 +458,7 @@ void View::mouseMove(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    if (paintMode) {
+    if (audioProcessor.uimode == UIMode::Paint) {
         paintTool.mouseMove(e);
         return;
     }
@@ -494,7 +488,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    if (paintMode) {
+    if (audioProcessor.uimode == UIMode::Paint) {
         paintTool.mouseDrag(e);
         return;
     }
@@ -570,7 +564,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    if (paintMode) {
+    if (audioProcessor.uimode == UIMode::Paint) {
         return;
     }
 
@@ -629,7 +623,7 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
     auto param = audioProcessor.params.getParameter("grid");
     int newgrid = grid + (wheel.deltaY > 0.f ? 1 : -1);
     // constrain grid size to stay on straights or tripplets
-    if (!(grid == 3 && newgrid == 4) && !(grid == 4 && newgrid == 3)) {
+    if (!(grid == 4 && newgrid == 5) && !(grid == 5 && newgrid == 4)) {
         param->beginChangeGesture();
         param->setValueNotifyingHost(param->convertTo0to1((float)newgrid));
         param->endChangeGesture();
@@ -698,9 +692,6 @@ void View::showContextMenu(const juce::MouseEvent& event)
     if (!multiselect.selectionPoints.empty()) {
         menu.addItem(4, "Delete points");
     }
-    if (audioProcessor.isPaintMode() && !audioProcessor.isPaintEdit()) {
-        menu.addItem(5, "Reset paint tension");
-    }
 
     menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this](int result) {
         if (result == 0) return;
@@ -715,9 +706,6 @@ void View::showContextMenu(const juce::MouseEvent& event)
         if (result == 4 && !multiselect.selectionPoints.empty()) {
             audioProcessor.createUndoPoint();
             multiselect.deleteSelectedPoints();
-        }
-        if (result == 5) {
-            paintTool.resetPatternTension();
         }
     });
 }

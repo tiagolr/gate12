@@ -18,7 +18,10 @@ void PaintToolWidget::paint(Graphics& g)
     for (int i = 0; i < (int)rects.size(); ++i) {
         int pati = i + audioProcessor.paintPage * 8;
         bool isSelected = pati == audioProcessor.paintTool;
-        g.setColour(isSelected && audioProcessor.isPaintEdit() ? Colours::blue.withAlpha(0.05f) : Colours::black.withAlpha(0.1f));
+        g.setColour(isSelected && audioProcessor.uimode == UIMode::PaintEdit 
+            ? Colours::blue.withAlpha(0.05f) 
+            : Colours::black.withAlpha(0.1f)
+        );
         g.fillRect(rects[i]);
         auto color = isSelected ? Colours::white : Colour(COLOR_NEUTRAL);
         g.setColour(color);
@@ -84,7 +87,7 @@ void PaintToolWidget::mouseDown(const juce::MouseEvent& e)
         if (rects[i].contains(e.getPosition())) {
             int pati = i + audioProcessor.paintPage * 8;
             audioProcessor.paintTool = pati;
-            if (audioProcessor.isPaintEdit()) {
+            if (audioProcessor.uimode == UIMode::PaintEdit) {
                 audioProcessor.setViewPattern(audioProcessor.getPaintPatern(pati)->index);
             }
         }

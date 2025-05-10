@@ -32,4 +32,7 @@ namespace globals {
 	// paint mode
 	inline const int PAINT_PATS_IDX = 100; // starting index of paint patterns, audio patterns always range 0..11
 	inline const int PAINT_PATS = 32;
+
+	// sequencer
+	inline const int SEQ_PAT_IDX = 1000;
 };

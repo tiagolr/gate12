@@ -200,32 +200,57 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
     }
 }
 
-bool GATE12AudioProcessor::isPaintEdit()
-{
-    return viewPattern->index >= PAINT_PATS_IDX && 
-        viewPattern->index < PAINT_PATS_IDX + PAINT_PATS;
-}
-
-bool GATE12AudioProcessor::isPaintMode()
-{
-    return !isPaintEdit() && showPaintWidget;
-}
-
-void GATE12AudioProcessor::togglePaintEdit()
-{
-    if (paintTool < 0 || paintTool >= PAINT_PATS)
-        return; // safeguard
-
-    MessageManager::callAsync([this]() {
-        viewPattern = isPaintEdit()
-            ? pattern
-            : paintPatterns[paintTool];
-
-        if (isPaintEdit()) { // always show paint widget when editing the tool
-            showPaintWidget = true;
+void GATE12AudioProcessor::setUIMode(int mode)
+{   
+    MessageManager::callAsync([this, mode]() {
+        if (mode == UIMode::Normal) {
+            viewPattern = pattern;
+            showSequencer = false;
+            showPaintWidget = false;
         }
+        else if (mode == UIMode::Paint) {
+            viewPattern = pattern;
+            showPaintWidget = true;
+            showSequencer = false;
+        }
+        else if (mode == UIMode::PaintEdit) {
+            viewPattern = paintPatterns[paintTool];
+            showPaintWidget = true;
+            showSequencer = false;
+        }
+        else if (mode == UIMode::Sequencer) {
+            viewPattern = pattern;
+            showPaintWidget = true;
+            showSequencer = true;
+        }
+        luimode = uimode;
+        uimode = mode;
         sendChangeMessage();
     });
+}
+
+void GATE12AudioProcessor::togglePaintMode()
+{
+    setUIMode(uimode == UIMode::Paint 
+        ? UIMode::Normal 
+        : UIMode::Paint
+    );
+}
+
+void GATE12AudioProcessor::togglePaintEditMode()
+{
+    setUIMode(uimode == UIMode::PaintEdit
+        ? luimode
+        : UIMode::PaintEdit
+    );
+}
+
+void GATE12AudioProcessor::toggleSequencerMode()
+{
+    setUIMode(uimode == UIMode::Sequencer
+        ? UIMode::Normal 
+        : UIMode::Sequencer
+    );
 }
 
 Pattern* GATE12AudioProcessor::getPaintPatern(int index)
@@ -241,13 +266,15 @@ void GATE12AudioProcessor::setViewPattern(int index)
     else if (index >= PAINT_PATS && index < PAINT_PATS_IDX + PAINT_PATS) {
         viewPattern = paintPatterns[index - PAINT_PATS_IDX];
     }
+    sendChangeMessage();
 }
 
 void GATE12AudioProcessor::setPaintTool(int index) 
 {
     paintTool = index;
-    if (isPaintEdit()) {
+    if (uimode == UIMode::PaintEdit) {
         viewPattern = paintPatterns[index];
+        sendChangeMessage();
     }
 }
 
@@ -812,6 +839,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         // process queued pattern
         if (queuedPattern) {
             if (!playing || queuedPatternCountdown == 0) {
+                if (uimode == UIMode::Sequencer) {
+                    setUIMode(UIMode::Normal);
+                }
                 pattern = patterns[queuedPattern - 1];
                 viewPattern = pattern;
                 auto tension = (double)params.getRawParameterValue("tension")->load();

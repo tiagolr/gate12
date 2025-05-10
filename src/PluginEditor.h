@@ -19,6 +19,7 @@
 #include "ui/SettingsButton.h"
 #include "ui/AudioDisplay.h"
 #include "ui/PaintToolWidget.h"
+#include "ui/SequencerWidget.h"
 
 using namespace globals;
 
@@ -85,6 +86,7 @@ private:
     TextButton redoButton;
     std::unique_ptr<AudioDisplay> audioDisplay;
     TextButton paintButton;
+    TextButton sequencerButton;
     TextButton paintEditButton;
     TextButton paintNextButton;
     TextButton paintPrevButton;
@@ -103,6 +105,7 @@ private:
     std::unique_ptr<View> view;
     Label latencyWarning;
     std::unique_ptr<PaintToolWidget> paintWidget;
+    std::unique_ptr<SequencerWidget> seqWidget;
 
     TooltipWindow tooltipWindow;
 

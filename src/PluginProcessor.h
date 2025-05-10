@@ -43,6 +43,13 @@ enum PatSync {
     Beat_x4
 };
 
+enum UIMode {
+    Normal,
+    Paint,
+    PaintEdit,
+    Sequencer
+};
+
 /*
     RC lowpass filter with two resitances a or b
     Used for attack release smooth of ypos
@@ -81,7 +88,7 @@ class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioPro
 {
 public:
     static constexpr int GRID_SIZES[] = {
-        8, 16, 32, 64, // Straight
+        4, 8, 16, 32, 64, // Straight
         12, 24, 48,  // Triplet
     };
 
@@ -157,8 +164,11 @@ public:
     std::atomic<double> monpos = 0.0; // write index of monitor circular buf
     int lmonpos = 0; // last index
     int monW = 1; // audio monitor width used to rotate monitor samples buffer
+    int uimode = 0; // ui mode
+    int luimode = -1; // last ui mode
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
     bool showPaintWidget = false;
+    bool showSequencer = false;
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -170,9 +180,10 @@ public:
     int getCurrentGrid();
     void createUndoPoint(int patindex = -1);
     void createUndoPointFromSnapshot(std::vector<PPoint> snapshot);
-    bool isPaintEdit();
-    bool isPaintMode();
-    void togglePaintEdit();
+    void setUIMode(int mode);
+    void togglePaintEditMode();
+    void togglePaintMode();
+    void toggleSequencerMode();
     Pattern* getPaintPatern(int index);
     void setViewPattern(int index);
     void setPaintTool(int index);

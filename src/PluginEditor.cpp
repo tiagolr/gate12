@@ -298,16 +298,31 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(paintButton);
     paintButton.setButtonText("Paint");
     paintButton.setComponentID("button");
-    paintButton.setBounds(col, row, 90, 25);
+    paintButton.setBounds(col, row, 60, 25);
     paintButton.onClick = [this]() {
-        if (audioProcessor.isPaintEdit()) {
-            audioProcessor.togglePaintEdit();
+        if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Paint) {
+            audioProcessor.setUIMode(UIMode::Normal);
         }
-        audioProcessor.showPaintWidget = !audioProcessor.showPaintWidget;
-        toggleUIComponents();
+        else {
+            audioProcessor.togglePaintMode();
+        }
     };
-    col += 100;
+    col += 70;
 
+    addAndMakeVisible(sequencerButton);
+    sequencerButton.setButtonText("Seq");
+    sequencerButton.setComponentID("button");
+    sequencerButton.setBounds(col, row, 60, 25);
+    sequencerButton.onClick = [this]() {
+        if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Sequencer) {
+            audioProcessor.setUIMode(UIMode::Normal);
+        }
+        else {
+            audioProcessor.toggleSequencerMode();
+        }
+    };
+
+    col += 70;
     addAndMakeVisible(pointLabel);
     pointLabel.setText("Point", dontSendNotification);
     pointLabel.setColour(Label::textColourId, Colour(COLOR_NEUTRAL));
@@ -421,7 +436,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     paintEditButton.setComponentID("button");
     paintEditButton.setBounds(col, row+40/2-25/2, 60, 25);
     paintEditButton.onClick = [this]() {
-        audioProcessor.togglePaintEdit();
+        audioProcessor.togglePaintEditMode();
     };
 
     col += 65;
@@ -456,6 +471,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     paintWidget = std::make_unique<PaintToolWidget>(p);
     addAndMakeVisible(*paintWidget);
     paintWidget->setBounds(col,row,PLUG_WIDTH - PLUG_PADDING - col, 40);
+
+    row += 50;
+    col = PLUG_PADDING;
+    seqWidget = std::make_unique<SequencerWidget>(p);
+    addAndMakeVisible(*seqWidget);
+    seqWidget->setBounds(col,row,PLUG_WIDTH - PLUG_PADDING*2, 40);
 
     // VIEW
     col = 0;
@@ -591,17 +612,30 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     latencyWarning.setVisible(audioProcessor.showLatencyWarning);
 
     paintWidget->setVisible(audioProcessor.showPaintWidget);
-    view->setBounds(view->getBounds().withTop(paintWidget->isVisible() 
-        ? paintWidget->getBounds().getBottom()
-        : paintWidget->getBounds().getY() - 10)
-    );
+    seqWidget->setVisible(audioProcessor.showSequencer);
 
-    paintButton.setToggleState(audioProcessor.showPaintWidget, dontSendNotification);
+    if (seqWidget->isVisible()) {
+        view->setBounds(view->getBounds().withTop(seqWidget->getBottom()));
+    }
+    else if (paintWidget->isVisible()) {
+        view->setBounds(view->getBounds().withTop(paintWidget->getBounds().getBottom()));
+    }
+    else {
+        view->setBounds(view->getBounds().withTop(paintWidget->getBounds().getY() - 10));
+    }
+
+    auto uimode = audioProcessor.uimode;
+    paintButton.setToggleState(uimode == UIMode::Paint || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Paint), dontSendNotification);
     paintEditButton.setVisible(audioProcessor.showPaintWidget);
-    paintEditButton.setToggleState(audioProcessor.isPaintEdit(), dontSendNotification);
+    paintEditButton.setToggleState(uimode == UIMode::PaintEdit, dontSendNotification);
+    paintNextButton.setVisible(audioProcessor.showPaintWidget);
+    paintPrevButton.setVisible(audioProcessor.showPaintWidget);
+    paintPageLabel.setVisible(audioProcessor.showPaintWidget);
+
+    sequencerButton.setToggleState(uimode == UIMode::Sequencer || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Sequencer), dontSendNotification);
+
     int firstPaintPat = audioProcessor.paintPage * 8 + 1;
     paintPageLabel.setText(String(firstPaintPat) + "-" + String(firstPaintPat+7), dontSendNotification);
-    paintPageLabel.setVisible(audioProcessor.showPaintWidget);
 
     repaint();
 }

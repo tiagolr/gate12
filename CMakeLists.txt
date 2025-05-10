@@ -81,6 +81,10 @@ source_group(Source\\ui
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/PaintToolWidget.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/TextDial.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/TextDial.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/Sequencer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/Sequencer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SequencerWidget.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/SequencerWidget.cpp
 )
 
 source_group(Source\\dsp

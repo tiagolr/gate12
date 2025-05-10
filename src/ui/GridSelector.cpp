@@ -32,14 +32,15 @@ void GridSelector::mouseDown(const juce::MouseEvent& e)
     (void)e;
     PopupMenu menu;
     menu.addSectionHeader("Straight");
-    menu.addItem(1, "8");
-    menu.addItem(2, "16");
-    menu.addItem(3, "32");
-    menu.addItem(4, "64");
+    menu.addItem(1, "4");
+    menu.addItem(2, "8");
+    menu.addItem(3, "16");
+    menu.addItem(4, "32");
+    menu.addItem(5, "64");
     menu.addSectionHeader("Triplet");
-    menu.addItem(5, "12");
-    menu.addItem(6, "24");
-    menu.addItem(7, "48");
+    menu.addItem(6, "12");
+    menu.addItem(7, "24");
+    menu.addItem(8, "48");
 
     auto menuPos = localPointToGlobal(getLocalBounds().getBottomLeft());
 
