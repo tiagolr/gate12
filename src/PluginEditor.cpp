@@ -382,6 +382,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeRightButton.setBounds(col, row, 20, 25);
     nudgeRightButton.onClick = [this]() {
         MessageManager::callAsync([this] {
+            if (audioProcessor.uimode == UIMode::Seq) {
+                audioProcessor.sequencer->rotateRight();
+                return;
+            }
             double grid = (double)audioProcessor.getCurrentGrid();
             auto snapshot = audioProcessor.viewPattern->points;
             audioProcessor.viewPattern->rotate(1.0/grid);
@@ -396,6 +400,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     nudgeLeftButton.setBounds(col, row, 20, 25);
     nudgeLeftButton.onClick = [this]() {
         MessageManager::callAsync([this] {
+            if (audioProcessor.uimode == UIMode::Seq) {
+                audioProcessor.sequencer->rotateLeft();
+                return;
+            }
             double grid = (double)audioProcessor.getCurrentGrid();
             auto snapshot = audioProcessor.viewPattern->points;
             audioProcessor.viewPattern->rotate(-1.0/grid);
@@ -412,7 +420,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     redoButton.setAlpha(0.f);
     redoButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            audioProcessor.viewPattern->redo();
+            if (audioProcessor.uimode == UIMode::Seq) {
+                audioProcessor.sequencer->redo();
+            }
+            else {
+                audioProcessor.viewPattern->redo();
+            }
             repaint();
         });
     };
@@ -425,7 +438,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     undoButton.setAlpha(0.f);
     undoButton.onClick = [this]() {
         MessageManager::callAsync([this] {
-            audioProcessor.viewPattern->undo();
+            if (audioProcessor.uimode == UIMode::Seq) {
+                audioProcessor.sequencer->undo();
+            }
+            else {
+                audioProcessor.viewPattern->undo();
+            }
             repaint();
         });
     };
@@ -743,8 +761,14 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     }   
 
     // draw undo redo buttons
-    auto canUndo = !audioProcessor.viewPattern->undoStack.empty();
-    auto canRedo = !audioProcessor.viewPattern->redoStack.empty();
+    auto canUndo = audioProcessor.uimode == UIMode::Seq
+        ? !audioProcessor.sequencer->undoStack.empty()
+        : !audioProcessor.viewPattern->undoStack.empty();
+
+    auto canRedo = audioProcessor.uimode == UIMode::Seq
+        ? !audioProcessor.sequencer->redoStack.empty()
+        : !audioProcessor.viewPattern->redoStack.empty();
+
     drawUndoButton(g, undoButton.getBounds().toFloat(), true, Colour(canUndo ? COLOR_ACTIVE : COLOR_NEUTRAL));
     drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? COLOR_ACTIVE : COLOR_NEUTRAL));
 }

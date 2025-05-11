@@ -1042,6 +1042,10 @@ juce::AudioProcessorEditor* GATE12AudioProcessor::createEditor()
 //==============================================================================
 void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
+    bool isSeqMode = uimode == UIMode::Seq;
+    if (isSeqMode)
+        sequencer->close();
+
     auto state = ValueTree("PluginState");
     state.appendChild(params.copyState(), nullptr);
     state.setProperty("version", PROJECT_VERSION, nullptr);
@@ -1066,10 +1070,17 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
+
+    if (isSeqMode) 
+        sequencer->open();
 }
 
 void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    bool isSeqMode = uimode == UIMode::Seq;
+    if (isSeqMode)
+        sequencer->close();
+
     std::unique_ptr<juce::XmlElement>xmlState (getXmlFromBinary (data, sizeInBytes));
     if (!xmlState) return;
     auto state = ValueTree::fromXml (*xmlState);
@@ -1109,6 +1120,8 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         }
     }
 
+    if (isSeqMode) 
+        sequencer->open();
     sendChangeMessage();
 }
 

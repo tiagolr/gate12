@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "../Globals.h"
 #include "../dsp/Pattern.h"
+#include "algorithm"
 
 using namespace globals;
 class GATE12AudioProcessor;
@@ -63,6 +64,15 @@ public:
     void build();
     std::vector<PPoint> buildSeg(double minx, double maxx, Cell cell);
     std::vector<Rectangle<int>> getSegButtons();
+    void rotateRight();
+    void rotateLeft();
+
+    std::vector<std::vector<Cell>> undoStack;
+    std::vector<std::vector<Cell>> redoStack;
+    void clearUndo();
+    void createUndo(std::vector<Cell> snapshot);
+    void undo();
+    void redo();
 
 private:
     Point<int> lmousepos;
@@ -80,13 +90,5 @@ private:
     GATE12AudioProcessor& audioProcessor;
 
     bool isSnapping(const MouseEvent& e);
-
-
-    std::vector<std::vector<Cell>> undoStack;
-    std::vector<std::vector<Cell>> redoStack;
-    void createUndo(std::vector<Cell> snapshot);
-    void undo();
-    void redo();
-    void clearUndo();
     bool compareCells(const std::vector<Cell>& a, const std::vector<Cell>& b);
 };

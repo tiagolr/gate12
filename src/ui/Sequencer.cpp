@@ -73,8 +73,9 @@ void Sequencer::mouseMove(const MouseEvent& e)
 void Sequencer::mouseDrag(const MouseEvent& e)
 {
     lmousepos = e.getPosition();
-    hoverButton = -1;
-    onMouseSegment(e);
+    if (hoverButton == -1) {
+        onMouseSegment(e);
+    }
 }
 
 void Sequencer::mouseDown(const MouseEvent& e)
@@ -130,9 +131,13 @@ void Sequencer::onMouseSegment(const MouseEvent& e) {
 
     if (editMode == SeqEditMode::SMin) {
         cell.maxy = y; // y coordinates are inverted
+        if (cell.miny > y)
+            cell.miny = y;
     }
     else if (editMode == SeqEditMode::SMax) {
         cell.miny = y; // y coordinates are inverted
+        if (cell.maxy < y)
+            cell.maxy = y;
     }
     else if (editMode == SeqEditMode::SFlipX) {
         cell.invertx = !snapshot[seg].invertx;
@@ -253,6 +258,23 @@ std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)
     return pts;
 }
 
+void Sequencer::rotateRight()
+{
+    snapshot = cells;
+    int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
+    std::rotate(cells.begin(), cells.begin() + grid - 1, cells.begin() + grid);
+    createUndo(snapshot);
+    build();
+}
+void Sequencer::rotateLeft()
+{
+    snapshot = cells;
+    int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
+    std::rotate(cells.begin(), cells.begin() + 1, cells.begin() + grid);
+    createUndo(snapshot);
+    build();
+}
+
 bool Sequencer::isSnapping(const MouseEvent& e) {
     bool snapping = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
     return (snapping && !e.mods.isShiftDown()) || (!snapping && e.mods.isShiftDown());
@@ -270,6 +292,7 @@ void Sequencer::createUndo(std::vector<Cell> snap)
     }
     undoStack.push_back(snap);
     redoStack.clear();
+    MessageManager::callAsync([this]() { audioProcessor.sendChangeMessage(); }); // repaint undo/redo buttons
 }
 void Sequencer::undo()
 {
@@ -281,6 +304,9 @@ void Sequencer::undo()
     undoStack.pop_back();
 
     build();
+    MessageManager::callAsync([this]() {
+        audioProcessor.sendChangeMessage(); // repaint undo/redo buttons
+    });
 }
 
 void Sequencer::redo()
@@ -293,12 +319,18 @@ void Sequencer::redo()
     redoStack.pop_back();
 
     build();
+    MessageManager::callAsync([this]() {
+        audioProcessor.sendChangeMessage(); // repaint undo/redo buttons
+    });
 }
 
 void Sequencer::clearUndo()
 {
     undoStack.clear();
     redoStack.clear();
+    MessageManager::callAsync([this]() {
+        audioProcessor.sendChangeMessage(); // repaint undo/redo buttons
+    });
 }
 
 bool Sequencer::compareCells(const std::vector<Cell>& a, const std::vector<Cell>& b)
