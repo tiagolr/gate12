@@ -57,6 +57,7 @@ void View::resized()
     winh = bounds.getHeight() - PLUG_PADDING * 2 - 10;
     multiselect.setViewBounds(winx, winy, winw, winh);
     paintTool.setViewBounds(winx, winy, winw, winh);
+    audioProcessor.sequencer->setViewBounds(winx, winy, winw, winh);
     MessageManager::callAsync([this] {
         audioProcessor.viewW = winw;
     });
@@ -75,7 +76,10 @@ void View::paint(Graphics& g) {
     g.fillRect(winx + winw/4, winy, winw/4, winh);
     g.fillRect(winx + winw - winw/4, winy, winw/4, winh);
 
-    if (uimode == UIMode::Normal || uimode == UIMode::Sequencer) {
+    if (uimode == UIMode::Seq && isMouseOver())
+        audioProcessor.sequencer->drawBackground(g);
+
+    if (uimode == UIMode::Normal || uimode == UIMode::Seq) {
         drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
         drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
     }
@@ -99,6 +103,9 @@ void View::paint(Graphics& g) {
     if (uimode != UIMode::PaintEdit) {
         drawSeek(g);
     }
+
+    if (uimode == UIMode::Seq)
+        audioProcessor.sequencer->draw(g);
 }
 
 void View::drawWave(Graphics& g, std::vector<double>& samples, Colour color) const
@@ -350,6 +357,11 @@ void View::mouseDown(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
+    if (audioProcessor.uimode == UIMode::Seq) {
+        audioProcessor.sequencer->mouseDown(e);
+        return;
+    }
+
     // save snapshon, compare with changes after mouseup
     // if changes were made save this snapshot as undo
     snapshot = audioProcessor.viewPattern->points; 
@@ -411,6 +423,11 @@ void View::mouseUp(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
+    if (audioProcessor.uimode == UIMode::Seq) {
+        audioProcessor.sequencer->mouseUp(e);
+        return;
+    }
+
     if (e.mods.isRightButtonDown() && rmousePoint == -1) {
         if (std::abs(e.getDistanceFromDragStartX()) < 4 && std::abs(e.getDistanceFromDragStartY()) < 4)
             showContextMenu(e);
@@ -458,6 +475,11 @@ void View::mouseMove(const juce::MouseEvent& e)
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
+    if (audioProcessor.uimode == UIMode::Seq) {
+        audioProcessor.sequencer->mouseMove(e);
+        return;
+    }
+
     if (audioProcessor.uimode == UIMode::Paint) {
         paintTool.mouseMove(e);
         return;
@@ -487,6 +509,11 @@ void View::mouseDrag(const juce::MouseEvent& e)
 {
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
+
+    if (audioProcessor.uimode == UIMode::Seq) {
+        audioProcessor.sequencer->mouseDrag(e);
+        return;
+    }
 
     if (audioProcessor.uimode == UIMode::Paint) {
         paintTool.mouseDrag(e);
@@ -568,6 +595,11 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         return;
     }
 
+    if (audioProcessor.uimode == UIMode::Seq) {
+        audioProcessor.sequencer->mouseDrag(e);
+        return;
+    }
+
     if (e.mods.isRightButtonDown()) {
         return;
     }
@@ -634,6 +666,10 @@ bool View::keyPressed(const juce::KeyPress& key)
 {
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return false;
+
+    if (audioProcessor.uimode == UIMode::Seq) {
+        return false;
+    }
 
     // remove selected points
     if (key == KeyPress::deleteKey && !multiselect.selectionPoints.empty()) {

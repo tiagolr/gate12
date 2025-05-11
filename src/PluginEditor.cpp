@@ -10,17 +10,19 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 {
     MessageManager::callAsync([this]() {
         audioProcessor.loadSettings(); // load saved paint patterns from other plugin instances
+        setSize(audioProcessor.plugWidth, audioProcessor.plugHeight);
+        setScaleFactor(audioProcessor.scale);
     });
+
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
+    audioProcessor.params.addParameterListener("grid", this);
     audioProcessor.params.addParameterListener("trigger", this);
     audioProcessor.params.addParameterListener("pattern", this);
 
     setResizable(true, false);
     setResizeLimits(PLUG_WIDTH, PLUG_HEIGHT, MAX_PLUG_WIDTH, MAX_PLUG_HEIGHT);
 
-    setSize (audioProcessor.plugWidth, audioProcessor.plugHeight);
-    setScaleFactor(audioProcessor.scale);
     auto col = PLUG_PADDING;
     auto row = PLUG_PADDING;
 
@@ -314,7 +316,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     sequencerButton.setComponentID("button");
     sequencerButton.setBounds(col, row, 60, 25);
     sequencerButton.onClick = [this]() {
-        if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Sequencer) {
+        if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Seq) {
             audioProcessor.setUIMode(UIMode::Normal);
         }
         else {
@@ -528,6 +530,9 @@ void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameter
     if (parameterID == "pattern") {
         patterns[(int)newValue - 1].get()->setToggleState(true, dontSendNotification);
     }
+    else if (parameterID == "grid" && audioProcessor.uimode == UIMode::Seq) {
+        audioProcessor.sequencer->build();
+    }
 
     toggleUIComponents();
 };
@@ -632,7 +637,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     paintPrevButton.setVisible(audioProcessor.showPaintWidget);
     paintPageLabel.setVisible(audioProcessor.showPaintWidget);
 
-    sequencerButton.setToggleState(uimode == UIMode::Sequencer || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Sequencer), dontSendNotification);
+    sequencerButton.setToggleState(uimode == UIMode::Seq || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Seq), dontSendNotification);
 
     int firstPaintPat = audioProcessor.paintPage * 8 + 1;
     paintPageLabel.setText(String(firstPaintPat) + "-" + String(firstPaintPat+7), dontSendNotification);

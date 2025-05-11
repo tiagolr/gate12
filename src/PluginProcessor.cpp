@@ -82,6 +82,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         paintPatterns[i]->buildSegments();
     }
 
+    sequencer = new Sequencer(*this);
     pattern = patterns[0];
     viewPattern = pattern;
     preSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= viewport width 
@@ -111,7 +112,7 @@ void GATE12AudioProcessor::parameterGestureChanged (int parameterIndex, bool ges
 
 void GATE12AudioProcessor::loadSettings ()
 {
-    settings.closeFiles(); // FIX
+    settings.closeFiles();
     if (auto* file = settings.getUserSettings()) {
         scale = (float)file->getDoubleValue("scale", 1.0f);
         plugWidth = file->getIntValue("width", PLUG_WIDTH);
@@ -140,7 +141,7 @@ void GATE12AudioProcessor::loadSettings ()
 
 void GATE12AudioProcessor::saveSettings ()
 {
-    settings.closeFiles(); // FIX
+    settings.closeFiles();
     if (auto* file = settings.getUserSettings()) {
         file->setValue("scale", scale);
         file->setValue("width", plugWidth);
@@ -200,9 +201,13 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
     }
 }
 
-void GATE12AudioProcessor::setUIMode(int mode)
+void GATE12AudioProcessor::setUIMode(UIMode mode)
 {   
     MessageManager::callAsync([this, mode]() {
+        if (mode != UIMode::Seq && uimode == UIMode::Seq) {
+            sequencer->close();
+        }
+
         if (mode == UIMode::Normal) {
             viewPattern = pattern;
             showSequencer = false;
@@ -218,7 +223,8 @@ void GATE12AudioProcessor::setUIMode(int mode)
             showPaintWidget = true;
             showSequencer = false;
         }
-        else if (mode == UIMode::Sequencer) {
+        else if (mode == UIMode::Seq) {
+            sequencer->open();
             viewPattern = pattern;
             showPaintWidget = true;
             showSequencer = true;
@@ -247,9 +253,9 @@ void GATE12AudioProcessor::togglePaintEditMode()
 
 void GATE12AudioProcessor::toggleSequencerMode()
 {
-    setUIMode(uimode == UIMode::Sequencer
+    setUIMode(uimode == UIMode::Seq
         ? UIMode::Normal 
-        : UIMode::Sequencer
+        : UIMode::Seq
     );
 }
 
@@ -839,7 +845,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         // process queued pattern
         if (queuedPattern) {
             if (!playing || queuedPatternCountdown == 0) {
-                if (uimode == UIMode::Sequencer) {
+                if (uimode == UIMode::Seq) {
                     setUIMode(UIMode::Normal);
                 }
                 pattern = patterns[queuedPattern - 1];

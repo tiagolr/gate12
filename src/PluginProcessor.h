@@ -17,6 +17,7 @@
 #include <atomic>
 #include <deque>
 #include "Globals.h"
+#include "ui/Sequencer.h"
 
 using namespace globals;
 
@@ -47,7 +48,7 @@ enum UIMode {
     Normal,
     Paint,
     PaintEdit,
-    Sequencer
+    Seq
 };
 
 /*
@@ -110,6 +111,7 @@ public:
     // State
     Pattern* pattern; // current pattern used for audio processing
     Pattern* viewPattern; // pattern being edited on the view, usually the audio pattern but can also be a paint mode pattern
+    Sequencer* sequencer;
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
     int currentProgram = -1;
@@ -164,8 +166,8 @@ public:
     std::atomic<double> monpos = 0.0; // write index of monitor circular buf
     int lmonpos = 0; // last index
     int monW = 1; // audio monitor width used to rotate monitor samples buffer
-    int uimode = 0; // ui mode
-    int luimode = -1; // last ui mode
+    UIMode uimode = UIMode::Normal; // ui mode
+    UIMode luimode = UIMode::Normal; // last ui mode
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
     bool showPaintWidget = false;
     bool showSequencer = false;
@@ -180,7 +182,7 @@ public:
     int getCurrentGrid();
     void createUndoPoint(int patindex = -1);
     void createUndoPointFromSnapshot(std::vector<PPoint> snapshot);
-    void setUIMode(int mode);
+    void setUIMode(UIMode mode);
     void togglePaintEditMode();
     void togglePaintMode();
     void toggleSequencerMode();

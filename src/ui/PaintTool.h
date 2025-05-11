@@ -25,7 +25,7 @@ public:
     void resetPatternTension();
 
 private:
-    Pattern* pat;
+    Pattern* tmp;
     int paintW = 100;
     int paintH = 150;
     int startW = 100;
