@@ -3,7 +3,7 @@
 
 PaintTool::PaintTool(GATE12AudioProcessor& p) : audioProcessor(p) 
 {
-    tmp = new Pattern(-1);
+    pat = new Pattern(-1);
 }
 
 void PaintTool::setViewBounds(int _x, int _y, int _w, int _h)
@@ -17,21 +17,22 @@ void PaintTool::setViewBounds(int _x, int _y, int _w, int _h)
 void PaintTool::draw(Graphics& g)
 {
     auto bounds = getBounds();
-    tmp->points = audioProcessor.getPaintPatern(audioProcessor.paintTool)->points;
-    if (invertx) tmp->reverse();
-    if (inverty) tmp->invert();
+    pat->points = audioProcessor.getPaintPatern(audioProcessor.paintTool)->points;
+    if (invertx) pat->reverse();
+    if (inverty) pat->invert();
+    pat->buildSegments();
 
     double x = bounds.getX();
     double y = bounds.getY();
     double w = std::max(1.0, bounds.getWidth());
     double h = bounds.getHeight();
 
-    double minx = tmp->points.empty() ? 0.0 : tmp->points.front().x;
-    double maxx = tmp->points.empty() ? 0.0 : tmp->points.back().x;
+    double minx = pat->points.empty() ? 0.0 : pat->points.front().x;
+    double maxx = pat->points.empty() ? 0.0 : pat->points.back().x;
 
     Path path;
     double startX = x + minx * w;
-    double startY = y + tmp->get_y_at(minx) * h;
+    double startY = y + pat->get_y_at(minx) * h;
     path.startNewSubPath((float)startX, (float)startY);
 
     for (int i = 0; i < (int)w + 1; ++i) {
@@ -39,7 +40,7 @@ void PaintTool::draw(Graphics& g)
         if (px < minx || px > maxx) {
             continue;
         }
-        double py = tmp->get_y_at(px);
+        double py = pat->get_y_at(px);
         py = py * h + y;
         path.lineTo((float)(i + x), (float)py);
     }
@@ -47,8 +48,8 @@ void PaintTool::draw(Graphics& g)
     g.setColour(Colours::white.withAlpha(0.75f));
     g.strokePath(path, PathStrokeType(1.f));
 
-    float y0 = (float)tmp->get_y_at(minx);
-    float y1 = (float)tmp->get_y_at(maxx);
+    float y0 = (float)pat->get_y_at(minx);
+    float y1 = (float)pat->get_y_at(maxx);
     float x0 = (float)(x + minx * w);
     float x1 = (float)(x + maxx * w);
     g.fillEllipse(x0 - POINT_RADIUS,(float)y + (float)h * y0 - (float)POINT_RADIUS, POINT_RADIUS * 2.f, POINT_RADIUS*2.f);
@@ -135,12 +136,12 @@ void PaintTool::apply()
         points = { points.front(), points.back() };
     }
 
-    tmp->points = points;
-    if (invertx) tmp->reverse();
-    if (inverty) tmp->invert();
-    tmp->buildSegments();
+    pat->points = points;
+    if (invertx) pat->reverse();
+    if (inverty) pat->invert();
+    pat->buildSegments();
 
-    for (auto& point : tmp->points) {
+    for (auto& point : pat->points) {
         double px = rx + point.x * rw; // map points to rectangle bounds
         double py = ry + point.y * rh;
         px = (px - winx) / winw; // normalize again 
