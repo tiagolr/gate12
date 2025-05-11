@@ -477,8 +477,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     row += 50;
     col = PLUG_PADDING;
     seqWidget = std::make_unique<SequencerWidget>(p);
-    addAndMakeVisible(*seqWidget);
-    seqWidget->setBounds(col,row,PLUG_WIDTH - PLUG_PADDING*2, 40);
+    seqWidget->setBounds(col,row,PLUG_WIDTH - PLUG_PADDING*2, 60+10+PLUG_PADDING+10);
 
     // VIEW
     col = 0;
@@ -486,6 +485,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     view = std::make_unique<View>(p);
     addAndMakeVisible(*view);
     view->setBounds(col,row,getWidth(), getHeight() - row);
+    addAndMakeVisible(*seqWidget); // add sequencer after widget so it overlaps on top pixels
+
 
     addAndMakeVisible(latencyWarning);
     latencyWarning.setText("Plugin latency has changed, restart playback", dontSendNotification);
@@ -620,7 +621,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     seqWidget->setVisible(audioProcessor.showSequencer);
 
     if (seqWidget->isVisible()) {
-        view->setBounds(view->getBounds().withTop(seqWidget->getBottom()));
+        view->setBounds(view->getBounds().withTop(seqWidget->getBottom() - PLUG_PADDING - 10));
     }
     else if (paintWidget->isVisible()) {
         view->setBounds(view->getBounds().withTop(paintWidget->getBounds().getBottom()));
@@ -651,6 +652,8 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 {
     g.fillAll(Colour(COLOR_BG));
     auto bounds = getLocalBounds().withTop(view->getBounds().getY() + 10).withHeight(3).toFloat();
+    if (audioProcessor.uimode == UIMode::Seq)
+        bounds = bounds.withY((float)seqWidget->getBounds().getBottom() - PLUG_PADDING - 10);
 
     auto grad = ColourGradient(
         Colours::black.withAlpha(0.25f),

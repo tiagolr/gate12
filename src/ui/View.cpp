@@ -55,6 +55,7 @@ void View::resized()
     winy = bounds.getY() + PLUG_PADDING + 10;
     winw = bounds.getWidth() - PLUG_PADDING * 2;
     winh = bounds.getHeight() - PLUG_PADDING * 2 - 10;
+
     multiselect.setViewBounds(winx, winy, winw, winh);
     paintTool.setViewBounds(winx, winy, winw, winh);
     audioProcessor.sequencer->setViewBounds(winx, winy, winw, winh);

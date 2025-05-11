@@ -11,6 +11,15 @@ public:
     SequencerWidget(GATE12AudioProcessor& p);
     ~SequencerWidget() override {}
 
+    TextButton minButton;
+    TextButton maxButton;
+    TextButton tenButton;
+    TextButton tenaButton;
+    TextButton tenrButton;
+    TextButton invxButton;
+    TextButton invyButton;
+
+    void updateButtonsState();
     void paint(Graphics& g) override;
     void mouseDown(const juce::MouseEvent& e) override;
 

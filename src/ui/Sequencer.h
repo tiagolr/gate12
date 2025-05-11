@@ -39,6 +39,8 @@ struct Cell {
 class Sequencer {
 public:
     SeqEditMode editMode = SeqEditMode::SMax;
+    bool mouseOverWidget = false;
+    int mouseOverWidgetSeg = 0;
 
     Sequencer(GATE12AudioProcessor& p);
     ~Sequencer() {}
