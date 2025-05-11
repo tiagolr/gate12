@@ -16,8 +16,9 @@ public:
     TextButton tenButton;
     TextButton tenaButton;
     TextButton tenrButton;
-    TextButton invxButton;
-    TextButton invyButton;
+    TextButton flipXButton;
+    TextButton flipYButton;
+    TextButton gateButton;
 
     void updateButtonsState();
     void paint(Graphics& g) override;

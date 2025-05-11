@@ -15,18 +15,20 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.onClick = [this, mode]() {
 			audioProcessor.sequencer->editMode = mode;
 			updateButtonsState();
+			repaint();
 		};
 	};
 
 	int col = 0;int row = 0;
 	addButton(maxButton, "Max", col, row, Colours::white, SeqEditMode::SMax);col += 65;
-	addButton(invxButton, "InvX", col, row, Colours::aqua, SeqEditMode::SInvx);col += 65;
-	addButton(tenaButton, "TenA", col, row, Colours::yellow, SeqEditMode::STenAtt);col += 65;
-	addButton(tenButton, "Ten", col, row, Colour(0xffff8080), SeqEditMode::STen);col = 0; row += 35;
 	addButton(minButton, "Min", col, row, Colours::white, SeqEditMode::SMin);col += 65;
-	addButton(invyButton, "InvY", col, row, Colours::aqua, SeqEditMode::SInvy);col+=65;
+	addButton(flipXButton, "FlipX", col, row, Colours::aqua, SeqEditMode::SFlipX);col += 65;
+	addButton(flipYButton, "FlipY", col, row, Colours::aqua, SeqEditMode::SFlipY);col = 0; row += 35;
+	addButton(tenaButton, "TenA", col, row, Colours::yellow, SeqEditMode::STenAtt);col += 65;
 	addButton(tenrButton, "TenR", col, row, Colours::yellow, SeqEditMode::STenRel);col += 65;
-	maxButton.setToggleState(true,dontSendNotification);
+	addButton(tenButton, "Ten", col, row, Colour(0xffff8080), SeqEditMode::STension);col += 65;
+	addButton(gateButton, "Gate", col, row, Colours::chocolate, SeqEditMode::SGate);col += 65;
+	maxButton.setToggleState(true, dontSendNotification);
 	updateButtonsState();
 }
 
@@ -35,24 +37,26 @@ void SequencerWidget::updateButtonsState()
 	auto mode = audioProcessor.sequencer->editMode;
 	maxButton.setToggleState(mode == SeqEditMode::SMax, dontSendNotification);
 	minButton.setToggleState(mode == SeqEditMode::SMin, dontSendNotification);
-	invxButton.setToggleState(mode == SeqEditMode::SInvx, dontSendNotification);
-	invyButton.setToggleState(mode == SeqEditMode::SInvy, dontSendNotification);
+	flipXButton.setToggleState(mode == SeqEditMode::SFlipX, dontSendNotification);
+	flipYButton.setToggleState(mode == SeqEditMode::SFlipY, dontSendNotification);
 	tenaButton.setToggleState(mode == SeqEditMode::STenAtt, dontSendNotification);
 	tenrButton.setToggleState(mode == SeqEditMode::STenRel, dontSendNotification);
-	tenButton.setToggleState(mode == SeqEditMode::STen, dontSendNotification);
+	tenButton.setToggleState(mode == SeqEditMode::STension, dontSendNotification);
+	gateButton.setToggleState(mode == SeqEditMode::SGate, dontSendNotification);
 }
 
 void SequencerWidget::paint(Graphics& g)
 {
-	g.setColour(Colour(COLOR_NEUTRAL));
-	auto grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
-	auto gridx = getWidth() / grid;
-	for (int i = 0; i < grid; ++i) {
-		auto w = gridx/2;
-		auto h = 2;
-		auto bounds = Rectangle<int>(gridx*i+gridx/2-w/2,getHeight()-PLUG_PADDING+h/2, w, h);
-		g.fillRoundedRectangle(bounds.toFloat(), 3.0f);
-	}
+	(void)g;
+	//g.setColour(Colour(COLOR_NEUTRAL));
+	//auto grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
+	//auto gridx = getWidth() / grid;
+	//for (int i = 0; i < grid; ++i) {
+	//	auto w = gridx/2;
+	//	auto h = 2;
+	//	auto bounds = Rectangle<int>(gridx*i+gridx/2-w/2,getHeight()-PLUG_PADDING+h/2, w, h);
+	//	g.fillRoundedRectangle(bounds.toFloat(), 3.0f);
+	//}
 }
 
 void SequencerWidget::mouseDown(const juce::MouseEvent& e) 

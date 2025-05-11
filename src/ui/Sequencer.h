@@ -9,7 +9,7 @@ class GATE12AudioProcessor;
 
 enum CellType {
     PTool,
-    Clear,
+    Silence,
     Empty,
     Ramp,
     Tri,
@@ -18,11 +18,12 @@ enum CellType {
 enum SeqEditMode {
     SMin,
     SMax,
-    STen,
+    STension,
     STenAtt,
     STenRel,
-    SInvx,
-    SInvy,
+    SFlipX,
+    SFlipY,
+    SGate,
 };
 
 struct Cell { 
@@ -39,32 +40,34 @@ struct Cell {
 class Sequencer {
 public:
     SeqEditMode editMode = SeqEditMode::SMax;
-    bool mouseOverWidget = false;
-    int mouseOverWidgetSeg = 0;
+    int hoverButton = -1;
 
     Sequencer(GATE12AudioProcessor& p);
     ~Sequencer() {}
 
     void setViewBounds(int _x, int _y, int _w, int _h);
-
     void draw(Graphics& g);
     void drawBackground(Graphics& g);
+
+    void mouseMove(const MouseEvent& e);
+    void mouseDrag(const MouseEvent& e);
+    void mouseDown(const MouseEvent& e);
+    void mouseUp(const MouseEvent& e);
+    void mouseDoubleClick(const MouseEvent& e);
+    void onMouseSegment(const MouseEvent& e);
+
     void close();
     void open();
     void apply();
     void clear();
     void build();
     std::vector<PPoint> buildSeg(double minx, double maxx, Cell cell);
-    void mouseMove(const MouseEvent& e);
-    void mouseDrag(const MouseEvent& e);
-    void mouseDown(const MouseEvent& e);
-    void mouseUp(const MouseEvent& e);
-    void mouseDoubleClick(const MouseEvent& e);
-    void onMouse(const MouseEvent& e);
+    std::vector<Rectangle<int>> getSegButtons();
 
 private:
     Point<int> lmousepos;
     std::vector<PPoint> ramp;
+    std::vector<PPoint> silence;
     std::vector<PPoint> backup;
     std::vector<Cell> cells;
     std::vector<Cell> snapshot;
