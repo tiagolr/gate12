@@ -37,6 +37,7 @@
   * **Paint-mode** revamped with user patterns painted on view
   * **Rotate patterns** no longer constrained by start and end points
   * **Undo & Redo** supported
+  * **Built-in Sequencer** (under development) allows to easily generate and randomize patterns
   * Other **improvements and fixes**
 
 ## Features
