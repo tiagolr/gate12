@@ -124,12 +124,14 @@ void Sequencer::mouseDrag(const MouseEvent& e)
 
 void Sequencer::mouseDown(const MouseEvent& e)
 {
+    snapshot = cells;
     onMouse(e);
 }
 
 void Sequencer::mouseUp(const MouseEvent& e)
 {   
     (void)e;
+    createUndo(snapshot);
 }
 
 
@@ -147,11 +149,72 @@ void Sequencer::onMouse(const MouseEvent& e) {
     int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     int seg = jlimit(0, SEQ_MAX_CELLS-1, (int)(x * grid));
     auto& cell = cells[seg];
-    cell.miny = y;
+    cell.maxy = y;
     build();
 }
 
 bool Sequencer::isSnapping(const MouseEvent& e) {
     bool snapping = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
     return (snapping && !e.mods.isShiftDown()) || (!snapping && e.mods.isShiftDown());
+}
+
+//=====================================================================
+
+void Sequencer::createUndo(std::vector<Cell> snapshot)
+{
+    if (compareCells(snapshot, cells)) {
+        return; // nothing to undo
+    }
+    if (undoStack.size() > globals::MAX_UNDO) {
+        undoStack.erase(undoStack.begin());
+    }
+    undoStack.push_back(snapshot);
+    redoStack.clear();
+}
+void Sequencer::undo()
+{
+    if (undoStack.empty())
+        return;
+
+    redoStack.push_back(cells);
+    cells = undoStack.back();
+    undoStack.pop_back();
+
+    build();
+}
+
+void Sequencer::redo()
+{
+    if (redoStack.empty()) 
+        return;
+
+    undoStack.push_back(cells);
+    cells = redoStack.back();
+    redoStack.pop_back();
+
+    build();
+}
+
+void Sequencer::clearUndo()
+{
+    undoStack.clear();
+    redoStack.clear();
+}
+
+bool Sequencer::compareCells(const std::vector<Cell>& a, const std::vector<Cell>& b)
+{
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (a[i].invertx != b[i].invertx ||
+            a[i].inverty != b[i].inverty ||
+            a[i].maxy != b[i].maxy ||
+            a[i].miny != b[i].miny ||
+            a[i].type != b[i].type ||
+            a[i].tenatt != b[i].tenatt ||
+            a[i].tenrel != b[i].tenrel ||
+            a[i].ptool != b[i].ptool
+        ) {
+            return false;
+        }
+    }
+    return true;
 }
