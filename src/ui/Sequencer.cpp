@@ -149,7 +149,7 @@ void Sequencer::onMouse(const MouseEvent& e) {
     int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     int seg = jlimit(0, SEQ_MAX_CELLS-1, (int)(x * grid));
     auto& cell = cells[seg];
-    cell.maxy = y;
+    cell.miny = y;
     build();
 }
 
@@ -160,15 +160,15 @@ bool Sequencer::isSnapping(const MouseEvent& e) {
 
 //=====================================================================
 
-void Sequencer::createUndo(std::vector<Cell> snapshot)
+void Sequencer::createUndo(std::vector<Cell> snap)
 {
-    if (compareCells(snapshot, cells)) {
+    if (compareCells(snap, cells)) {
         return; // nothing to undo
     }
     if (undoStack.size() > globals::MAX_UNDO) {
         undoStack.erase(undoStack.begin());
     }
-    undoStack.push_back(snapshot);
+    undoStack.push_back(snap);
     redoStack.clear();
 }
 void Sequencer::undo()

@@ -8,7 +8,7 @@ using namespace globals;
 class GATE12AudioProcessor;
 
 enum CellType {
-    Paint,
+    PTool,
     Clear,
     Empty,
     Ramp,
