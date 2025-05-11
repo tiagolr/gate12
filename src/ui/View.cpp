@@ -64,8 +64,10 @@ void View::resized()
     winh = bounds.getHeight() - PLUG_PADDING * 2 - 10;
     multiselect.setViewBounds(winx, winy, winw, winh);
     paintTool.setViewBounds(winx, winy, winw, winh);
-    MessageManager::callAsync([this] {
-        audioProcessor.viewW = winw;
+    juce::Component::SafePointer<View> safeThis(this); // FIX Renoise DAW crashing on plugin instantiated
+    MessageManager::callAsync([safeThis] {
+        if (safeThis != nullptr)
+            safeThis->audioProcessor.viewW = safeThis->winw;
     });
     multiselect.recalcSelectionArea();
 }

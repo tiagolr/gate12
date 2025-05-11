@@ -24,8 +24,10 @@ void AudioDisplay::timerCallback()
 
 void AudioDisplay::resized()
 {
-    MessageManager::callAsync([this] {
-        audioProcessor.monW = getWidth();
+    juce::Component::SafePointer<AudioDisplay> safeThis(this); // FIX Renoise DAW crashing on plugin instantiated
+    MessageManager::callAsync([safeThis] {
+        if (safeThis != nullptr)
+        safeThis->audioProcessor.monW = safeThis->getWidth();
     });
 }
 
