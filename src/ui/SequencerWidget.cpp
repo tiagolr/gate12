@@ -24,7 +24,8 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.setBounds(col, row, w, h);
 		button.onClick = [this, shape]() {
 			audioProcessor.sequencer->selectedShape = shape;
-			repaint();
+			audioProcessor.showPaintWidget = shape == SPTool;
+			audioProcessor.sendChangeMessage(); // refresh ui
 		};
 		button.setAlpha(0.f);
 	};

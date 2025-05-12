@@ -637,6 +637,10 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
     paintWidget->setVisible(audioProcessor.showPaintWidget);
     seqWidget->setVisible(audioProcessor.showSequencer);
+    seqWidget->setBounds(seqWidget->getBounds().withY(paintWidget->isVisible() 
+        ? paintWidget->getBounds().getBottom() + 10
+        : paintWidget->getBounds().getY()
+    ));
 
     if (seqWidget->isVisible()) {
         view->setBounds(view->getBounds().withTop(seqWidget->getBottom()));

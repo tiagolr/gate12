@@ -226,7 +226,7 @@ void GATE12AudioProcessor::setUIMode(UIMode mode)
         else if (mode == UIMode::Seq) {
             sequencer->open();
             viewPattern = pattern;
-            showPaintWidget = true;
+            showPaintWidget = sequencer->selectedShape == CellShape::SPTool;
             showSequencer = true;
         }
         luimode = uimode;
