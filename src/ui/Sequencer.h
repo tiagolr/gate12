@@ -8,12 +8,13 @@
 using namespace globals;
 class GATE12AudioProcessor;
 
-enum CellType {
-    PTool,
-    Silence,
-    Empty,
-    Ramp,
-    Tri,
+enum CellShape {
+    SSilence,
+    SRampUp,
+    SRampDn,
+    STri,
+    SLine,
+    SPTool,
 };
 
 enum SeqEditMode {
@@ -28,7 +29,8 @@ enum SeqEditMode {
 };
 
 struct Cell { 
-    CellType type;
+    CellShape shape;
+    CellShape lshape; // used to temporarily change type and revert back
     int ptool; // paint tool
     bool invertx;
     bool inverty;
@@ -42,6 +44,8 @@ class Sequencer {
 public:
     SeqEditMode editMode = SeqEditMode::SMax;
     int hoverButton = -1;
+    CellShape hoverButtonType = CellShape::SSilence; // used for dragging multiple buttons assigning the same type
+    CellShape selectedShape = CellShape::SRampDn;
 
     Sequencer(GATE12AudioProcessor& p);
     ~Sequencer() {}
@@ -55,7 +59,7 @@ public:
     void mouseDown(const MouseEvent& e);
     void mouseUp(const MouseEvent& e);
     void mouseDoubleClick(const MouseEvent& e);
-    void onMouseSegment(const MouseEvent& e);
+    void onMouseSegment(const MouseEvent& e, bool isDrag);
 
     void close();
     void open();
@@ -76,8 +80,11 @@ public:
 
 private:
     Point<int> lmousepos;
-    std::vector<PPoint> ramp;
     std::vector<PPoint> silence;
+    std::vector<PPoint> ramp;
+    std::vector<PPoint> tri;
+    std::vector<PPoint> line;
+
     std::vector<PPoint> backup;
     std::vector<Cell> cells;
     std::vector<Cell> snapshot;

@@ -11,14 +11,21 @@ public:
     SequencerWidget(GATE12AudioProcessor& p);
     ~SequencerWidget() override {}
 
-    TextButton minButton;
-    TextButton maxButton;
-    TextButton tenButton;
-    TextButton tenaButton;
-    TextButton tenrButton;
-    TextButton flipXButton;
-    TextButton flipYButton;
-    TextButton gateButton;
+    TextButton minBtn;
+    TextButton maxBtn;
+    TextButton tenBtn;
+    TextButton tenaBtn;
+    TextButton tenrBtn;
+    TextButton flipXBtn;
+    TextButton flipYBtn;
+    TextButton gateBtn;
+
+    TextButton silenceBtn;
+    TextButton rampupBtn;
+    TextButton rampdnBtn;
+    TextButton lineBtn;
+    TextButton triBtn;
+    TextButton ptoolBtn;
 
     void updateButtonsState();
     void paint(Graphics& g) override;

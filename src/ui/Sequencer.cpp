@@ -7,8 +7,13 @@ Sequencer::Sequencer(GATE12AudioProcessor& p) : audioProcessor(p)
     pat = new Pattern(-1);
     clear();
     ramp.push_back({ 0, 0.0, 1.0, 0.0, 1 });
-    ramp.push_back({ 0, 1.0, 0.0, 0.0, 1 });
+    ramp.push_back({ 0, 0.0, 0.0, 0.0, 1 });
     ramp.push_back({ 0, 1.0, 1.0, 0.0, 1 });
+    line.push_back({ 0, 0.0, 0.0, 0.0, 1 });
+    line.push_back({ 0, 1.0, 0.0, 0.0, 1 });
+    tri.push_back({ 0, 0.0, 1.0, 0.0, 1 });
+    tri.push_back({ 0, 0.5, 0.0, 0.0, 1 });
+    tri.push_back({ 0, 1.0, 1.0, 0.0, 1 });
     silence.push_back({ 0, 0.0, 1.0, 0.0, 1 });
     silence.push_back({ 0, 1.0, 1.0, 0.0, 1 });
 }
@@ -47,10 +52,10 @@ void Sequencer::draw(Graphics& g)
     g.setColour(Colours::white);
     for (int i = 0; i < buttons.size(); ++i) {
         auto& cell = cells[i];
-        if (cell.type != CellType::Silence) {
+        if (cell.shape != SSilence) {
             auto& button = buttons[i];
-            auto line = button.expanded(-button.getWidth()/4,0).toFloat();
-            g.drawLine(line.getX(), line.getCentreY(), line.getRight(), line.getCentreY(), 2.f);
+            auto l = button.expanded(-button.getWidth()/4,0).toFloat();
+            g.drawLine(l.getX(), l.getCentreY(), l.getRight(), l.getCentreY(), 2.f);
         }
     }
 }
@@ -74,20 +79,27 @@ void Sequencer::mouseDrag(const MouseEvent& e)
 {
     lmousepos = e.getPosition();
     if (hoverButton == -1) {
-        onMouseSegment(e);
+        onMouseSegment(e, true);
     }
 }
 
 void Sequencer::mouseDown(const MouseEvent& e)
 {
     snapshot = cells;
+
+    // process mouse down on seg buttons
     if (hoverButton > -1) {
         auto& cell = cells[hoverButton];
-        cell.type = cell.type == CellType::Silence ? CellType::Ramp : CellType::Silence;
+        if (cell.shape != SSilence) 
+            cell.lshape = cell.shape;
+        cell.shape = cell.shape == SSilence 
+            ? cell.lshape 
+            : SSilence;
         build();
     }
+    // process mouse down on viewport
     else if (e.getPosition().y > 10) {
-        onMouseSegment(e);
+        onMouseSegment(e, false);
     }
 }
 
@@ -112,7 +124,7 @@ void Sequencer::mouseDoubleClick(const juce::MouseEvent& e)
     (void)e;
 }
 
-void Sequencer::onMouseSegment(const MouseEvent& e) {
+void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     double x = (e.getPosition().x - winx) / (double)winw;
     double y = (e.getPosition().y - winy) / (double)winh;
     
@@ -129,35 +141,65 @@ void Sequencer::onMouseSegment(const MouseEvent& e) {
 
     auto& cell = cells[seg];
 
-    if (editMode == SeqEditMode::SMin) {
+    if (editMode == SMin || editMode == SMax) {
+        if (isDrag && cell.shape == SSilence) {
+            return; // ignore cell when dragging over silence cell
+        }
+
+        if (selectedShape == SSilence) {
+            cell.shape = SSilence;
+            build();
+            return;
+        }
+
+        if (selectedShape == SPTool) {
+            cell.shape = selectedShape;
+            cell.lshape = selectedShape;
+            cell.ptool = audioProcessor.paintTool;
+        }
+
+        // Apply selected shape to clicked or dragged cell
+        else if (cell.shape != selectedShape) {
+            cell.invertx = selectedShape == SRampUp;
+            cell.shape = selectedShape;
+            cell.lshape = selectedShape;
+        }
+    }
+
+    // Apply edit mode to the cell fields
+    if (editMode == SMin) {
         cell.maxy = y; // y coordinates are inverted
         if (cell.miny > y)
             cell.miny = y;
     }
-    else if (editMode == SeqEditMode::SMax) {
+    else if (editMode == SMax) {
         cell.miny = y; // y coordinates are inverted
         if (cell.maxy < y)
             cell.maxy = y;
     }
-    else if (editMode == SeqEditMode::SFlipX) {
+    else if (editMode == SFlipX) {
         cell.invertx = !snapshot[seg].invertx;
     }
-    else if (editMode == SeqEditMode::SFlipY) {
+    else if (editMode == SFlipY) {
         cell.inverty = !snapshot[seg].inverty;
     }
-    else if (editMode == SeqEditMode::STension) {
+    else if (editMode == STension) {
         cell.tenatt = y * 2 - 1;
-        cell.tenrel = y * 2 - 1;
+        cell.tenrel = (y * 2 - 1)*-1;
     }
-    else if (editMode == SeqEditMode::STenAtt) {
+    else if (editMode == STenAtt) {
         cell.tenatt = y * 2 - 1;
     } 
-    else if (editMode == SeqEditMode::STenRel) {
+    else if (editMode == STenRel) {
         cell.tenrel = y * 2 - 1;
     } 
     build();
 }
 
+/*
+* Returns the boundaries of the buttons above the pattern
+* These buttons toggle the pattern type/shape from silence to previous shape
+*/
 std::vector<Rectangle<int>> Sequencer::getSegButtons() 
 {
     std::vector<Rectangle<int>> rects;
@@ -189,7 +231,7 @@ void Sequencer::clear()
 {
     cells.clear();
     for (int i = 0; i < SEQ_MAX_CELLS; ++i) {
-        cells.push_back({ CellType::Ramp, 0, false, false, 0.0, 1.0, 0.0, 0.0 });
+        cells.push_back({ SRampDn, SRampDn, 0, false, false, 0.0, 1.0, 0.0, 0.0 });
     }
 }
 
@@ -207,7 +249,7 @@ void Sequencer::build()
     double grid = (double)std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     double gridx = 1.0 / grid;
 
-    for (int i = 0; i < cells.size(); ++i) {
+    for (int i = 0; i < grid; ++i) {
         auto seg = buildSeg(i * gridx, (i+1)*gridx, cells[i]);
         for (auto& pt : seg) {
             pat->insertPoint(pt.x, pt.y, pt.tension, pt.type);
@@ -227,9 +269,14 @@ std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)
     double miny = cell.miny;
     double h = cell.maxy-cell.miny;
 
-    auto paint = cell.type == CellType::Silence ? silence : ramp;
+    auto paint = cell.shape == SRampUp ? ramp
+        : cell.shape == SRampDn ? ramp
+        : cell.shape == STri ? tri
+        : cell.shape == SLine ? line
+        : cell.shape == SPTool ? audioProcessor.getPaintPatern(cell.ptool)->points
+        : silence;
 
-    if (cell.type == CellType::Silence) {
+    if (cell.shape == SSilence) {
         miny = 1;
         h = 0;
     }
@@ -242,8 +289,10 @@ std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)
     const auto size = tmp->points.size();
     for (int i = 0; i < size; ++i) {
         auto& point = tmp->points[i];
-        auto isAttack = i < size - 2 && point.y > tmp->points[i + 1].y;
-        point.tension = isAttack ? cell.tenatt : cell.tenrel;
+        if (cell.tenatt != 0.0 || cell.tenrel != 0.0) {
+            auto isAttack = i < size - 2 && point.y > tmp->points[i + 1].y;
+            point.tension = isAttack ? cell.tenatt : cell.tenrel;
+        }
         if (cell.inverty) point.tension *= -1;
     }
     if (cell.invertx) tmp->reverse();
@@ -340,7 +389,7 @@ bool Sequencer::compareCells(const std::vector<Cell>& a, const std::vector<Cell>
             a[i].inverty != b[i].inverty ||
             a[i].maxy != b[i].maxy ||
             a[i].miny != b[i].miny ||
-            a[i].type != b[i].type ||
+            a[i].shape != b[i].shape ||
             a[i].tenatt != b[i].tenatt ||
             a[i].tenrel != b[i].tenrel ||
             a[i].ptool != b[i].ptool
