@@ -654,7 +654,7 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
     (void)event;
     int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
     auto param = audioProcessor.params.getParameter("grid");
-    int newgrid = grid + (wheel.deltaY > 0.f ? 1 : -1);
+    int newgrid = grid + (wheel.deltaY > 0.f ? -1 : 1);
     // constrain grid size to stay on straights or tripplets
     if (!(grid == 4 && newgrid == 5) && !(grid == 5 && newgrid == 4)) {
         param->beginChangeGesture();

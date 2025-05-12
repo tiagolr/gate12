@@ -23,8 +23,8 @@ enum SeqEditMode {
     STension,
     STenAtt,
     STenRel,
-    SFlipX,
-    SFlipY,
+    SInvertx,
+    SInverty,
     SGate,
 };
 

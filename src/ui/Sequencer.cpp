@@ -58,6 +58,41 @@ void Sequencer::draw(Graphics& g)
             g.drawLine(l.getX(), l.getCentreY(), l.getRight(), l.getCentreY(), 2.f);
         }
     }
+
+    if (editMode == SMax || editMode == SMin)
+        return;
+
+    g.setColour(Colours::black.withAlpha(0.25f));
+    g.fillRect(winx,winy,winw,winh);
+
+    int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
+    float gridx = winw / (float)grid;
+
+    if (editMode == SInvertx || editMode == SInverty) {
+        g.setColour(Colour(0xff0080ff).darker(editMode == SInvertx ? 0.0f : 0.3f).withAlpha(0.2f));
+        for (int i = 0; i < grid; ++i) {
+            auto& cell = cells[i];
+            if ((editMode == SInvertx && cell.invertx) || (editMode == SInverty && cell.inverty)) {
+                g.fillRect((float)winx+i*gridx, (float)winy, (float)gridx, (float)winh);
+            }
+        }
+
+        return;
+    }
+
+    // draw selected edit mode overlay
+    Colour c = editMode == STenAtt ? Colours::gold
+        : editMode == STenRel ? Colours::gold.darker(0.3f)
+        : editMode == STension ? Colour(0xffff8080)
+        : editMode == SInvertx ? Colours::aqua
+        : editMode == SInverty ? Colours::aqua.darker(0.3f)
+        : editMode == SGate ? Colours::chocolate
+        : Colours::white;
+
+    c = c.withAlpha(0.5f);
+    
+
+    
 }
 
 void Sequencer::mouseMove(const MouseEvent& e)
@@ -177,15 +212,15 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
         if (cell.maxy < y)
             cell.maxy = y;
     }
-    else if (editMode == SFlipX) {
+    else if (editMode == SInvertx) {
         cell.invertx = !snapshot[seg].invertx;
     }
-    else if (editMode == SFlipY) {
+    else if (editMode == SInverty) {
         cell.inverty = !snapshot[seg].inverty;
     }
     else if (editMode == STension) {
         cell.tenatt = y * 2 - 1;
-        cell.tenrel = (y * 2 - 1)*-1;
+        cell.tenrel = y * 2 - 1;
     }
     else if (editMode == STenAtt) {
         cell.tenatt = y * 2 - 1;
@@ -291,7 +326,7 @@ std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)
         auto& point = tmp->points[i];
         if (cell.tenatt != 0.0 || cell.tenrel != 0.0) {
             auto isAttack = i < size - 2 && point.y > tmp->points[i + 1].y;
-            point.tension = isAttack ? cell.tenatt : cell.tenrel;
+            point.tension = isAttack ? cell.tenatt : cell.tenrel * -1;
         }
         if (cell.inverty) point.tension *= -1;
     }

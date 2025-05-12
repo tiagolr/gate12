@@ -13,7 +13,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.setColour(TextButton::textColourOffId, color);
 		button.setBounds(col,row,55,25);
 		button.onClick = [this, mode]() {
-			audioProcessor.sequencer->editMode = mode;
+			audioProcessor.sequencer->editMode = audioProcessor.sequencer->editMode == mode ? SMax : mode;
 			updateButtonsState();
 			repaint();
 		};
@@ -25,6 +25,11 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.onClick = [this, shape]() {
 			audioProcessor.sequencer->selectedShape = shape;
 			audioProcessor.showPaintWidget = shape == SPTool;
+			auto editMode = audioProcessor.sequencer->editMode;
+			if (editMode != SMin && editMode != SMax) {
+				audioProcessor.sequencer->editMode = SMax;
+				updateButtonsState();
+			}
 			audioProcessor.sendChangeMessage(); // refresh ui
 		};
 		button.setAlpha(0.f);
@@ -33,8 +38,8 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	int col = 0;int row = 0;
 	addButton(maxBtn, "Max", col, row, Colours::white, SeqEditMode::SMax);col += 65;
 	addButton(minBtn, "Min", col, row, Colours::white, SeqEditMode::SMin);col += 65;
-	addButton(flipXBtn, "FlipX", col, row, Colours::aqua, SeqEditMode::SFlipX);col += 65;
-	addButton(flipYBtn, "FlipY", col, row, Colours::aqua, SeqEditMode::SFlipY);col = 0; row += 35;
+	addButton(flipXBtn, "FlipX", col, row, Colours::aqua, SeqEditMode::SInvertx);col += 65;
+	addButton(flipYBtn, "FlipY", col, row, Colours::aqua, SeqEditMode::SInverty);col = 0; row += 35;
 	addButton(tenaBtn, "TenA", col, row, Colours::yellow, SeqEditMode::STenAtt);col += 65;
 	addButton(tenrBtn, "TenR", col, row, Colours::yellow, SeqEditMode::STenRel);col += 65;
 	addButton(tenBtn, "Ten", col, row, Colour(0xffff8080), SeqEditMode::STension);col += 65;
@@ -57,8 +62,8 @@ void SequencerWidget::updateButtonsState()
 	auto mode = audioProcessor.sequencer->editMode;
 	maxBtn.setToggleState(mode == SeqEditMode::SMax, dontSendNotification);
 	minBtn.setToggleState(mode == SeqEditMode::SMin, dontSendNotification);
-	flipXBtn.setToggleState(mode == SeqEditMode::SFlipX, dontSendNotification);
-	flipYBtn.setToggleState(mode == SeqEditMode::SFlipY, dontSendNotification);
+	flipXBtn.setToggleState(mode == SeqEditMode::SInvertx, dontSendNotification);
+	flipYBtn.setToggleState(mode == SeqEditMode::SInverty, dontSendNotification);
 	tenaBtn.setToggleState(mode == SeqEditMode::STenAtt, dontSendNotification);
 	tenrBtn.setToggleState(mode == SeqEditMode::STenRel, dontSendNotification);
 	tenBtn.setToggleState(mode == SeqEditMode::STension, dontSendNotification);
