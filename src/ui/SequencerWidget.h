@@ -17,8 +17,6 @@ public:
     TextButton tenaBtn;
     TextButton tenrBtn;
     TextButton flipXBtn;
-    TextButton flipYBtn;
-    TextButton gateBtn;
 
     TextButton silenceBtn;
     TextButton rampupBtn;

@@ -24,8 +24,6 @@ enum SeqEditMode {
     STenAtt,
     STenRel,
     SInvertx,
-    SInverty,
-    SGate,
 };
 
 struct Cell { 
@@ -33,7 +31,6 @@ struct Cell {
     CellShape lshape; // used to temporarily change type and revert back
     int ptool; // paint tool
     bool invertx;
-    bool inverty;
     double miny;
     double maxy;
     double tenatt; // attack tension
@@ -43,8 +40,6 @@ struct Cell {
 class Sequencer {
 public:
     SeqEditMode editMode = SeqEditMode::SMax;
-    int hoverButton = -1;
-    CellShape hoverButtonType = CellShape::SSilence; // used for dragging multiple buttons assigning the same type
     CellShape selectedShape = CellShape::SRampDn;
 
     Sequencer(GATE12AudioProcessor& p);
@@ -79,6 +74,10 @@ public:
     void redo();
 
 private:
+    int hoverButton = -1;
+    CellShape hoverButtonType = CellShape::SSilence; // used for dragging multiple buttons assigning the same type
+    bool startHoverSilence = false; // used for dragging multiple buttons with the same type
+    bool startInvertX = false; // used to drag toggle all segments to the same invertx
     Point<int> lmousepos;
     std::vector<PPoint> silence;
     std::vector<PPoint> ramp;

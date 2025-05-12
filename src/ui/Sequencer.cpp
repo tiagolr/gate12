@@ -68,31 +68,41 @@ void Sequencer::draw(Graphics& g)
     int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     float gridx = winw / (float)grid;
 
-    if (editMode == SInvertx || editMode == SInverty) {
+    if (editMode == SInvertx) {
         g.setColour(Colour(0xff0080ff).darker(editMode == SInvertx ? 0.0f : 0.3f).withAlpha(0.2f));
         for (int i = 0; i < grid; ++i) {
             auto& cell = cells[i];
-            if ((editMode == SInvertx && cell.invertx) || (editMode == SInverty && cell.inverty)) {
+            if (cell.invertx)
                 g.fillRect((float)winx+i*gridx, (float)winy, (float)gridx, (float)winh);
-            }
         }
-
         return;
     }
 
     // draw selected edit mode overlay
-    Colour c = editMode == STenAtt ? Colours::gold
-        : editMode == STenRel ? Colours::gold.darker(0.3f)
+    Colour c = editMode == STenAtt ? Colours::yellow
+        : editMode == STenRel ? Colours::yellow.darker(0.3f)
         : editMode == STension ? Colour(0xffff8080)
         : editMode == SInvertx ? Colours::aqua
-        : editMode == SInverty ? Colours::aqua.darker(0.3f)
-        : editMode == SGate ? Colours::chocolate
         : Colours::white;
 
-    c = c.withAlpha(0.5f);
-    
+    c = c.withAlpha(0.2f);
+    g.setColour(c);
 
-    
+    for (int i = 0; i < grid; ++i) {
+        auto& cell = cells[i];
+        double value = editMode == STenAtt ? (cell.invertx ? cell.tenrel : cell.tenatt) * -1
+            : editMode == STenRel ? (cell.invertx ? cell.tenatt : cell.tenrel) * -1
+            : editMode == STension ? (std::fabs(cell.tenatt) > std::fabs(cell.tenrel) ? cell.tenatt : cell.tenrel) * -1
+            : 0.0;
+
+        auto bounds = Rectangle<float>((float)winx+i* gridx, (float)winy+winh/2.f, gridx, winh/2.f*std::fabs((float)value));
+        if (value > 0.0)
+            bounds = bounds.withY(winy+winh/2.f-bounds.getHeight());
+        if (value == 0.0)
+            bounds = bounds.withHeight(2.0f).withY(winy+winh/2.f-1.f);
+
+        g.fillRect(bounds);
+    }
 }
 
 void Sequencer::mouseMove(const MouseEvent& e)
@@ -113,7 +123,24 @@ void Sequencer::mouseMove(const MouseEvent& e)
 void Sequencer::mouseDrag(const MouseEvent& e)
 {
     lmousepos = e.getPosition();
-    if (hoverButton == -1) {
+    
+    // process mouse drag on seg buttons
+    if (hoverButton > -1) {
+        auto buttons = getSegButtons();
+        for (int i = 0; i < buttons.size(); ++i) {
+            auto& button = buttons[i];
+            if (button.contains(e.getPosition())) {
+                hoverButton = i;
+                auto& cell = cells[i];
+                if (cell.shape != SSilence) {
+                    cell.lshape = cell.shape;
+                }
+                cell.shape = startHoverSilence ? SSilence : cell.lshape;
+                build();
+            }
+        }
+    }
+    else {
         onMouseSegment(e, true);
     }
 }
@@ -125,11 +152,13 @@ void Sequencer::mouseDown(const MouseEvent& e)
     // process mouse down on seg buttons
     if (hoverButton > -1) {
         auto& cell = cells[hoverButton];
-        if (cell.shape != SSilence) 
+        if (cell.shape != SSilence) {
             cell.lshape = cell.shape;
+        }
         cell.shape = cell.shape == SSilence 
             ? cell.lshape 
             : SSilence;
+        startHoverSilence = cell.shape == SSilence;
         build();
     }
     // process mouse down on viewport
@@ -213,21 +242,27 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
             cell.maxy = y;
     }
     else if (editMode == SInvertx) {
-        cell.invertx = !snapshot[seg].invertx;
-    }
-    else if (editMode == SInverty) {
-        cell.inverty = !snapshot[seg].inverty;
+        if (!isDrag)
+            startInvertX = !snapshot[seg].invertx;
+        cell.invertx = startInvertX;
     }
     else if (editMode == STension) {
         cell.tenatt = y * 2 - 1;
         cell.tenrel = y * 2 - 1;
     }
     else if (editMode == STenAtt) {
-        cell.tenatt = y * 2 - 1;
+        if (cell.invertx)
+            cell.tenrel = y * 2 - 1;
+        else
+            cell.tenatt = y * 2 - 1;
     } 
     else if (editMode == STenRel) {
-        cell.tenrel = y * 2 - 1;
+        if (cell.invertx) 
+            cell.tenatt = y * 2 - 1;
+        else
+            cell.tenrel = y * 2 - 1;
     } 
+
     build();
 }
 
@@ -266,7 +301,7 @@ void Sequencer::clear()
 {
     cells.clear();
     for (int i = 0; i < SEQ_MAX_CELLS; ++i) {
-        cells.push_back({ SRampDn, SRampDn, 0, false, false, 0.0, 1.0, 0.0, 0.0 });
+        cells.push_back({ SRampDn, SRampDn, 0, false, 0.0, 1.0, 0.0, 0.0 });
     }
 }
 
@@ -328,10 +363,8 @@ std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)
             auto isAttack = i < size - 2 && point.y > tmp->points[i + 1].y;
             point.tension = isAttack ? cell.tenatt : cell.tenrel * -1;
         }
-        if (cell.inverty) point.tension *= -1;
     }
     if (cell.invertx) tmp->reverse();
-    if (cell.inverty) tmp->invert();
 
     for (auto& point : tmp->points) {
         double px = minx + point.x * w; // map points to rectangle bounds
@@ -421,7 +454,6 @@ bool Sequencer::compareCells(const std::vector<Cell>& a, const std::vector<Cell>
 {
     for (size_t i = 0; i < a.size(); ++i) {
         if (a[i].invertx != b[i].invertx ||
-            a[i].inverty != b[i].inverty ||
             a[i].maxy != b[i].maxy ||
             a[i].miny != b[i].miny ||
             a[i].shape != b[i].shape ||

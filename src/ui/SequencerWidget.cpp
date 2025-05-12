@@ -36,23 +36,21 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	};
 
 	int col = 0;int row = 0;
-	addButton(maxBtn, "Max", col, row, Colours::white, SeqEditMode::SMax);col += 65;
-	addButton(minBtn, "Min", col, row, Colours::white, SeqEditMode::SMin);col += 65;
 	addButton(flipXBtn, "FlipX", col, row, Colours::aqua, SeqEditMode::SInvertx);col += 65;
-	addButton(flipYBtn, "FlipY", col, row, Colours::aqua, SeqEditMode::SInverty);col = 0; row += 35;
+	addButton(minBtn, "Min", col, row, Colours::white, SeqEditMode::SMin);col += 65;
+	addButton(maxBtn, "Max", col, row, Colours::white, SeqEditMode::SMax);col = 0;row+=35;
+	addButton(tenBtn, "Ten", col, row, Colour(0xffff8080), SeqEditMode::STension);col += 65;
 	addButton(tenaBtn, "TenA", col, row, Colours::yellow, SeqEditMode::STenAtt);col += 65;
 	addButton(tenrBtn, "TenR", col, row, Colours::yellow, SeqEditMode::STenRel);col += 65;
-	addButton(tenBtn, "Ten", col, row, Colour(0xffff8080), SeqEditMode::STension);col += 65;
-	addButton(gateBtn, "Gate", col, row, Colours::chocolate, SeqEditMode::SGate);col += 65;
 
 	row = 0;
-	col = gateBtn.getRight() + 10;
-	addToolButton(silenceBtn, col, row, 23, 23, CellShape::SSilence); col += 25;
-	addToolButton(lineBtn, col, row, 23, 23, CellShape::SLine); col += 25;
-	addToolButton(rampdnBtn, col, row, 23, 23, CellShape::SRampDn); col += 25;
-	addToolButton(rampupBtn, col, row, 23, 23, CellShape::SRampUp); col += 25;
-	addToolButton(triBtn, col, row, 23, 23, CellShape::STri); col += 25;
-	addToolButton(ptoolBtn, col, row, 23, 23, CellShape::SPTool); col += 25;
+	col = maxBtn.getRight() + 10;
+	addToolButton(silenceBtn, col, row, 25, 25, CellShape::SSilence); col += 25;
+	addToolButton(lineBtn, col, row, 25, 25, CellShape::SLine); col += 25;
+	addToolButton(rampdnBtn, col, row, 25, 25, CellShape::SRampDn); col += 25;
+	addToolButton(rampupBtn, col, row, 25, 25, CellShape::SRampUp); col += 25;
+	addToolButton(triBtn, col, row, 25, 25, CellShape::STri); col += 25;
+	addToolButton(ptoolBtn, col, row, 25, 25, CellShape::SPTool); col += 25;
 	
 	updateButtonsState();
 }
@@ -63,11 +61,9 @@ void SequencerWidget::updateButtonsState()
 	maxBtn.setToggleState(mode == SeqEditMode::SMax, dontSendNotification);
 	minBtn.setToggleState(mode == SeqEditMode::SMin, dontSendNotification);
 	flipXBtn.setToggleState(mode == SeqEditMode::SInvertx, dontSendNotification);
-	flipYBtn.setToggleState(mode == SeqEditMode::SInverty, dontSendNotification);
 	tenaBtn.setToggleState(mode == SeqEditMode::STenAtt, dontSendNotification);
 	tenrBtn.setToggleState(mode == SeqEditMode::STenRel, dontSendNotification);
 	tenBtn.setToggleState(mode == SeqEditMode::STension, dontSendNotification);
-	gateBtn.setToggleState(mode == SeqEditMode::SGate, dontSendNotification);
 }
 
 void SequencerWidget::paint(Graphics& g)
@@ -75,7 +71,7 @@ void SequencerWidget::paint(Graphics& g)
 	auto bounds = silenceBtn.getBounds().toFloat();
 	g.setColour(audioProcessor.sequencer->selectedShape == CellShape::SSilence ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
-	bounds.expand(-4,-4);
+	bounds.expand(-6,-6);
 	Path silencePath;
 	silencePath.startNewSubPath(bounds.getBottomLeft());
 	silencePath.lineTo(bounds.getTopRight());
@@ -86,7 +82,7 @@ void SequencerWidget::paint(Graphics& g)
 	bounds = rampdnBtn.getBounds().toFloat();
 	g.setColour(audioProcessor.sequencer->selectedShape == CellShape::SRampDn ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
-	bounds.expand(-4,-4);
+	bounds.expand(-5,-5);
 	Path rampdnPath;
 	rampdnPath.startNewSubPath(bounds.getBottomLeft());
 	rampdnPath.lineTo(bounds.getTopLeft());
@@ -96,7 +92,7 @@ void SequencerWidget::paint(Graphics& g)
 	bounds = rampupBtn.getBounds().toFloat();
 	g.setColour(audioProcessor.sequencer->selectedShape == CellShape::SRampUp ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
-	bounds.expand(-4,-4);
+	bounds.expand(-5,-5);
 	Path rampupPath;
 	rampupPath.startNewSubPath(bounds.getBottomLeft());
 	rampupPath.lineTo(bounds.getTopRight());
@@ -106,7 +102,7 @@ void SequencerWidget::paint(Graphics& g)
 	bounds = triBtn.getBounds().toFloat();
 	g.setColour(audioProcessor.sequencer->selectedShape == CellShape::STri ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
-	bounds.expand(-4,-4);
+	bounds.expand(-5,-5);
 	Path triPath;
 	triPath.startNewSubPath(bounds.getBottomLeft());
 	triPath.lineTo(bounds.getTopRight().withX(bounds.getCentreX()));
@@ -116,7 +112,7 @@ void SequencerWidget::paint(Graphics& g)
 	bounds = lineBtn.getBounds().toFloat();
 	g.setColour(audioProcessor.sequencer->selectedShape == CellShape::SLine ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
-	bounds.expand(-4,-4);
+	bounds.expand(-5,-5);
 	Path linePath;
 	linePath.startNewSubPath(bounds.getBottomLeft().withY(bounds.getCentreY()));
 	linePath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()));
@@ -125,7 +121,7 @@ void SequencerWidget::paint(Graphics& g)
 	bounds = ptoolBtn.getBounds().toFloat();
 	g.setColour(audioProcessor.sequencer->selectedShape == CellShape::SPTool ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
-	bounds.expand(-2,-2);
+	bounds.expand(-3,-3);
 	Path paintPath;
 	paintPath.startNewSubPath(bounds.getCentre());
 	paintPath.lineTo(bounds.getCentre().translated(0,4));
