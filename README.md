@@ -37,7 +37,7 @@
   * **Paint-mode** revamped with user patterns painted on view
   * **Rotate patterns** no longer constrained by start and end points
   * **Undo & Redo** supported
-  * **Built-in Sequencer** (under development) allows to easily generate and randomize patterns
+  * **Built-in Sequencer** to quickly build and randomize patterns
   * Other **improvements and fixes**
 
 ## Features
@@ -103,6 +103,16 @@ MIDI can be used to trigger the envelope or restart its cycle, it can also be us
 #### Pattern sync
 
 Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
+
+#### Sequencer
+
+Clicking the `Seq` button toggles the sequencer mode where patterns can be built and randomized with ease.
+
+![sequencer](/doc/sequencer.png)
+
+The left buttons are the edit mode used when clicking the view. On the right there is a row of shapes used to draw on the view and below is the randomization of the current selected mode.
+
+After creating a sequence click `Apply` to save it as the current pattern and edit from there.
 
 ### Tips
 
