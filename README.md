@@ -44,7 +44,7 @@
 
   * Multi-segment editor
   * 12 patterns triggered by midi notes
-  * Paint mode with user defined patterns
+  * Paint mode with user defined shapes
   * Point type - hold, curve, s-curve, stairs ..
   * Tempo sync or lfo rate (Hz)
   * Attack and release smooth
