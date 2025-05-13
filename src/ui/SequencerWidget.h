@@ -25,6 +25,13 @@ public:
     TextButton triBtn;
     TextButton ptoolBtn;
 
+    TextButton randomBtn;
+    TextButton randomMenuBtn;
+    Slider randomRange;
+
+    double randomMin = 0.0;
+    double randomMax = 1.0;
+
     void updateButtonsState();
     void paint(Graphics& g) override;
     void mouseDown(const juce::MouseEvent& e) override;

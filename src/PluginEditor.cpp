@@ -219,12 +219,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     tension->setBounds(col,row,80,65);
     //col += 75;
 
-    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "TenA", RotaryLabel::percx100, true);
+    tensionatk = std::make_unique<Rotary>(p, "tensionatk", "TAtk", RotaryLabel::percx100, true);
     addAndMakeVisible(*tensionatk);
     tensionatk->setBounds(col,row,80,65);
     col += 75;
 
-    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "TenR", RotaryLabel::percx100, true);
+    tensionrel = std::make_unique<Rotary>(p, "tensionrel", "TRel", RotaryLabel::percx100, true);
     addAndMakeVisible(*tensionrel);
     tensionrel->setBounds(col,row,80,65);
     col += 75;

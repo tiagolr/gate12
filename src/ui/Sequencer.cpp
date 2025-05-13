@@ -59,7 +59,7 @@ void Sequencer::draw(Graphics& g)
         }
     }
 
-    if (editMode == SMax || editMode == SMin)
+    if (editMode == EditMax || editMode == EditMin || editMode == EditNone)
         return;
 
     g.setColour(Colours::black.withAlpha(0.25f));
@@ -68,8 +68,8 @@ void Sequencer::draw(Graphics& g)
     int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     float gridx = winw / (float)grid;
 
-    if (editMode == SInvertx) {
-        g.setColour(Colour(0xff0080ff).darker(editMode == SInvertx ? 0.0f : 0.3f).withAlpha(0.2f));
+    if (editMode == EditInvertX) {
+        g.setColour(Colour(0xff0080ff).darker(editMode == EditInvertX ? 0.0f : 0.3f).withAlpha(0.2f));
         for (int i = 0; i < grid; ++i) {
             auto& cell = cells[i];
             if (cell.invertx)
@@ -79,20 +79,13 @@ void Sequencer::draw(Graphics& g)
     }
 
     // draw selected edit mode overlay
-    Colour c = editMode == STenAtt ? Colours::yellow
-        : editMode == STenRel ? Colours::yellow.darker(0.3f)
-        : editMode == STension ? Colour(0xffff8080)
-        : editMode == SInvertx ? Colours::aqua
-        : Colours::white;
-
-    c = c.withAlpha(0.2f);
-    g.setColour(c);
+    g.setColour(getEditModeColour(editMode).withAlpha(0.2f));
 
     for (int i = 0; i < grid; ++i) {
         auto& cell = cells[i];
-        double value = editMode == STenAtt ? (cell.invertx ? cell.tenrel : cell.tenatt) * -1
-            : editMode == STenRel ? (cell.invertx ? cell.tenatt : cell.tenrel) * -1
-            : editMode == STension ? (std::fabs(cell.tenatt) > std::fabs(cell.tenrel) ? cell.tenatt : cell.tenrel) * -1
+        double value = editMode == EditTenAtt ? (cell.invertx ? cell.tenrel : cell.tenatt) * -1
+            : editMode == EditTenRel ? (cell.invertx ? cell.tenatt : cell.tenrel) * -1
+            : editMode == EditTension ? (std::fabs(cell.tenatt) > std::fabs(cell.tenrel) ? cell.tenatt : cell.tenrel) * -1
             : 0.0;
 
         auto bounds = Rectangle<float>((float)winx+i* gridx, (float)winy+winh/2.f, gridx, winh/2.f*std::fabs((float)value));
@@ -103,6 +96,17 @@ void Sequencer::draw(Graphics& g)
 
         g.fillRect(bounds);
     }
+}
+
+Colour Sequencer::getEditModeColour(SeqEditMode mode)
+{
+    if (mode == EditInvertX) return Colours::aqua;
+    if (mode == EditMax) return Colours::white;
+    if (mode == EditMin) return Colours::white;
+    if (mode == EditTension) return Colour(0xffff8080);
+    if (mode == EditTenAtt) return Colours::yellow;
+    if (mode == EditTenRel) return Colours::yellow;
+    return Colours::white;
 }
 
 void Sequencer::mouseMove(const MouseEvent& e)
@@ -205,7 +209,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
 
     auto& cell = cells[seg];
 
-    if (editMode == SMin || editMode == SMax) {
+    if (editMode == EditMin || editMode == EditMax || editMode == EditNone) {
         if (isDrag && cell.shape == SSilence) {
             return; // ignore cell when dragging over silence cell
         }
@@ -231,32 +235,32 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     }
 
     // Apply edit mode to the cell fields
-    if (editMode == SMin) {
+    if (editMode == EditMin) {
         cell.maxy = y; // y coordinates are inverted
         if (cell.miny > y)
             cell.miny = y;
     }
-    else if (editMode == SMax) {
+    else if (editMode == EditMax) {
         cell.miny = y; // y coordinates are inverted
         if (cell.maxy < y)
             cell.maxy = y;
     }
-    else if (editMode == SInvertx) {
+    else if (editMode == EditInvertX) {
         if (!isDrag)
             startInvertX = !snapshot[seg].invertx;
         cell.invertx = startInvertX;
     }
-    else if (editMode == STension) {
+    else if (editMode == EditTension) {
         cell.tenatt = y * 2 - 1;
         cell.tenrel = y * 2 - 1;
     }
-    else if (editMode == STenAtt) {
+    else if (editMode == EditTenAtt) {
         if (cell.invertx)
             cell.tenrel = y * 2 - 1;
         else
             cell.tenatt = y * 2 - 1;
     } 
-    else if (editMode == STenRel) {
+    else if (editMode == EditTenRel) {
         if (cell.invertx) 
             cell.tenatt = y * 2 - 1;
         else
@@ -389,6 +393,61 @@ void Sequencer::rotateLeft()
     int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     std::rotate(cells.begin(), cells.begin() + 1, cells.begin() + grid);
     createUndo(snapshot);
+    build();
+}
+
+void Sequencer::clear(SeqEditMode mode)
+{
+    for (auto& cell : cells) {
+        if (mode == EditMax) cell.miny = 0.0;
+        else if (mode == EditMin) cell.maxy = 1.0;
+        else if (mode == EditInvertX) cell.invertx = cell.shape == CellShape::SRampUp;
+        else if (mode == EditTenAtt) cell.tenatt = 0.0;
+        else if (mode == EditTenRel) cell.tenrel = 0.0;
+        else if (mode == EditTension) cell.tenatt = cell.tenrel = 0.0;
+        else if (mode == EditNone) cell.miny = 0.0;
+    }
+    build();
+}
+
+void Sequencer::randomize(SeqEditMode mode, double min, double max)
+{
+    for (auto& cell : cells) {
+        auto rmin = min;
+        auto rmax = max;
+
+        // this bit of code gets confusing because the variables are inverted
+        // maxy and miny are inverted as well as the y coordinates on screen
+        // the logic is to map the random min to the cell bottom
+        // the random max gets scaled proportionally to the new range
+        if (mode == EditMax) {
+            rmin = std::max(rmin, 1.0 - cell.maxy);
+            rmax = std::max(rmin + (max - min) * (1 - rmin), rmax);
+        }
+        // same thing but random max is mapped to the cell ceiling
+        // and random min is scaled proportionally
+        else if (mode == EditMin) {
+            rmax = std::min(rmax, 1.0 - cell.miny);
+            rmin = std::min(rmax - (max - min) * rmax, rmin);
+        }
+
+        double random = (rand() / (double)RAND_MAX);
+        double value = rmin + (rmax - rmin) * random;
+        bool flag = random <= (rmax - rmin) / 2.0 + rmin; // the slider is a double range, arrange it so that when the range is full the prob is 50%
+
+        if (mode == EditTenAtt) cell.tenatt = (value * 2 - 1) * -1;
+        else if (mode == EditTenRel) cell.tenrel = (value * 2 - 1) * -1;
+        else if (mode == EditTension) cell.tenrel = cell.tenatt = (value * 2 - 1) * -1;
+        else if (mode == EditMax || mode == EditNone) cell.miny = std::min(1.0 - value, cell.maxy);
+        else if (mode == EditMin) cell.maxy = std::max(1.0 - value, cell.miny);
+        else if (mode == EditInvertX) cell.invertx = flag;
+        else if (mode == EditSilence) {
+            if (flag && cell.shape != SSilence)
+                cell.lshape = cell.shape;
+            cell.shape = flag ? SSilence : cell.lshape;
+        }
+    }
+
     build();
 }
 

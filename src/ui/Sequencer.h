@@ -18,12 +18,14 @@ enum CellShape {
 };
 
 enum SeqEditMode {
-    SMin,
-    SMax,
-    STension,
-    STenAtt,
-    STenRel,
-    SInvertx,
+    EditNone,
+    EditMin,
+    EditMax,
+    EditTension,
+    EditTenAtt,
+    EditTenRel,
+    EditInvertX,
+    EditSilence // used for randomize only
 };
 
 struct Cell { 
@@ -39,7 +41,7 @@ struct Cell {
 
 class Sequencer {
 public:
-    SeqEditMode editMode = SeqEditMode::SMax;
+    SeqEditMode editMode = SeqEditMode::EditMax;
     CellShape selectedShape = CellShape::SRampDn;
 
     Sequencer(GATE12AudioProcessor& p);
@@ -48,6 +50,7 @@ public:
     void setViewBounds(int _x, int _y, int _w, int _h);
     void draw(Graphics& g);
     void drawBackground(Graphics& g);
+    Colour getEditModeColour(SeqEditMode mode);
 
     void mouseMove(const MouseEvent& e);
     void mouseDrag(const MouseEvent& e);
@@ -65,6 +68,9 @@ public:
     std::vector<Rectangle<int>> getSegButtons();
     void rotateRight();
     void rotateLeft();
+
+    void randomize(SeqEditMode mode, double min, double max);
+    void clear(SeqEditMode mode);
 
     std::vector<std::vector<Cell>> undoStack;
     std::vector<std::vector<Cell>> redoStack;
