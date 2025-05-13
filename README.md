@@ -101,6 +101,10 @@ Audio transients can be used to trigger the envelope or restart its cycle, its h
 
 MIDI can be used to trigger the envelope or restart its cycle, it can also be used to change patterns (defaults to channel 10).
 
+#### Pattern sync
+
+Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
+
 #### Sequencer
 
 Clicking the `Seq` button toggles the sequencer mode where patterns can be built and randomized with ease.
@@ -110,10 +114,6 @@ Clicking the `Seq` button toggles the sequencer mode where patterns can be built
 The left buttons are the edit mode used when clicking the view. On the right there is a row of shapes used to draw on the view and below is the randomization of the current selected mode.
 
 After creating a sequence click `Apply` to save it as the current pattern and edit from there.
-
-#### Pattern sync
-
-Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
 
 ## Tips
 
