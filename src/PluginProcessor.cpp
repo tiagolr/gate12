@@ -22,9 +22,9 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("phase", "Phase", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
         std::make_unique<juce::AudioParameterFloat>("min", "Min", 0.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("max", "Max", 0.0f, 1.0f, 1.0f),
-        std::make_unique<juce::AudioParameterFloat>("smooth", "Smooth", 0.0f, 1.0f, 0.0f),
-        std::make_unique<juce::AudioParameterFloat>("attack", "Attack", 0.0f, 1.0f, 0.0f),
-        std::make_unique<juce::AudioParameterFloat>("release", "Release", 0.0f, 1.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("smooth", "Smooth", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("attack", "Attack", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("release", "Release", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tension", "Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tensionatk", "Attack Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tensionrel", "Release Tension", -1.0f, 1.0f, 0.0f),
@@ -637,10 +637,13 @@ void GATE12AudioProcessor::setSmooth()
     if (dualSmooth) {
         float attack = params.getRawParameterValue("attack")->load();
         float release = params.getRawParameterValue("release")->load();
+        attack *= attack;
+        release *= release;
         value->setup(attack * 0.25, release * 0.25, getSampleRate());
     }
     else {
         float lfosmooth = params.getRawParameterValue("smooth")->load();
+        lfosmooth *= lfosmooth;
         value->setup(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
     }
 }
