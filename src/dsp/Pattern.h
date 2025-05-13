@@ -52,6 +52,9 @@ public:
     std::vector<Segment> segments;
     std::vector<std::vector<PPoint>> undoStack;
     std::vector<std::vector<PPoint>> redoStack;
+    std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
+    std::atomic<double> tensionAtk = 0.0; // tension multiplier for attack only
+    std::atomic<double> tensionRel = 0.0; // tension multiplier for release only
 
     Pattern(int index);
     void incrementVersion(); // generates a new unique ID for this pattern
@@ -92,9 +95,6 @@ public:
 private:
     static inline uint64_t versionIDCounter = 1; // static global ID counter
     static inline uint64_t pointsIDCounter = 1; // static global ID counter
-    std::atomic<double> tensionMult = 0.0; // tension multiplier applied to all points
-    std::atomic<double> tensionAtk = 0.0; // tension multiplier for attack only
-    std::atomic<double> tensionRel = 0.0; // tension multiplier for release only
     bool dualTension = false;
     std::mutex mtx;
 };

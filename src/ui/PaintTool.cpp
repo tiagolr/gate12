@@ -17,9 +17,11 @@ void PaintTool::setViewBounds(int _x, int _y, int _w, int _h)
 void PaintTool::draw(Graphics& g)
 {
     auto bounds = getBounds();
-    pat->points = audioProcessor.getPaintPatern(audioProcessor.paintTool)->points;
+    auto paintPat = audioProcessor.getPaintPatern(audioProcessor.paintTool);
+    pat->points = paintPat->points;
     if (invertx) pat->reverse();
     if (inverty) pat->invert();
+    pat->setTension(paintPat->tensionMult.load(), paintPat->tensionAtk.load(), paintPat->tensionRel.load(), audioProcessor.dualTension);
     pat->buildSegments();
 
     double x = bounds.getX();
