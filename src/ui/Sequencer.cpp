@@ -100,12 +100,12 @@ void Sequencer::draw(Graphics& g)
 
 Colour Sequencer::getEditModeColour(SeqEditMode mode)
 {
-    if (mode == EditInvertX) return Colour(0xff00ffff);
-    if (mode == EditMax) return Colours::white;
-    if (mode == EditMin) return Colours::white;
-    if (mode == EditTension) return Colour(0xffffbb50).withHue(0.35f);
-    if (mode == EditTenAtt) return Colour(COLOR_ACTIVE).withHue(0.15f);
-    if (mode == EditTenRel) return Colour(COLOR_ACTIVE).withHue(0.1f);
+    if (mode == EditInvertX) return Colour(COLOR_SEQ_INVX);
+    if (mode == EditMax) return Colour(COLOR_SEQ_MAX);
+    if (mode == EditMin) return Colour(COLOR_SEQ_MIN);
+    if (mode == EditTension) return Colour(COLOR_SEQ_TEN);
+    if (mode == EditTenAtt) return Colour(COLOR_SEQ_TENA);
+    if (mode == EditTenRel) return Colour(COLOR_SEQ_TENR);
     return Colours::white;
 }
 
@@ -209,6 +209,18 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
 
     auto& cell = cells[seg];
 
+    if (e.mods.isRightButtonDown()) {
+        if (cell.shape == SSilence) return;
+        else if (editMode == EditMin) cell.maxy = 1.0;
+        else if (editMode == EditMax) cell.miny = 0.0;
+        else if (editMode == EditTenAtt) cell.tenatt = 0.0;
+        else if (editMode == EditTenRel) cell.tenrel = 0.0;
+        else if (editMode == EditTension) cell.tenatt = cell.tenrel = 0.0;
+        else if (editMode == EditInvertX) cell.invertx = false;
+        build();
+        return;
+    }
+
     if (editMode == EditMin || editMode == EditMax || editMode == EditNone) {
         if (isDrag && cell.shape == SSilence) {
             return; // ignore cell when dragging over silence cell
@@ -234,14 +246,8 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
         }
     }
 
-    if (e.mods.isRightButtonDown()) {
-        cell.miny = y;
-        cell.maxy = 1.0;
-        cell.tenatt = 0.0;
-        cell.tenrel = 0.0;
-        cell.invertx = cell.shape == SRampUp;
-    }
-    else if (editMode == EditMin) {
+    
+    if (editMode == EditMin) {
         cell.maxy = y; // y coordinates are inverted
         if (cell.miny > y)
             cell.miny = y;
@@ -476,8 +482,14 @@ void Sequencer::randomize(SeqEditMode mode, double min, double max)
         double value = rmin + (rmax - rmin) * random;
         bool flag = random <= (rmax - rmin) / 2.0 + rmin; // the slider is a double range, arrange it so that when the range is full the prob is 50%
 
-        if (mode == EditTenAtt) cell.tenatt = (value * 2 - 1) * -1;
-        else if (mode == EditTenRel) cell.tenrel = (value * 2 - 1) * -1;
+        if (mode == EditTenAtt) {
+            if (cell.invertx) cell.tenrel = (value * 2 - 1) * -1;
+            else cell.tenatt = (value * 2 - 1) * -1;
+        }
+        else if (mode == EditTenRel) {
+            if (cell.invertx) cell.tenatt = (value * 2 -1) * -1;
+            else cell.tenrel = (value * 2 - 1) * -1;
+        }
         else if (mode == EditTension) cell.tenrel = cell.tenatt = (value * 2 - 1) * -1;
         else if (mode == EditMax || mode == EditNone) cell.miny = std::min(1.0 - value, cell.maxy);
         else if (mode == EditMin) cell.maxy = std::max(1.0 - value, cell.miny);
