@@ -105,6 +105,7 @@ public:
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
     bool useMonitor = false;
     bool useSidechain = false;
+    bool audioIgnoreHitsWhilePlaying = false;
     int paintTool = 0; // index of pattern used for paint mode
     int paintPage = 0;
 
@@ -118,6 +119,7 @@ public:
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
     double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play
+    double trigposSinceHit = 1.0; // used by audioIgnoreHitsWhilePlaying option
     double trigphase = 0.0; // phase when trigger occurs, used to sync the background wave draw
     double syncQN = 1.0; // sync quarter notes
     int ltrigger = -1; // last trigger mode

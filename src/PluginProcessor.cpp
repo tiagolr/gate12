@@ -553,6 +553,7 @@ void GATE12AudioProcessor::onPlay()
     beatPos = ppqPosition;
     ratePos = beatPos * secondsPerBeat * ratehz;
     trigpos = 0.0;
+    trigposSinceHit = 1.0;
     trigphase = phase;
 
     audioTriggerCountdown = -1;
@@ -981,13 +982,15 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 : 1 / srate * ratehz;
             xpos += inc;
             trigpos += inc;
+            trigposSinceHit += inc;
             xpos -= std::floor(xpos);
 
-            if (hit) {
+            if (hit && (alwaysPlaying || !audioIgnoreHitsWhilePlaying || trigposSinceHit > 0.98)) {
                 clearDrawBuffers();
                 audioTrigger = !alwaysPlaying;
                 trigpos = 0.0;
                 trigphase = phase;
+                trigposSinceHit = 0.0;
                 restartEnv(true);
             }
 
@@ -1064,6 +1067,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("useSidechain",useSidechain, nullptr);
     state.setProperty("paintTool", paintTool, nullptr);
     state.setProperty("paintPage", paintPage, nullptr);
+    state.setProperty("audioIgnoreHitsWhilePlaying", audioIgnoreHitsWhilePlaying, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -1103,6 +1107,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         useSidechain = (bool)state.getProperty("useSidechain");
         paintTool = (int)state.getProperty("paintTool");
         paintPage = (int)state.getProperty("paintPage");
+        audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();

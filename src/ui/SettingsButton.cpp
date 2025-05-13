@@ -20,10 +20,16 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	}
 	triggerChn.addItem(27, "Any", true, audioProcessor.triggerChn == 16);
 
+	PopupMenu audioTrigger;
+	audioTrigger.addItem(32, "Ignore hits while playing", true, audioProcessor.audioIgnoreHitsWhilePlaying);
+
 	PopupMenu options;
-	options.addSubMenu("Trigger Channel", triggerChn);
+	options.addSubMenu("Pattern select chn", triggerChn);
+	options.addSubMenu("Audio trigger", audioTrigger);
+	options.addSeparator();
 	options.addItem(30, "Dual smooth", true, audioProcessor.dualSmooth);
 	options.addItem(31, "Dual tension", true, audioProcessor.dualTension);
+
 
 	PopupMenu load;
 	load.addItem(100, "Sine", audioProcessor.uimode != UIMode::Seq);
@@ -126,6 +132,11 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 					audioProcessor.dualTension = !audioProcessor.dualTension;
 					audioProcessor.onTensionChange();
 					toggleUIComponents();
+				});
+			}
+			if (result == 32) {
+				MessageManager::callAsync([this]() {
+					audioProcessor.audioIgnoreHitsWhilePlaying = !audioProcessor.audioIgnoreHitsWhilePlaying;
 				});
 			}
 			if (result == 50) {
