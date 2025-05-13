@@ -37,7 +37,7 @@
   * **Paint-mode** revamped with user patterns painted on view
   * **Rotate patterns** no longer constrained by start and end points
   * **Undo & Redo** supported
-  * **Built-in Sequencer** to quickly build and randomize patterns
+  * **Sequencer** built-in to quickly build and randomize patterns
   * Other **improvements and fixes**
 
 ## Features
@@ -100,10 +100,6 @@ Audio transients can be used to trigger the envelope or restart its cycle, its h
 
 MIDI can be used to trigger the envelope or restart its cycle, it can also be used to change patterns (defaults to channel 10).
 
-#### Pattern sync
-
-Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
-
 #### Sequencer
 
 Clicking the `Seq` button toggles the sequencer mode where patterns can be built and randomized with ease.
@@ -114,14 +110,18 @@ The left buttons are the edit mode used when clicking the view. On the right the
 
 After creating a sequence click `Apply` to save it as the current pattern and edit from there.
 
-### Tips
+#### Pattern sync
 
-  - `Shift` for fine slider adjustments.
-	- `Shift` toggles snap on/off.
-	- `Mouse wheel` on view changes grid size
-	- `Right click` points changes point type.
-	- `Alt + drag` selection handles skews selected points.
-	- `Right click + drag` in paint mode changes paint tool tension.
+Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
+
+## Tips
+
+- `Shift` for fine slider adjustments.
+- `Shift` toggles snap on/off.
+- `Mouse wheel` on view changes grid size
+- `Right click` points changes point type.
+- `Alt + drag` selection handles skews selected points.
+- `Right click + drag` in paint mode changes paint tool tension.
 
 ## MacOS
 
