@@ -234,8 +234,14 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
         }
     }
 
-    // Apply edit mode to the cell fields
-    if (editMode == EditMin) {
+    if (e.mods.isRightButtonDown()) {
+        cell.miny = y;
+        cell.maxy = 1.0;
+        cell.tenatt = 0.0;
+        cell.tenrel = 0.0;
+        cell.invertx = cell.shape == SRampUp;
+    }
+    else if (editMode == EditMin) {
         cell.maxy = y; // y coordinates are inverted
         if (cell.miny > y)
             cell.miny = y;
@@ -359,10 +365,30 @@ void Sequencer::build()
         }
     }
 
+    pat->points = removeCollinearPoints(pat->points);
     auto& pattern = audioProcessor.pattern;
     pattern->points = pat->points;
     pattern->sortPoints();
     pattern->buildSegments();
+}
+
+/*
+* Removes sequential points with the same x coordinate leaving just the first and last 
+* Useful for removing extra points in successive patterns like ramps
+*/
+std::vector<PPoint> Sequencer::removeCollinearPoints(const std::vector<PPoint>& points)
+{
+    if (points.size() < 2) return points;
+    std::vector<PPoint> result;
+
+    result.push_back(points[0]);
+    for (size_t i = 1; i + 1 < points.size(); ++i) {
+        if (points[i].x != points[i - 1].x || points[i].x != points[i + 1].x) {
+            result.push_back(points[i]);
+        }
+    }
+    result.push_back(points.back());
+    return result;
 }
 
 std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)

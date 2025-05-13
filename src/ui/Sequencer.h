@@ -103,5 +103,6 @@ private:
     GATE12AudioProcessor& audioProcessor;
 
     bool isSnapping(const MouseEvent& e);
+    std::vector<PPoint> removeCollinearPoints(const std::vector<PPoint>& pts);
     bool compareCells(const std::vector<Cell>& a, const std::vector<Cell>& b);
 };

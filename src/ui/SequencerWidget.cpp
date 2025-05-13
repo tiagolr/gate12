@@ -14,7 +14,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.setColour(TextButton::textColourOffId, color);
 		button.setBounds(col,row,60,25);
 		button.onClick = [this, mode]() {
-			audioProcessor.sequencer->editMode = audioProcessor.sequencer->editMode == mode ? EditNone : mode;
+			audioProcessor.sequencer->editMode = audioProcessor.sequencer->editMode == mode ? EditMax : mode;
 			updateButtonsState();
 		};
 	};
@@ -69,9 +69,9 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	randomMenuBtn.setBounds(col,row,25,25);
 	randomMenuBtn.onClick = [this]() {
 		PopupMenu menu;
+		menu.addItem(3, "Random Silence");
 		menu.addItem(1, "Random All");
 		menu.addItem(2, "Random All + Silence");
-		menu.addItem(3, "Random Silence");
 		Point<int> pos = localPointToGlobal(randomMenuBtn.getBounds().getTopRight());
 		menu.showMenuAsync(PopupMenu::Options().withTargetScreenArea({ pos.getX(), pos.getY(), 1, 1 }), [this](int result) {
 			if (result == 1 || result == 2) {
@@ -260,7 +260,7 @@ void SequencerWidget::paint(Graphics& g)
 	paintPath.lineTo(bounds.getTopLeft().translated(4,2));
 	g.strokePath(paintPath, PathStrokeType(1.f));
 	g.fillRoundedRectangle(Rectangle<float>(bounds.getCentreX() - 2, bounds.getCentreY()+2, 4.f,8.f).withBottom(bounds.getBottom()), 1.f);
-	g.fillRoundedRectangle(Rectangle<float>(bounds.getX() + 4, bounds.getY(), 0.f, 4.f).withRight(bounds.getRight()), 1.f);
+	g.fillRoundedRectangle(Rectangle<float>(bounds.getX() + 4, bounds.getY(), 0.f, 4.f).withRight(bounds.getRight()-2.f), 1.f);
 
 	// draw random dice
 	g.setColour(seq->getEditModeColour(seq->editMode));

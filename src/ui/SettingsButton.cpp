@@ -100,7 +100,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	//menu.addItem(51, "Reverse");
 	menu.addItem(53, "Copy", audioProcessor.uimode != UIMode::Seq);
 	menu.addItem(54, "Paste", audioProcessor.uimode != UIMode::Seq);
-	menu.addItem(52, "Clear");
+	menu.addItem(52, audioProcessor.uimode == UIMode::Seq ? "Reset" : "Clear");
 	menu.addSeparator();
 	menu.addSubMenu("Load", load);
 	menu.addItem(1000, "About");
@@ -140,7 +140,10 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			}
 			if (result == 52) {
 				if (audioProcessor.uimode == UIMode::Seq) {
-					audioProcessor.sequencer->clear(audioProcessor.sequencer->editMode);
+					auto snap = audioProcessor.sequencer->cells;
+					audioProcessor.sequencer->clear();
+					audioProcessor.sequencer->createUndo(snap);
+					audioProcessor.sequencer->build();
 				}
 				else {
 					audioProcessor.viewPattern->clear();
