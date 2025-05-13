@@ -84,7 +84,10 @@ void Multiselect::drawHandles(Graphics& g)
     bool isCollinearY = isCollinear(selectionPoints, false);
 
     g.setColour(Colour(COLOR_SELECTION));
-    if (isCollinearX) {
+    if (isCollinearX && isCollinearY) {
+        // draw nothing
+    }
+    else if (isCollinearX) {
         g.fillRect(tmRect);g.fillRect(bmRect);
     } 
     else if (isCollinearY) {
@@ -96,7 +99,10 @@ void Multiselect::drawHandles(Graphics& g)
     }
     
     g.setColour(Colours::white);
-    if (isCollinearX) {
+    if (isCollinearX && isCollinearY) {
+        // draw nothing
+    }
+    else if (isCollinearX) {
         if (mouseHover == MouseHover::topMid) g.fillRect(tmRect);
         if (mouseHover == MouseHover::bottomMid) g.fillRect(bmRect);
     }
@@ -606,7 +612,7 @@ bool Multiselect::isCollinear(const std::vector<SelPoint>& points, bool xaxis)
 {
     if (points.size() < 2) return true;
 
-    const double EPSILON = 1e-6;
+    const double EPSILON = 1e-5;
     double firstCoord = xaxis ? points[0].x : points[0].y;
 
     for (const auto& p : points) {
