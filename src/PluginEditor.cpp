@@ -8,20 +8,17 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     : AudioProcessorEditor (&p)
     , audioProcessor (p)
 {
-    MessageManager::callAsync([this]() {
-        audioProcessor.loadSettings(); // load saved paint patterns from other plugin instances
-        setSize(audioProcessor.plugWidth, audioProcessor.plugHeight);
-        setScaleFactor(audioProcessor.scale);
-    });
+    audioProcessor.loadSettings(); // load saved paint patterns from other plugin instances
+    setResizable(true, false);
+    setResizeLimits(PLUG_WIDTH, PLUG_HEIGHT, MAX_PLUG_WIDTH, MAX_PLUG_HEIGHT);
+    setSize (audioProcessor.plugWidth, audioProcessor.plugHeight);
+    setScaleFactor(audioProcessor.scale);
 
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("grid", this);
     audioProcessor.params.addParameterListener("trigger", this);
     audioProcessor.params.addParameterListener("pattern", this);
-
-    setResizable(true, false);
-    setResizeLimits(PLUG_WIDTH, PLUG_HEIGHT, MAX_PLUG_WIDTH, MAX_PLUG_HEIGHT);
 
     auto col = PLUG_PADDING;
     auto row = PLUG_PADDING;

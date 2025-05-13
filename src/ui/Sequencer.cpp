@@ -69,7 +69,7 @@ void Sequencer::draw(Graphics& g)
     float gridx = winw / (float)grid;
 
     if (editMode == EditInvertX) {
-        g.setColour(Colour(0xff0080ff).darker(editMode == EditInvertX ? 0.0f : 0.3f).withAlpha(0.2f));
+        g.setColour(getEditModeColour(EditInvertX).withAlpha(0.2f));
         for (int i = 0; i < grid; ++i) {
             auto& cell = cells[i];
             if (cell.invertx)
@@ -100,12 +100,12 @@ void Sequencer::draw(Graphics& g)
 
 Colour Sequencer::getEditModeColour(SeqEditMode mode)
 {
-    if (mode == EditInvertX) return Colours::aqua;
+    if (mode == EditInvertX) return Colour(0xff00ffff);
     if (mode == EditMax) return Colours::white;
     if (mode == EditMin) return Colours::white;
-    if (mode == EditTension) return Colour(0xffff8080);
-    if (mode == EditTenAtt) return Colours::yellow;
-    if (mode == EditTenRel) return Colours::yellow;
+    if (mode == EditTension) return Colour(0xffffbb50).withHue(0.35f);
+    if (mode == EditTenAtt) return Colour(COLOR_ACTIVE).withHue(0.15f);
+    if (mode == EditTenRel) return Colour(COLOR_ACTIVE).withHue(0.1f);
     return Colours::white;
 }
 
