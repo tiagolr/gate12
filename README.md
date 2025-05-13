@@ -51,6 +51,7 @@
   * Pre and post waveform display
   * MIDI trigger mode
   * Audio trigger mode
+  * Sequencer and randomizer
 
 ## Download
 
