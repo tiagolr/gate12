@@ -12,7 +12,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.setColour(TextButton::buttonOnColourId, color);
 		button.setColour(TextButton::textColourOnId, Colour(COLOR_BG));
 		button.setColour(TextButton::textColourOffId, color);
-		button.setBounds(col,row,55,25);
+		button.setBounds(col,row,60,25);
 		button.onClick = [this, mode]() {
 			audioProcessor.sequencer->editMode = audioProcessor.sequencer->editMode == mode ? EditNone : mode;
 			updateButtonsState();
@@ -36,15 +36,15 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	};
 
 	int col = 0;int row = 0;
-	addButton(flipXBtn, "FlipX", col, row, EditInvertX);col += 65;
-	addButton(minBtn, "Min", col, row, EditMin);col += 65;
+	addButton(flipXBtn, "FlipX", col, row, EditInvertX);col += 70;
+	addButton(minBtn, "Min", col, row, EditMin);col += 70;
 	addButton(maxBtn, "Max", col, row, EditMax);col = 0;row = 35;
-	addButton(tenBtn, "Ten", col, row, EditTension);col += 65;
-	addButton(tenaBtn, "TAtk", col, row, EditTenAtt);col += 65;
-	addButton(tenrBtn, "TRel", col, row, EditTenRel);col += 65;
+	addButton(tenBtn, "Ten", col, row, EditTension);col += 70;
+	addButton(tenaBtn, "TAtk", col, row, EditTenAtt);col += 70;
+	addButton(tenrBtn, "TRel", col, row, EditTenRel);col += 70;
 
 	row = 0;
-	col = maxBtn.getRight() + 10;
+	col = 0; // layout during resized()
 	addToolButton(silenceBtn, col, row, 25, 25, CellShape::SSilence); col += 25;
 	addToolButton(lineBtn, col, row, 25, 25, CellShape::SLine); col += 25;
 	addToolButton(rampdnBtn, col, row, 25, 25, CellShape::SRampDn); col += 25;
@@ -55,11 +55,12 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	row = 35;
 	col = maxBtn.getRight() + 10;
 	addAndMakeVisible(randomBtn);
-	randomBtn.setTooltip("Randomize selection");
 	randomBtn.setBounds(col,row,25,25);
 	randomBtn.setAlpha(0.f);
 	randomBtn.onClick = [this]() {
+		auto snap = audioProcessor.sequencer->cells;
 		audioProcessor.sequencer->randomize(audioProcessor.sequencer->editMode, randomMin, randomMax);
+		audioProcessor.sequencer->createUndo(snap);
 	};
 
 	col += 25;
@@ -69,11 +70,12 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	randomMenuBtn.onClick = [this]() {
 		PopupMenu menu;
 		menu.addItem(1, "Random All");
+		menu.addItem(2, "Random All + Silence");
 		menu.addItem(3, "Random Silence");
-		menu.addItem(2, "Random Not Silence");
 		Point<int> pos = localPointToGlobal(randomMenuBtn.getBounds().getTopRight());
 		menu.showMenuAsync(PopupMenu::Options().withTargetScreenArea({ pos.getX(), pos.getY(), 1, 1 }), [this](int result) {
 			if (result == 1 || result == 2) {
+				auto snap = audioProcessor.sequencer->cells;
 				audioProcessor.sequencer->clear(EditMax);
 				audioProcessor.sequencer->clear(EditMin);
 				audioProcessor.sequencer->randomize(EditMax, randomMin, randomMax);
@@ -81,13 +83,15 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 				audioProcessor.sequencer->randomize(EditTenAtt, randomMin, randomMax);
 				audioProcessor.sequencer->randomize(EditTenRel, randomMin, randomMax);
 				audioProcessor.sequencer->randomize(EditInvertX, randomMin, randomMax);
-				audioProcessor.sequencer->randomize(EditSilence, randomMin, randomMax);
-				if (result == 1) {
+				if (result == 2) {
 					audioProcessor.sequencer->randomize(EditSilence, randomMin, randomMax);
 				}
+				audioProcessor.sequencer->createUndo(snap);
 			}
 			else if (result == 3) {
+				auto snap = audioProcessor.sequencer->cells;
 				audioProcessor.sequencer->randomize(EditSilence, randomMin, randomMax);
+				audioProcessor.sequencer->createUndo(snap);
 			}
 		});
 	};
@@ -105,8 +109,67 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		if (randomMin > randomMax)
 			randomRange.setMinAndMaxValues(randomMax, randomMax);
 	};
-	
+
+	addAndMakeVisible(clearBtn);
+	clearBtn.setButtonText("Clear");
+	clearBtn.setComponentID("button");
+	clearBtn.setBounds(getRight() - 60, row, 60, 25);
+	clearBtn.onClick = [this]() {
+		audioProcessor.sequencer->clear(audioProcessor.sequencer->editMode);
+	};
+
+	row = 0;
+	col = getWidth();
+
+	addAndMakeVisible(resetBtn);
+	resetBtn.setButtonText("Reset");
+	resetBtn.setComponentID("button");
+	resetBtn.setBounds(col-60,row,60,25);
+	resetBtn.onClick = [this]() {
+		auto snap = audioProcessor.sequencer->cells;
+		audioProcessor.sequencer->clear();
+		audioProcessor.sequencer->createUndo(snap);
+		audioProcessor.sequencer->build();
+	};
+
+	col -= 70;
+	addAndMakeVisible(applyBtn);
+	applyBtn.setButtonText("Apply");
+	applyBtn.setComponentID("button");
+	applyBtn.setBounds(col-60,row,60,25);
+	applyBtn.onClick = [this]() {
+		audioProcessor.sequencer->apply();
+		audioProcessor.toggleSequencerMode();
+	};
+
 	updateButtonsState();
+}
+
+void SequencerWidget::resized()
+{
+	auto row = 0;
+	auto col = getWidth();
+	resetBtn.setBounds(col-60,row,60,25);
+	col -= 70;
+	applyBtn.setBounds(col-60,row,60,25);
+
+	row = 0;
+	col = getLocalBounds().getCentreX() - 25*6/2;
+	silenceBtn.setBounds(col, row, 25, 25); col+= 25;
+	lineBtn.setBounds(col, row, 25, 25); col+= 25;
+	rampdnBtn.setBounds(col, row, 25, 25); col+= 25;
+	rampupBtn.setBounds(col, row, 25, 25); col+= 25;
+	triBtn.setBounds(col, row, 25, 25); col+= 25;
+	ptoolBtn.setBounds(col, row, 25, 25); col+= 25;
+
+	auto bounds = clearBtn.getBounds();
+	clearBtn.setBounds(bounds.withRightX(getWidth()));
+
+	randomBtn.setBounds(randomBtn.getBounds().withX(silenceBtn.getX()));
+	randomMenuBtn.setBounds(randomMenuBtn.getBounds().withX(silenceBtn.getRight()));
+	randomRange.setBounds(randomRange.getBounds()
+		.withX(randomMenuBtn.getBounds().getRight())
+		.withRight(ptoolBtn.getBounds().getRight()));
 }
 
 void SequencerWidget::updateButtonsState()
@@ -123,6 +186,10 @@ void SequencerWidget::updateButtonsState()
 	randomRange.setColour(Slider::backgroundColourId, Colour(COLOR_BG).brighter(0.1f));
 	randomRange.setColour(Slider::trackColourId, Colour(COLOR_ACTIVE).darker(0.5f));
 	randomRange.setColour(Slider::thumbColourId, Colour(COLOR_ACTIVE));
+	clearBtn.setColour(TextButton::buttonColourId, modeColor);
+	clearBtn.setColour(TextButton::buttonOnColourId, modeColor);
+	clearBtn.setColour(TextButton::textColourOnId, Colour(COLOR_BG));
+	clearBtn.setColour(TextButton::textColourOffId, modeColor);
 
 	repaint();
 }
@@ -209,13 +276,13 @@ void SequencerWidget::paint(Graphics& g)
 	g.fillEllipse(circle.translated(6.f,6.f));
 
 	// draw random menu btn
-	g.setColour(Colour(COLOR_ACTIVE));
-	bounds = randomMenuBtn.getBounds().translated(2,0).toFloat();
-	Path p; r = 5.f;
-	p.addTriangle(bounds.getCentre().translated(-r,-r),
-		bounds.getCentre().translated(0.0,r),
-		bounds.getCentre().translated(r,-r));
-	g.fillPath(p);
+	g.setColour(seq->getEditModeColour(seq->editMode));
+	bounds = randomMenuBtn.getBounds().toFloat();
+	r = 2.0f;
+	bounds = Rectangle<float>(bounds.getCentreX() - r, bounds.getCentreY()-r, r*2.f,r*2.f);
+	g.fillEllipse(bounds);
+	g.fillEllipse(bounds.translated(0.f,-r*3.f));
+	g.fillEllipse(bounds.translated(0.f,r*3.f));
 }
 
 void SequencerWidget::mouseDown(const juce::MouseEvent& e) 

@@ -53,6 +53,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     addAndMakeVisible(syncMenu);
     syncMenu.setTooltip("Tempo sync");
+    syncMenu.addSectionHeading("Tempo Sync");
     syncMenu.addItem("Rate Hz", 1);
     syncMenu.addSectionHeading("Straight");
     syncMenu.addItem("1/16", 2);
@@ -87,6 +88,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     addAndMakeVisible(triggerMenu);
     triggerMenu.setTooltip("Envelope trigger:\nSync - song playback\nMIDI - midi notes\nAudio - audio input");
+    triggerMenu.addSectionHeading("Trigger");
     triggerMenu.addItem("Sync", 1);
     triggerMenu.addItem("MIDI", 2);
     triggerMenu.addItem("Audio", 3);
@@ -167,6 +169,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     addAndMakeVisible(patSyncMenu);
     patSyncMenu.setTooltip("Changes pattern in sync with song position during playback");
+    patSyncMenu.addSectionHeading("Pattern Sync");
     patSyncMenu.addItem("Off", 1);
     patSyncMenu.addItem("1/4 Beat", 2);
     patSyncMenu.addItem("1/2 Beat", 3);
@@ -326,14 +329,14 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     col += 70;
     addAndMakeVisible(pointLabel);
-    pointLabel.setText("Point", dontSendNotification);
-    pointLabel.setColour(Label::textColourId, Colour(COLOR_NEUTRAL));
-    pointLabel.setFont(FontOptions(16.f));
-    pointLabel.setBounds(col,row,45,25);
-    col += 55;
+    pointLabel.setText("p", dontSendNotification);
+    pointLabel.setBounds(col-2,row,25,25);
+    pointLabel.setVisible(false);
+    col += 35-4;
 
     addAndMakeVisible(pointMenu);
     pointMenu.setTooltip("Point mode\nRight click points to change mode");
+    pointMenu.addSectionHeading("Point Mode");
     pointMenu.addItem("Hold", 1);
     pointMenu.addItem("Curve", 2);
     pointMenu.addItem("S-Curve", 3);
@@ -640,7 +643,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     seqWidget->setBounds(seqWidget->getBounds().withY(paintWidget->isVisible() 
         ? paintWidget->getBounds().getBottom() + 10
         : paintWidget->getBounds().getY()
-    ));
+    ).withWidth(getWidth() - PLUG_PADDING * 2));
 
     if (seqWidget->isVisible()) {
         view->setBounds(view->getBounds().withTop(seqWidget->getBottom()));
@@ -686,6 +689,10 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     );
     g.setGradientFill(grad);
     g.fillRect(bounds);
+
+    g.setColour(Colour(COLOR_NEUTRAL));
+    g.drawEllipse(pointLabel.getBounds().expanded(-2,-2).toFloat(), 1.f);
+    g.fillEllipse(pointLabel.getBounds().expanded(-10,-10).toFloat());
 
     // draw loop play button
     auto trigger = (int)audioProcessor.params.getRawParameterValue("trigger")->load();
@@ -873,6 +880,9 @@ void GATE12AudioProcessorEditor::resized()
     // view
     bounds = view->getBounds();
     view->setBounds(bounds.withWidth(getWidth()).withHeight(getHeight() - bounds.getY()));
+
+    bounds = seqWidget->getBounds();
+    seqWidget->setBounds(bounds.withWidth(getWidth() - PLUG_PADDING * 2));
 
     bounds = latencyWarning.getBounds();
     latencyWarning.setBounds(bounds

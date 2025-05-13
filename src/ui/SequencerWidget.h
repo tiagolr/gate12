@@ -10,6 +10,7 @@ class SequencerWidget : public juce::Component {
 public:
     SequencerWidget(GATE12AudioProcessor& p);
     ~SequencerWidget() override {}
+    void resized() override;
 
     TextButton minBtn;
     TextButton maxBtn;
@@ -28,6 +29,10 @@ public:
     TextButton randomBtn;
     TextButton randomMenuBtn;
     Slider randomRange;
+    TextButton clearBtn;
+
+    TextButton applyBtn;
+    TextButton resetBtn;
 
     double randomMin = 0.0;
     double randomMax = 1.0;

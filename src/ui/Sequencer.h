@@ -41,8 +41,10 @@ struct Cell {
 
 class Sequencer {
 public:
+    std::vector<Cell> cells;
     SeqEditMode editMode = SeqEditMode::EditMax;
     CellShape selectedShape = CellShape::SRampDn;
+    int patternIdx = -1;
 
     Sequencer(GATE12AudioProcessor& p);
     ~Sequencer() {}
@@ -91,7 +93,6 @@ private:
     std::vector<PPoint> line;
 
     std::vector<PPoint> backup;
-    std::vector<Cell> cells;
     std::vector<Cell> snapshot;
     Pattern* pat;
     Pattern* tmp; // temp pattern used for painting

@@ -202,11 +202,10 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
 }
 
 void GATE12AudioProcessor::setUIMode(UIMode mode)
-{   
+{
     MessageManager::callAsync([this, mode]() {
-        if (mode != UIMode::Seq && uimode == UIMode::Seq) {
+        if (mode != UIMode::Seq && uimode == UIMode::Seq)
             sequencer->close();
-        }
 
         if (mode == UIMode::Normal) {
             viewPattern = pattern;
@@ -354,6 +353,9 @@ void GATE12AudioProcessor::setCurrentProgram (int index)
 
 void GATE12AudioProcessor::loadProgram (int index)
 {
+    if (uimode == UIMode::Seq)
+        sequencer->close();
+
     currentProgram = index;
     auto loadPreset = [](Pattern& pat, int idx) {
         auto preset = Presets::getPreset(idx);
@@ -381,7 +383,7 @@ void GATE12AudioProcessor::loadProgram (int index)
         loadPreset(*pattern, index - 1);
     }
 
-    viewPattern = pattern; // exit paintEdit if on
+    setUIMode(UIMode::Normal);
     sendChangeMessage(); // UI Repaint
 }
 
@@ -846,6 +848,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         if (queuedPattern) {
             if (!playing || queuedPatternCountdown == 0) {
                 if (uimode == UIMode::Seq) {
+                    sequencer->close();
                     setUIMode(UIMode::Normal);
                 }
                 pattern = patterns[queuedPattern - 1];
@@ -1120,9 +1123,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         }
     }
 
-    if (isSeqMode) 
-        sequencer->open();
-    sendChangeMessage();
+    setUIMode(UIMode::Normal);
 }
 
 //==============================================================================

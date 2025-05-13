@@ -290,6 +290,7 @@ std::vector<Rectangle<int>> Sequencer::getSegButtons()
 void Sequencer::open()
 {
     backup = audioProcessor.pattern->points;
+    patternIdx = audioProcessor.pattern->index;
     build();
     audioProcessor.pattern->points = pat->points;
     audioProcessor.pattern->buildSegments();
@@ -297,6 +298,10 @@ void Sequencer::open()
 
 void Sequencer::close()
 {
+    if (audioProcessor.pattern->index != patternIdx)
+        return;
+
+    patternIdx = -1;
     audioProcessor.pattern->points = backup;
     audioProcessor.pattern->buildSegments();
 }
@@ -309,11 +314,35 @@ void Sequencer::clear()
     }
 }
 
+void Sequencer::clear(SeqEditMode mode)
+{
+    auto snap = cells;
+    for (auto& cell : cells) {
+        if (mode == EditMax) cell.miny = 0.0;
+        else if (mode == EditMin) cell.maxy = 1.0;
+        else if (mode == EditInvertX) cell.invertx = cell.shape == CellShape::SRampUp;
+        else if (mode == EditTenAtt) {
+            if (cell.invertx) 
+                cell.tenrel = 0.0;
+            else
+                cell.tenatt = 0.0;
+        }
+        else if (mode == EditTenRel) {
+            if (cell.invertx)
+                cell.tenatt = 0.0;
+            else
+                cell.tenrel = 0.0;
+        }
+        else if (mode == EditTension) cell.tenatt = cell.tenrel = 0.0;
+        else if (mode == EditNone) cell.miny = 0.0;
+    }
+    createUndo(snap);
+    build();
+}
+
 void Sequencer::apply()
 {
-    auto snap = audioProcessor.pattern->points;
-    audioProcessor.pattern->points = backup;
-    audioProcessor.createUndoPointFromSnapshot(snap);
+    audioProcessor.createUndoPointFromSnapshot(backup);
     backup = pat->points;
 }
 
@@ -393,20 +422,6 @@ void Sequencer::rotateLeft()
     int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
     std::rotate(cells.begin(), cells.begin() + 1, cells.begin() + grid);
     createUndo(snapshot);
-    build();
-}
-
-void Sequencer::clear(SeqEditMode mode)
-{
-    for (auto& cell : cells) {
-        if (mode == EditMax) cell.miny = 0.0;
-        else if (mode == EditMin) cell.maxy = 1.0;
-        else if (mode == EditInvertX) cell.invertx = cell.shape == CellShape::SRampUp;
-        else if (mode == EditTenAtt) cell.tenatt = 0.0;
-        else if (mode == EditTenRel) cell.tenrel = 0.0;
-        else if (mode == EditTension) cell.tenatt = cell.tenrel = 0.0;
-        else if (mode == EditNone) cell.miny = 0.0;
-    }
     build();
 }
 

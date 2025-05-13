@@ -38,20 +38,23 @@ void CustomLookAndFeel::drawButtonBackground (Graphics& g, Button& button, const
 
     if (tag == "button") {
         g.setColour(backgroundColour);
-        if (button.getToggleState()) {
+        //if (isMouseOverButton)
+        //    g.setColour(backgroundColour.darker(0.2f));
+        //if (isButtonDown) 
+        //    g.setColour(backgroundColour.darker(0.4f));
+        if (button.getToggleState())
             g.fillRoundedRectangle(bounds, cornerSize);
-        }
-        else {
+        else
             g.drawRoundedRectangle(bounds.reduced(0.5, 0.5), cornerSize, 1.0f);
+
+        if (isMouseOverButton) {
+            g.setColour(Colours::black.withAlpha(0.2f));
+            g.fillRoundedRectangle(bounds.expanded(1,1), cornerSize);
         }
-        //if (isButtonDown) {
-        //    g.setColour(Colours::black.withAlpha(0.1f));
-        //    g.fillRoundedRectangle(bounds, cornerSize);
-        //}
-        //else if (isMouseOverButton) {
-        //    g.setColour(backgroundColour.withAlpha(0.1f));
-        //    g.fillRoundedRectangle(bounds, cornerSize);
-        //}
+        if (isButtonDown) {
+            g.setColour(Colours::black.withAlpha(0.4f));
+            g.fillRoundedRectangle(bounds.expanded(1,1), cornerSize);
+        }
 
         return;
     }
