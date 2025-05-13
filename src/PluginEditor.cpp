@@ -541,7 +541,8 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
 void GATE12AudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* source)
 {
     (void)source;
-    toggleUIComponents();
+
+    MessageManager::callAsync([this] { toggleUIComponents(); });
 }
 
 void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
@@ -553,7 +554,7 @@ void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameter
         audioProcessor.sequencer->build();
     }
 
-    toggleUIComponents();
+    MessageManager::callAsync([this]() { toggleUIComponents(); });
 };
 
 void GATE12AudioProcessorEditor::toggleUIComponents()
