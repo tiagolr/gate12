@@ -26,9 +26,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	options.addItem(31, "Dual tension", true, audioProcessor.dualTension);
 
 	PopupMenu load;
-	load.addItem(100, "Sine");
-	load.addItem(101, "Triangle");
-	load.addItem(102, "Random");
+	load.addItem(100, "Sine", audioProcessor.uimode != UIMode::Seq);
+	load.addItem(101, "Triangle", audioProcessor.uimode != UIMode::Seq);
+	load.addItem(102, "Random", audioProcessor.uimode != UIMode::Seq);
 	load.addSeparator();
 	load.addItem(109, "Init");
 
