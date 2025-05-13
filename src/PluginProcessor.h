@@ -90,7 +90,7 @@ class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioPro
 public:
     static constexpr int GRID_SIZES[] = {
         4, 8, 16, 32, 64, // Straight
-        12, 24, 48,  // Triplet
+        6, 12, 24, 48,  // Triplet
     };
 
     // Plugin settings

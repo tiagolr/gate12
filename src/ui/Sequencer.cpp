@@ -203,7 +203,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     int seg = jlimit(0, SEQ_MAX_CELLS-1, (int)(x * grid));
 
     if (isSnapping(e)) {
-        auto snapy = grid%12 == 0 ? 12.0 : 16.0;
+        auto snapy = grid % 6 == 0 ? 12.0 : 16.0;
         y = std::round(y * snapy) / snapy;
     }
 

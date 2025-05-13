@@ -38,9 +38,10 @@ void GridSelector::mouseDown(const juce::MouseEvent& e)
     menu.addItem(4, "32");
     menu.addItem(5, "64");
     menu.addSectionHeader("Triplet");
-    menu.addItem(6, "12");
-    menu.addItem(7, "24");
-    menu.addItem(8, "48");
+    menu.addItem(6, "6");
+    menu.addItem(7, "12");
+    menu.addItem(8, "24");
+    menu.addItem(9, "48");
 
     auto menuPos = localPointToGlobal(getLocalBounds().getBottomLeft());
 
