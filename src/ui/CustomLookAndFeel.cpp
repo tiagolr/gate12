@@ -86,3 +86,44 @@ void CustomLookAndFeel::drawButtonBackground (Graphics& g, Button& button, const
     g.setColour(backgroundColour);
     g.fillPath(path);
 }
+
+void CustomLookAndFeel::drawComboBox(Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, ComboBox& box)
+{
+    (void)buttonX;
+    (void)buttonY;
+    (void)buttonH;
+    (void)buttonW;
+    (void)isButtonDown;
+
+    auto cornerSize = 3.0f;
+    Rectangle<int> boxBounds (0, 0, width, height);
+
+    g.setColour (box.findColour (ComboBox::backgroundColourId));
+    g.fillRoundedRectangle (boxBounds.toFloat(), cornerSize);
+
+    g.setColour (box.findColour (ComboBox::outlineColourId));
+    g.drawRoundedRectangle (boxBounds.toFloat().reduced (0.5f, 0.5f), cornerSize, 1.0f);
+
+    auto arrowZone = Rectangle<int>(width - 20, 0, 20, height).translated(-2,0).toFloat();
+    Path path;
+    auto r = 4.0f;
+    //path.addTriangle({arrowZone.getCentreX() - r, arrowZone.getCentreY() - r},
+    //    {arrowZone.getCentreX(), arrowZone.getCentreY() + r},
+    //    {arrowZone.getCentreX() + r, arrowZone.getCentreY() - r}
+    //);
+    path.startNewSubPath({arrowZone.getCentreX() - r, arrowZone.getCentreY() - r/2});
+    path.lineTo(arrowZone.getCentreX(), arrowZone.getCentreY() + r/2);
+    path.lineTo(arrowZone.getCentreX() + r, arrowZone.getCentreY() - r/2);
+
+    g.setColour (box.findColour (ComboBox::arrowColourId).withAlpha ((box.isEnabled() ? 0.9f : 0.2f)));
+    g.strokePath (path, PathStrokeType(2.f));
+}
+
+void CustomLookAndFeel::positionComboBoxText (ComboBox& box, Label& label)
+{
+    label.setBounds (1, 1,
+        box.getWidth() - 20,
+        box.getHeight() - 2);
+
+    label.setFont (getComboBoxFont (box));
+}

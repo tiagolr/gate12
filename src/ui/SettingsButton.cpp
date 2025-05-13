@@ -194,17 +194,12 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 
 void SettingsButton::paint(Graphics& g) 
 {
-	auto bounds = getLocalBounds();
-	bounds.removeFromTop(4);
-	bounds.removeFromBottom(4);
-	auto middle = bounds.expanded(0,0);
-	auto h = bounds.getHeight();
-	auto thick = 3;
+	auto r = 2.f;
+	auto bounds = getLocalBounds().toFloat();
+	auto centre = Rectangle<float>(bounds.getCentreX()-r, bounds.getCentreY()-r, r*2, r*2);
 	g.setColour(Colour(globals::COLOR_ACTIVE));
-	g.fillRoundedRectangle(bounds.removeFromBottom(thick).toFloat(), 2.f);
-	g.fillRoundedRectangle(bounds.removeFromTop(thick).toFloat(), 2.f);
-	middle.removeFromBottom(h/2 - thick/2);
-	middle.removeFromTop(h/2 - thick/2);
-	g.fillRoundedRectangle(middle.toFloat(), 2.f);
+	g.fillEllipse(centre);
+	g.fillEllipse(centre.translated(0,-6.f));
+	g.fillEllipse(centre.translated(0,6.f));
 };
 

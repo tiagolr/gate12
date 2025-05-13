@@ -79,9 +79,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(triggerLabel);
     triggerLabel.setColour(juce::Label::ColourIds::textColourId, Colour(COLOR_NEUTRAL_LIGHT));
     triggerLabel.setFont(FontOptions(16.0f));
+    triggerLabel.setJustificationType(Justification::centredRight);
     triggerLabel.setText("Trigger", NotificationType::dontSendNotification);
     triggerLabel.setBounds(col, row, 60, 25);
-    col += 70-5;
+    col += 70;
 
     addAndMakeVisible(triggerMenu);
     triggerMenu.setTooltip("Envelope trigger:\nSync - song playback\nMIDI - midi notes\nAudio - audio input");
@@ -89,20 +90,20 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     triggerMenu.addItem("Sync", 1);
     triggerMenu.addItem("MIDI", 2);
     triggerMenu.addItem("Audio", 3);
-    triggerMenu.setBounds(col, row, 80, 25);
+    triggerMenu.setBounds(col, row, 75, 25);
     triggerAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "trigger", triggerMenu);
-    col += 90;
+    col += 85;
 
     addAndMakeVisible(algoMenu);
     algoMenu.setTooltip("Algorithm used for transient detection");
     algoMenu.addItem("Simple", 1);
     algoMenu.addItem("Drums", 2);
-    algoMenu.setBounds(col,row,90,25);
+    algoMenu.setBounds(col,row,75,25);
     algoMenu.setColour(ComboBox::arrowColourId, Colour(COLOR_AUDIO));
     algoMenu.setColour(ComboBox::textColourId, Colour(COLOR_AUDIO));
     algoMenu.setColour(ComboBox::outlineColourId, Colour(COLOR_AUDIO));
     algoAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "algo", algoMenu);
-    col += 100;
+    col += 85;
 
     addAndMakeVisible(audioSettingsButton);
     audioSettingsButton.setBounds(col, row, 25, 25);
@@ -121,9 +122,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
     settingsButton->toggleUIComponents = [this]() { toggleUIComponents(); };
     settingsButton->toggleAbout = [this]() { about.get()->setVisible(true); };
-    settingsButton->setBounds(col-25,row,25,25);
+    settingsButton->setBounds(col-25,row,10,25);
 
-    col -= 35;
+    col -= 20;
     mixDial = std::make_unique<TextDial>(p, "mix", "Mix ", "", TextDialLabel::tdPercx100, 16.f, COLOR_NEUTRAL_LIGHT);
     addAndMakeVisible(*mixDial);
     mixDial->setBounds(col - 65, row, 65, 25);
@@ -155,14 +156,15 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         addAndMakeVisible(*btn);
         patterns.push_back(std::move(btn));
     }
-    col += 274;
+    col += 265 + 10;
 
     addAndMakeVisible(patSyncLabel);
     patSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(COLOR_NEUTRAL_LIGHT));
     patSyncLabel.setFont(FontOptions(16.0f));
     patSyncLabel.setText("Pat. Sync", NotificationType::dontSendNotification);
-    patSyncLabel.setBounds(col, row, 70, 25);
-    col += 75;
+    patSyncLabel.setJustificationType(Justification::centred);
+    patSyncLabel.setBounds(col, row, 80, 25);
+    col += 90;
 
     addAndMakeVisible(patSyncMenu);
     patSyncMenu.setTooltip("Changes pattern in sync with song position during playback");
@@ -173,7 +175,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     patSyncMenu.addItem("1 Beat", 4);
     patSyncMenu.addItem("2 Beats", 5);
     patSyncMenu.addItem("4 Beats", 6);
-    patSyncMenu.setBounds(col, row, 90, 25);
+    patSyncMenu.setBounds(col, row, 75, 25);
     patSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "patsync", patSyncMenu);
 
     // KNOBS ROW
@@ -300,7 +302,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(paintButton);
     paintButton.setButtonText("Paint");
     paintButton.setComponentID("button");
-    paintButton.setBounds(col, row, 60, 25);
+    paintButton.setBounds(col, row, 75, 25);
     paintButton.onClick = [this]() {
         if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Paint) {
             audioProcessor.setUIMode(UIMode::Normal);
@@ -309,12 +311,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
             audioProcessor.togglePaintMode();
         }
     };
-    col += 70;
+    col += 85;
 
     addAndMakeVisible(sequencerButton);
     sequencerButton.setButtonText("Seq");
     sequencerButton.setComponentID("button");
-    sequencerButton.setBounds(col, row, 60, 25);
+    sequencerButton.setBounds(col, row, 75, 25);
     sequencerButton.onClick = [this]() {
         if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Seq) {
             audioProcessor.setUIMode(UIMode::Normal);
@@ -324,7 +326,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         }
     };
 
-    col += 70;
+    col += 85;
     addAndMakeVisible(pointLabel);
     pointLabel.setText("p", dontSendNotification);
     pointLabel.setBounds(col-2,row,25,25);
@@ -342,9 +344,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     pointMenu.addItem("Triangle", 6);
     pointMenu.addItem("Stairs", 7);
     pointMenu.addItem("Smooth St", 8);
-    pointMenu.setBounds(col, row, 90, 25);
+    pointMenu.setBounds(col, row, 75, 25);
     pointAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "point", pointMenu);
-    col += 100;
+    col += 85;
 
     addAndMakeVisible(loopButton);
     loopButton.setTooltip("Toggle continuous play");
