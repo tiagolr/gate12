@@ -106,6 +106,11 @@ public:
     bool useMonitor = false;
     bool useSidechain = false;
     bool audioIgnoreHitsWhilePlaying = false;
+    int outputCC = 0; // output CC, 0 is off, channel is outputCC - 1
+    int outputCCChan = 0; // output CC channel, 0 is channel 1
+    int outputATMIDI = 0; // audio trigger midi note output, 0 is off, 60 is C4
+    bool bipolarCC = false;
+    bool outputCV = false;
     int paintTool = 0; // index of pattern used for paint mode
     int paintPage = 0;
 

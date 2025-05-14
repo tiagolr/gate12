@@ -794,7 +794,12 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         for (int channel = 0; channel < audioOutputs; ++channel) {
             auto wet = (channel == 0 ? lsample : rsample) * env;
             auto dry = (double)buffer.getSample(channel, sampIdx);
-            buffer.setSample(channel, sampIdx, static_cast<FloatType>(wet * mix + dry * (1.0 - mix)));
+            if (outputCV) {
+                buffer.setSample(channel, sampIdx, static_cast<FloatType>(env));
+            }
+            else {
+                buffer.setSample(channel, sampIdx, static_cast<FloatType>(wet * mix + dry * (1.0 - mix)));
+            }
         }
     };
 
@@ -820,6 +825,15 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 message.getChannel() - 1
             });
         }
+    }
+    midiMessages.clear();
+
+    // update outputs with last block information at the start of the new block
+    if (outputCC > 0) {
+        auto val = (int)std::round(ypos*127.0);
+        if (bipolarCC) val -= 64;
+        auto cc = MidiMessage::controllerEvent(outputCCChan + 1, outputCC-1, val);
+        midiMessages.addEvent(cc, 0);
     }
 
     for (int sample = 0; sample < numSamples; ++sample) {
@@ -1065,6 +1079,11 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("triggerChn",triggerChn, nullptr);
     state.setProperty("useMonitor",useMonitor, nullptr);
     state.setProperty("useSidechain",useSidechain, nullptr);
+    state.setProperty("outputCC", outputCC, nullptr);
+    state.setProperty("outputCCChan", outputCCChan, nullptr);
+    state.setProperty("outputCV", outputCV, nullptr);
+    state.setProperty("outputATMIDI", outputATMIDI, nullptr);
+    state.setProperty("bipolarCC", bipolarCC, nullptr);
     state.setProperty("paintTool", paintTool, nullptr);
     state.setProperty("paintPage", paintPage, nullptr);
     state.setProperty("audioIgnoreHitsWhilePlaying", audioIgnoreHitsWhilePlaying, nullptr);
@@ -1105,6 +1124,11 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         triggerChn = (int)state.getProperty("triggerChn");
         useMonitor = (bool)state.getProperty("useMonitor");
         useSidechain = (bool)state.getProperty("useSidechain");
+        outputCC = (int)state.getProperty("outputCC");
+        outputCCChan = (int)state.getProperty("outputCCChan");
+        bipolarCC = (bool)state.getProperty("bipolarCC");
+        outputCV = (bool)state.getProperty("outputCV");
+        outputATMIDI = (int)state.getProperty("outputATMIDI");
         paintTool = (int)state.getProperty("paintTool");
         paintPage = (int)state.getProperty("paintPage");
         audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");

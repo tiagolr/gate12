@@ -95,6 +95,7 @@ void Rotary::mouseDown(const juce::MouseEvent& e)
     setMouseCursor(MouseCursor::NoCursor);
     start_mouse_pos = Desktop::getInstance().getMousePosition();
     repaint();
+    param->beginChangeGesture();
 }
 
 void Rotary::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
@@ -117,14 +118,14 @@ void Rotary::mouseUp(const juce::MouseEvent& e) {
     e.source.enableUnboundedMouseMovement(false);
     Desktop::getInstance().setMousePosition(start_mouse_pos);
     repaint();
+    auto param = audioProcessor.params.getParameter(paramId);
+    param->endChangeGesture();
 }
 
 void Rotary::mouseDoubleClick(const juce::MouseEvent& e) {
     (void)e;
     auto param = audioProcessor.params.getParameter(paramId);
-    param->beginChangeGesture();
     param->setValueNotifyingHost(param->getDefaultValue());
-    param->endChangeGesture();
 }
 
 void Rotary::mouseDrag(const juce::MouseEvent& e) {
@@ -134,9 +135,7 @@ void Rotary::mouseDrag(const juce::MouseEvent& e) {
     auto slider_change = float(change.getX() - change.getY()) / speed;
     cur_normed_value += slider_change;
     auto param = audioProcessor.params.getParameter(paramId);
-    param->beginChangeGesture();
     param->setValueNotifyingHost(cur_normed_value);
-    param->endChangeGesture();
 }
 
 void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {

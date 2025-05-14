@@ -38,10 +38,6 @@ void CustomLookAndFeel::drawButtonBackground (Graphics& g, Button& button, const
 
     if (tag == "button") {
         g.setColour(backgroundColour);
-        //if (isMouseOverButton)
-        //    g.setColour(backgroundColour.darker(0.2f));
-        //if (isButtonDown) 
-        //    g.setColour(backgroundColour.darker(0.4f));
         if (button.getToggleState())
             g.fillRoundedRectangle(bounds, cornerSize);
         else
@@ -70,11 +66,9 @@ void CustomLookAndFeel::drawButtonBackground (Graphics& g, Button& button, const
     juce::Path path;
 
     if (roundLeft && roundRight) {
-        // If somehow both, just a full rounded rect
         path.addRoundedRectangle(bounds, 0.0f);
     }
     else {
-        // Custom corner rounding
         float topLeft = roundLeft ? cornerSize : 0.0f;
         float topRight = roundRight ? cornerSize : 0.0f;
         float bottomLeft = roundLeft ? cornerSize : 0.0f;
@@ -104,13 +98,9 @@ void CustomLookAndFeel::drawComboBox(Graphics& g, int width, int height, bool is
     g.setColour (box.findColour (ComboBox::outlineColourId));
     g.drawRoundedRectangle (boxBounds.toFloat().reduced (0.5f, 0.5f), cornerSize, 1.0f);
 
-    auto arrowZone = Rectangle<int>(width - 20, 0, 20, height).translated(-2,0).toFloat();
+    auto arrowZone = Rectangle<int>(width - 20, 0, 20, height).translated(-3,0).toFloat();
     Path path;
     auto r = 4.0f;
-    //path.addTriangle({arrowZone.getCentreX() - r, arrowZone.getCentreY() - r},
-    //    {arrowZone.getCentreX(), arrowZone.getCentreY() + r},
-    //    {arrowZone.getCentreX() + r, arrowZone.getCentreY() - r}
-    //);
     path.startNewSubPath({arrowZone.getCentreX() - r, arrowZone.getCentreY() - r/2});
     path.lineTo(arrowZone.getCentreX(), arrowZone.getCentreY() + r/2);
     path.lineTo(arrowZone.getCentreX() + r, arrowZone.getCentreY() - r/2);

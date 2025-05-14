@@ -36,6 +36,7 @@ void TextDial::mouseDown(const juce::MouseEvent& e)
     cur_normed_value = param->getValue();
     last_mouse_position = e.getPosition();
     setMouseCursor(MouseCursor::NoCursor);
+    param->beginChangeGesture();
 }
 
 void TextDial::mouseUp(const juce::MouseEvent& e) {
@@ -43,6 +44,8 @@ void TextDial::mouseUp(const juce::MouseEvent& e) {
     setMouseCursor(MouseCursor::NormalCursor);
     e.source.enableUnboundedMouseMovement(false);
     Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
+    auto param = audioProcessor.params.getParameter(paramId);
+    param->endChangeGesture();
 }
 
 void TextDial::mouseDrag(const juce::MouseEvent& e) {
@@ -53,9 +56,8 @@ void TextDial::mouseDrag(const juce::MouseEvent& e) {
     cur_normed_value += slider_change;
     cur_normed_value = jlimit(0.0f, 1.0f, cur_normed_value);
     auto param = audioProcessor.params.getParameter(paramId);
-    param->beginChangeGesture();
+    
     param->setValueNotifyingHost(cur_normed_value);
-    param->endChangeGesture();
 }
 
 void TextDial::mouseDoubleClick(const juce::MouseEvent& e)
