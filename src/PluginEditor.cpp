@@ -122,7 +122,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
     settingsButton->toggleUIComponents = [this]() { toggleUIComponents(); };
     settingsButton->toggleAbout = [this]() { about.get()->setVisible(true); };
-    settingsButton->setBounds(col-15,row,15,25);
+    settingsButton->setBounds(col-15,row,25,25);
 
     col -= 25;
     mixDial = std::make_unique<TextDial>(p, "mix", "Mix ", "", TextDialLabel::tdPercx100, 16.f, COLOR_NEUTRAL_LIGHT);

@@ -408,7 +408,7 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     (void)samplesPerBlock;
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     setLatencySamples(trigger == Trigger::Audio 
-        ? static_cast<int>(sampleRate * 0.004) 
+        ? static_cast<int>(sampleRate * LATENCY_MILLIS / 1000.0) 
         : 0
     );
     lpFilterL.clear(0.0);

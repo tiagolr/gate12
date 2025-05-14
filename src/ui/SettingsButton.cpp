@@ -246,12 +246,11 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 
 void SettingsButton::paint(Graphics& g) 
 {
-	auto r = 2.f;
-	auto bounds = getLocalBounds().toFloat();
-	auto centre = Rectangle<float>(bounds.getCentreX()-r, bounds.getCentreY()-r, r*2, r*2);
+	auto r = 1.5f;
+	auto bounds = getLocalBounds().expanded(-2,-4).toFloat();
 	g.setColour(Colour(globals::COLOR_ACTIVE));
-	g.fillEllipse(centre);
-	g.fillEllipse(centre.translated(0,-6.f));
-	g.fillEllipse(centre.translated(0,6.f));
+	g.fillRoundedRectangle(bounds.getX(), bounds.getY(), bounds.getWidth(), r * 2, 2.f);
+	g.fillRoundedRectangle(bounds.getX(), bounds.getCentreY() - r, bounds.getWidth(), r*2, 2.f);
+	g.fillRoundedRectangle(bounds.getX(), bounds.getBottom() - r*2, bounds.getWidth(), r*2, 2.f);
 };
 

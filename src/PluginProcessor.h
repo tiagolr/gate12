@@ -90,7 +90,7 @@ public:
 //==============================================================================
 /**
 */
-class GATE12AudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorParameter::Listener, public juce::ChangeBroadcaster
+class GATE12AudioProcessor  : public AudioProcessor, public AudioProcessorParameter::Listener, public ChangeBroadcaster
 {
 public:
     static constexpr int GRID_SIZES[] = {
@@ -230,17 +230,17 @@ public:
     void queuePattern(int patidx);
 
     //==============================================================================
-    void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock (AudioBuffer<double>&, MidiBuffer&) override;
+    void processBlock (AudioBuffer<float>&, MidiBuffer&) override;
     template <typename FloatType>
     void processBlockByType(AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages);
 
     //==============================================================================
-    juce::AudioProcessorEditor* createEditor() override;
+    AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
     //==============================================================================
-    const juce::String getName() const override;
+    const String getName() const override;
     bool acceptsMidi() const override;
     bool producesMidi() const override;
     bool isMidiEffect() const override;
@@ -251,17 +251,18 @@ public:
     int getCurrentProgram() override;
     void setCurrentProgram (int index) override;
     void loadProgram(int index);
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+    const String getProgramName (int index) override;
+    void changeProgramName (int index, const String& newName) override;
 
     //==============================================================================
-    void getStateInformation (juce::MemoryBlock& destData) override;
+    void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //=========================================================
 
-    juce::AudioProcessorValueTreeState params;
-    juce::UndoManager undoManager;
+    AudioProcessorValueTreeState params;
+    std::unique_ptr<ValueTree> internalParams;
+    UndoManager undoManager;
 
 private:
     Pattern* patterns[12]; // audio process patterns
@@ -269,7 +270,7 @@ private:
     Transient transDetectorL;
     Transient transDetectorR;
     bool paramChanged = false; // flag that triggers on any param change
-    juce::ApplicationProperties settings;
+    ApplicationProperties settings;
     std::vector<MidiInMsg> midiIn; // midi buffer used to process midi messages offset
     std::vector<MidiOutMsg> midiOut;
 
