@@ -15,6 +15,7 @@ enum CellShape {
     STri,
     SLine,
     SPTool,
+    SLink,
 };
 
 enum SeqEditMode {
@@ -43,7 +44,7 @@ class Sequencer {
 public:
     std::vector<Cell> cells;
     SeqEditMode editMode = SeqEditMode::EditMax;
-    CellShape selectedShape = CellShape::SRampDn;
+    CellShape selectedShape = CellShape::SLink;
     int patternIdx = -1;
 
     Sequencer(GATE12AudioProcessor& p);
@@ -103,6 +104,7 @@ private:
     GATE12AudioProcessor& audioProcessor;
 
     bool isSnapping(const MouseEvent& e);
-    std::vector<PPoint> removeCollinearPoints(const std::vector<PPoint>& pts);
+    void processLinkCells(std::vector<PPoint>& pts, int grid);
+    std::vector<PPoint> removeCollinearPoints(std::vector<PPoint>& pts);
     bool compareCells(const std::vector<Cell>& a, const std::vector<Cell>& b);
 };
