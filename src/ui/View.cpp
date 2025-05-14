@@ -639,7 +639,7 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         px = double(px - winx) / (double)winw;
         py = double(py - winy) / (double)winh;
         if (px >= 0 && px <= 1 && py >= 0 && py <= 1) { // point in env window
-            audioProcessor.viewPattern->insertPoint(px, py, 0, (int)audioProcessor.params.getRawParameterValue("point")->load());
+            audioProcessor.viewPattern->insertPoint(px, py, 0, audioProcessor.pointMode);
             audioProcessor.viewPattern->sortPoints(); // keep things consistent, avoids reorders later
         }
     }
