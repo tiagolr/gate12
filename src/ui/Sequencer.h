@@ -9,6 +9,7 @@ using namespace globals;
 class GATE12AudioProcessor;
 
 enum CellShape {
+    SNone,
     SSilence,
     SRampUp,
     SRampDn,
@@ -19,7 +20,6 @@ enum CellShape {
 };
 
 enum SeqEditMode {
-    EditNone,
     EditMin,
     EditMax,
     EditTension,
@@ -44,7 +44,7 @@ class Sequencer {
 public:
     std::vector<Cell> cells;
     SeqEditMode editMode = SeqEditMode::EditMax;
-    CellShape selectedShape = CellShape::SLink;
+    CellShape selectedShape = CellShape::SRampDn;
     int patternIdx = -1;
 
     Sequencer(GATE12AudioProcessor& p);

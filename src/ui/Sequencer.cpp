@@ -56,10 +56,19 @@ void Sequencer::draw(Graphics& g)
             auto& button = buttons[i];
             auto l = button.expanded(-button.getWidth()/4,0).toFloat();
             g.drawLine(l.getX(), l.getCentreY(), l.getRight(), l.getCentreY(), 2.f);
+
+            if (cell.shape == SLink) {
+                auto r = 5.f;
+                Path p;
+                p.startNewSubPath(l.getRight() - r, l.getCentreY() - r);
+                p.lineTo(l.getRight(), l.getCentreY());
+                p.lineTo(l.getRight()-r, l.getCentreY()+r);
+                g.strokePath(p, PathStrokeType(2.0f));
+            }
         }
     }
 
-    if (editMode == EditMax || editMode == EditMin || editMode == EditNone)
+    if (editMode == EditMax || editMode == EditMin)
         return;
 
     g.setColour(Colours::black.withAlpha(0.25f));
@@ -221,7 +230,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
         return;
     }
 
-    if (editMode == EditMin || editMode == EditMax || editMode == EditNone) {
+    if ((editMode == EditMin || editMode == EditMax) && selectedShape != SNone) {
         if (isDrag && cell.shape == SSilence) {
             return; // ignore cell when dragging over silence cell
         }
@@ -346,7 +355,6 @@ void Sequencer::clear(SeqEditMode mode)
                 cell.tenrel = 0.0;
         }
         else if (mode == EditTension) cell.tenatt = cell.tenrel = 0.0;
-        else if (mode == EditNone) cell.miny = 0.0;
     }
     createUndo(snap);
     build();
@@ -563,7 +571,7 @@ void Sequencer::randomize(SeqEditMode mode, double min, double max)
             else cell.tenrel = (value * 2 - 1) * -1;
         }
         else if (mode == EditTension) cell.tenrel = cell.tenatt = (value * 2 - 1) * -1;
-        else if (mode == EditMax || mode == EditNone) cell.miny = std::min(1.0 - value, cell.maxy);
+        else if (mode == EditMax) cell.miny = std::min(1.0 - value, cell.maxy);
         else if (mode == EditMin) cell.maxy = std::max(1.0 - value, cell.miny);
         else if (mode == EditInvertX) cell.invertx = flag;
         else if (mode == EditSilence) {
