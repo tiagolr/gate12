@@ -104,6 +104,7 @@ public:
     int plugHeight = PLUG_HEIGHT;
 
     // Instance Settings
+    int currentProgram = -1;
     bool alwaysPlaying = false;
     bool dualSmooth = true; // use either single smooth or attack and release
     bool dualTension = false;
@@ -126,7 +127,6 @@ public:
     Sequencer* sequencer;
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
-    int currentProgram = -1;
     double xpos = 0.0; // envelope x pos (0..1)
     double ypos = 0.0; // envelope y pos (0..1)
     double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play

@@ -340,7 +340,7 @@ int GATE12AudioProcessor::getNumPrograms()
 
 int GATE12AudioProcessor::getCurrentProgram()
 {
-    return currentProgram;
+    return currentProgram == -1 ? 0 : currentProgram;
 }
 
 void GATE12AudioProcessor::setCurrentProgram (int index)
