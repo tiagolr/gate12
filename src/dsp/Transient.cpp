@@ -43,7 +43,8 @@ bool Transient::detectSimple(double sample, double thres, double sense)
 	if (cooldown)
 		cooldown -= 1; 
 
-    return !cooldown && diff > sense && std::fabs(sample) > thres;
+	hit = !cooldown && diff > sense && std::fabs(sample) > thres;
+    return hit;
 }
 
 bool Transient::detectDrums(double sample, double thres, double sense)
@@ -63,5 +64,6 @@ bool Transient::detectDrums(double sample, double thres, double sense)
 	if (cooldown)
 		cooldown -= 1;
 
-	return !cooldown && diff > sense && std::fabs(sample) > thres;
+	hit = !cooldown && diff > sense && std::fabs(sample) > thres;
+	return hit;
 }

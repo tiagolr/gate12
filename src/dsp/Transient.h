@@ -19,6 +19,7 @@ public:
 	void clear(double srate);
 	
 	int cooldown = 0; // prevent triggers during cooldown (in samples)
+	bool hit = false;
 
 private:
 	// simple/envelope algo

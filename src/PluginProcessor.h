@@ -21,12 +21,17 @@
 
 using namespace globals;
 
-struct MIDIMsg {
+struct MidiInMsg {
     int offset;
     int isNoteon;
     int note;
     int vel;
     int channel;
+};
+
+struct MidiOutMsg {
+    MidiMessage msg;
+    int offset;
 };
 
 enum Trigger {
@@ -264,7 +269,8 @@ private:
     Transient transDetectorR;
     bool paramChanged = false; // flag that triggers on any param change
     juce::ApplicationProperties settings;
-    std::vector<MIDIMsg> midi; // midi buffer used to process midi messages offset
+    std::vector<MidiInMsg> midiIn; // midi buffer used to process midi messages offset
+    std::vector<MidiOutMsg> midiOut;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GATE12AudioProcessor)

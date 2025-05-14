@@ -694,6 +694,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 {
     juce::ScopedNoDenormals disableDenormals;
     double srate = getSampleRate();
+    int sblock = getBlockSize();
     bool looping = false;
     double loopStart = 0.0;
     double loopEnd = 0.0;
@@ -803,11 +804,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
     };
 
-    // remove midi messages that have been processed
-    midi.erase(std::remove_if(midi.begin(), midi.end(), [](const MIDIMsg& msg) {
-        return msg.offset < 0;
-    }), midi.end());
-
     if (paramChanged) {
         onSlider();
         paramChanged = false;
@@ -817,7 +813,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     for (const auto metadata : midiMessages) {
         juce::MidiMessage message = metadata.getMessage();
         if (message.isNoteOn() || message.isNoteOff()) {
-            midi.push_back({ // queue midi message
+            midiIn.push_back({ // queue midi message
                 metadata.samplePosition,
                 message.isNoteOn(),
                 message.getNoteNumber(),
@@ -827,6 +823,25 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         }
     }
     midiMessages.clear();
+
+    // Process midi out queue
+    for (auto it = midiOut.begin(); it != midiOut.end();) {
+        auto& [msg, offset] = *it;
+
+        if (offset < sblock) {
+            midiMessages.addEvent(msg, offset);
+            it = midiOut.erase(it);
+        }
+        else {
+            offset -= sblock;
+            ++it;
+        }
+    }
+
+    // remove midi in messages that have been processed
+    midiIn.erase(std::remove_if(midiIn.begin(), midiIn.end(), [](const MidiInMsg& msg) {
+        return msg.offset < 0;
+    }), midiIn.end());
 
     // update outputs with last block information at the start of the new block
     if (outputCC > 0) {
@@ -842,8 +857,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             ratePos = beatPos * secondsPerBeat * ratehz;
         }
 
-        // process midi queue
-        for (auto& msg : midi) {
+        // process midi in queue
+        for (auto& msg : midiIn) {
             if (msg.offset == 0) {
                 if (msg.isNoteon) {
                     if (msg.channel == triggerChn || triggerChn == 16) {
@@ -972,7 +987,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 transDetectorR.startCooldown();
                 int offset = (int)(params.getRawParameterValue("offset")->load() * LATENCY_MILLIS / 1000.f * srate);
                 audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
-                hitamp = std::max(std::fabs(monSampleL), std::fabs(monSampleR));
+                hitamp = transDetectorL.hit ? std::fabs(monSampleL) : std::fabs(monSampleR);
             }
 
             // read the sample 'latency' samples ago
@@ -998,6 +1013,24 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             trigpos += inc;
             trigposSinceHit += inc;
             xpos -= std::floor(xpos);
+
+            // send output midi notes on audio trigger hit
+            if (hit && outputATMIDI > 0) {
+                auto noteOn = MidiMessage::noteOn(1, outputATMIDI - 1, (float)hitamp);
+                midiMessages.addEvent(noteOn, sample);
+
+                auto offnoteDelay = static_cast<int>(srate * AUDIO_NOTE_LENGTH_MILLIS / 1000.0);
+                int noteOffSample = sample + offnoteDelay;
+                auto noteOff = MidiMessage::noteOff(1, outputATMIDI - 1);
+
+                if (noteOffSample < sblock) {
+                    midiMessages.addEvent(noteOff, noteOffSample);
+                }
+                else {
+                    int offset = noteOffSample - sblock;
+                    midiOut.push_back({ noteOff, offset });
+                }
+            }
 
             if (hit && (alwaysPlaying || !audioIgnoreHitsWhilePlaying || trigposSinceHit > 0.98)) {
                 clearDrawBuffers();
