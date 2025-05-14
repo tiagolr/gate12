@@ -2,6 +2,16 @@
 #include "../PluginProcessor.h"
 #include "../Globals.h"
 
+void SettingsButton::paint(Graphics& g) 
+{
+	auto r = 1.5f;
+	auto bounds = getLocalBounds().expanded(-2,-4).toFloat();
+	g.setColour(Colour(globals::COLOR_ACTIVE));
+	g.fillRoundedRectangle(bounds.getX(), bounds.getY(), bounds.getWidth(), r * 2, 2.f);
+	g.fillRoundedRectangle(bounds.getX(), bounds.getCentreY() - r, bounds.getWidth(), r*2, 2.f);
+	g.fillRoundedRectangle(bounds.getX(), bounds.getBottom() - r*2, bounds.getWidth(), r*2, 2.f);
+};
+
 void SettingsButton::mouseDown(const juce::MouseEvent& e)
 {
 	(void)e;
@@ -242,15 +252,5 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			}
 		}
 	);
-};
-
-void SettingsButton::paint(Graphics& g) 
-{
-	auto r = 1.5f;
-	auto bounds = getLocalBounds().expanded(-2,-4).toFloat();
-	g.setColour(Colour(globals::COLOR_ACTIVE));
-	g.fillRoundedRectangle(bounds.getX(), bounds.getY(), bounds.getWidth(), r * 2, 2.f);
-	g.fillRoundedRectangle(bounds.getX(), bounds.getCentreY() - r, bounds.getWidth(), r*2, 2.f);
-	g.fillRoundedRectangle(bounds.getX(), bounds.getBottom() - r*2, bounds.getWidth(), r*2, 2.f);
 };
 
