@@ -345,7 +345,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     pointMenu.addItem("Stairs", 7);
     pointMenu.addItem("Smooth St", 8);
     pointMenu.setBounds(col, row, 75, 25);
-    pointAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "point", pointMenu);
+    pointMenu.setSelectedId(audioProcessor.pointMode + 1, dontSendNotification);
+    pointMenu.onChange = [this]() {
+        MessageManager::callAsync([this]() {
+            audioProcessor.pointMode = pointMenu.getSelectedId() - 1;
+        });
+    };
     col += 85;
 
     addAndMakeVisible(loopButton);

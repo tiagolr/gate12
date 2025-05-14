@@ -118,6 +118,7 @@ public:
     bool outputCV = false;
     int paintTool = 0; // index of pattern used for paint mode
     int paintPage = 0;
+    int pointMode = 1; // Hold, Curve, S-curve, Pulse, Wave etc..
 
     // State
     Pattern* pattern; // current pattern used for audio processing

@@ -92,7 +92,6 @@ private:
     TextButton paintPrevButton;
     Label paintPageLabel;
     ComboBox pointMenu;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> pointAttachment;
     Label pointLabel;
     TextButton loopButton;
     Label triggerLabel;
