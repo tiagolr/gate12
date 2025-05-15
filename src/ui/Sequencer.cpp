@@ -145,10 +145,14 @@ void Sequencer::mouseDrag(const MouseEvent& e)
             if (button.contains(e.getPosition())) {
                 hoverButton = i;
                 auto& cell = cells[i];
-                if (cell.shape != SSilence) {
+                if (cell.shape != SSilence && cell.shape != SLink) {
                     cell.lshape = cell.shape;
                 }
-                cell.shape = startHoverSilence ? SSilence : cell.lshape;
+                cell.shape = startHoverShape == SSilence 
+                    ? SSilence 
+                    : startHoverShape == SLink 
+                    ? SLink
+                    : cell.lshape;
                 build();
             }
         }
@@ -165,13 +169,16 @@ void Sequencer::mouseDown(const MouseEvent& e)
     // process mouse down on seg buttons
     if (hoverButton > -1) {
         auto& cell = cells[hoverButton];
-        if (cell.shape != SSilence) {
+        if (cell.shape != SSilence && cell.shape != SLink) {
             cell.lshape = cell.shape;
         }
         cell.shape = cell.shape == SSilence 
             ? cell.lshape 
-            : SSilence;
-        startHoverSilence = cell.shape == SSilence;
+            : cell.shape == SLink 
+            ? SSilence 
+            : SLink;
+
+        startHoverShape = cell.shape;
         build();
     }
     // process mouse down on viewport

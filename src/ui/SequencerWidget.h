@@ -24,7 +24,6 @@ public:
     TextButton rampdnBtn;
     TextButton lineBtn;
     TextButton triBtn;
-    TextButton linkBtn;
     TextButton ptoolBtn;
 
     TextButton randomBtn;

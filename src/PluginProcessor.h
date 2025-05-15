@@ -261,7 +261,6 @@ public:
     //=========================================================
 
     AudioProcessorValueTreeState params;
-    std::unique_ptr<ValueTree> internalParams;
     UndoManager undoManager;
 
 private:

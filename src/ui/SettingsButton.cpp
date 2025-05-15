@@ -149,6 +149,8 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	menu.addSeparator();
 	menu.addItem(53, "Copy", audioProcessor.uimode != UIMode::Seq);
 	menu.addItem(54, "Paste", audioProcessor.uimode != UIMode::Seq);
+	menu.addItem(55, "Invert", audioProcessor.uimode != UIMode::Seq);
+	menu.addItem(56, "Reverse", audioProcessor.uimode != UIMode::Seq);
 	menu.addItem(52, audioProcessor.uimode == UIMode::Seq ? "Reset" : "Clear");
 	menu.addSeparator();
 	menu.addSubMenu("Load", load);
@@ -200,6 +202,18 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			else if (result == 54) {
 				auto snapshot = audioProcessor.viewPattern->points;
 				audioProcessor.viewPattern->paste();
+				audioProcessor.viewPattern->buildSegments();
+				audioProcessor.createUndoPointFromSnapshot(snapshot);
+			}
+			else if (result == 55) {
+				auto snapshot = audioProcessor.viewPattern->points;
+				audioProcessor.viewPattern->invert();
+				audioProcessor.viewPattern->buildSegments();
+				audioProcessor.createUndoPointFromSnapshot(snapshot);
+			}
+			else if (result == 56) {
+				auto snapshot = audioProcessor.viewPattern->points;
+				audioProcessor.viewPattern->reverse();
 				audioProcessor.viewPattern->buildSegments();
 				audioProcessor.createUndoPointFromSnapshot(snapshot);
 			}

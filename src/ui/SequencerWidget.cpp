@@ -46,7 +46,6 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	row = 0;
 	col = 0; // layout during resized()
 	addToolButton(silenceBtn, col, row, 25, 25, CellShape::SSilence); col += 25;
-	addToolButton(linkBtn, col, row, 25, 25, CellShape::SLink); col += 25;
 	addToolButton(lineBtn, col, row, 25, 25, CellShape::SLine); col += 25;
 	addToolButton(rampdnBtn, col, row, 25, 25, CellShape::SRampDn); col += 25;
 	addToolButton(rampupBtn, col, row, 25, 25, CellShape::SRampUp); col += 25;
@@ -157,7 +156,6 @@ void SequencerWidget::resized()
 	row = 0;
 	col = getLocalBounds().getCentreX() - 25*7/2;
 	silenceBtn.setBounds(col, row, 25, 25); col+= 25;
-	linkBtn.setBounds(col, row, 25, 25); col += 25;
 	lineBtn.setBounds(col, row, 25, 25); col+= 25;
 	rampdnBtn.setBounds(col, row, 25, 25); col+= 25;
 	rampupBtn.setBounds(col, row, 25, 25); col+= 25;
@@ -249,18 +247,6 @@ void SequencerWidget::paint(Graphics& g)
 	linePath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()));
 	g.strokePath(linePath, PathStrokeType(1.f));
 
-	auto r = 5.0f;
-	bounds = linkBtn.getBounds().toFloat();
-	g.setColour(seq->selectedShape == CellShape::SLink ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
-	bounds.expand(-5,-5);
-	Path linkPath;
-	linkPath.startNewSubPath(bounds.getBottomLeft().withY(bounds.getCentreY()));
-	linkPath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()));
-	linkPath.startNewSubPath(bounds.getBottomRight().withY(bounds.getCentreY()).translated(-r,-r));
-	linkPath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()));
-	linkPath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()).translated(-r,r));
-	g.strokePath(linkPath, PathStrokeType(1.f));
-
 	bounds = ptoolBtn.getBounds().toFloat();
 	g.setColour(seq->selectedShape == CellShape::SPTool ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
@@ -281,7 +267,7 @@ void SequencerWidget::paint(Graphics& g)
 	bounds = randomBtn.getBounds().expanded(-2,-2).toFloat();
 	g.fillRoundedRectangle(bounds, 3.0f);
 	g.setColour(Colour(COLOR_BG));
-	r = 3.0f;
+	auto r = 3.0f;
 	auto circle = Rectangle<float>(bounds.getCentreX() - r, bounds.getCentreY() - r, r*2.f, r*2.f);
 	g.fillEllipse(circle);
 	g.fillEllipse(circle.translated(-6.f,-6.f));

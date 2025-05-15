@@ -85,7 +85,7 @@ public:
 private:
     int hoverButton = -1;
     CellShape hoverButtonType = CellShape::SSilence; // used for dragging multiple buttons assigning the same type
-    bool startHoverSilence = false; // used for dragging multiple buttons with the same type
+    CellShape startHoverShape = CellShape::SLine; // used for dragging multiple buttons with the same type
     bool startInvertX = false; // used to drag toggle all segments to the same invertx
     Point<int> lmousepos;
     std::vector<PPoint> silence;
