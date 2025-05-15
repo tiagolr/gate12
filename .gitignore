@@ -53,6 +53,4 @@ products/
 
 .DS_Store
 build*/
-/libs/*
-!/libs/.gitmodules
 .cache/
