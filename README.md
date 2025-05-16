@@ -27,6 +27,11 @@
 
 </div>
 
+
+Also check other plugins from this collection:
+
+* [TIME-12](https://github.com/tiagolr/time12) - An envelope based delay modulator.
+
 ## Whats new
 
   * **Cross-platform** available on Windows, macOS and Linux
