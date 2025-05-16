@@ -508,7 +508,7 @@ std::vector<PPoint> Sequencer::buildSeg(double minx, double maxx, Cell cell)
     }
 
     tmp->points = paint;
-    const auto size = tmp->points.size();
+    const auto size = (int)tmp->points.size();
     for (int i = 0; i < size; ++i) {
         auto& point = tmp->points[i];
         if (cell.tenatt != 0.0 || cell.tenrel != 0.0) {
