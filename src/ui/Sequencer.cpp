@@ -546,6 +546,10 @@ void Sequencer::rotateLeft()
 
 void Sequencer::randomize(SeqEditMode mode, double min, double max)
 {
+    bool snap = audioProcessor.params.getRawParameterValue("snap")->load() == 1.0f;
+    int grid = std::min(SEQ_MAX_CELLS, audioProcessor.getCurrentGrid());
+    auto snapy = grid % 6 == 0 ? 12.0 : 16.0;
+
     for (auto& cell : cells) {
         auto rmin = min;
         auto rmax = max;
@@ -568,6 +572,10 @@ void Sequencer::randomize(SeqEditMode mode, double min, double max)
         double random = (rand() / (double)RAND_MAX);
         double value = rmin + (rmax - rmin) * random;
         bool flag = random <= (rmax - rmin) / 2.0 + rmin; // the slider is a double range, arrange it so that when the range is full the prob is 50%
+
+        if (snap) {
+            value = std::round(value * snapy) / snapy;
+        }
 
         if (mode == EditTenAtt) {
             if (cell.invertx) cell.tenrel = (value * 2 - 1) * -1;
