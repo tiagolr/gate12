@@ -39,9 +39,9 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	addButton(flipXBtn, "FlipX", col, row, EditInvertX);col += 70;
 	addButton(minBtn, "Min", col, row, EditMin);col += 70;
 	addButton(maxBtn, "Max", col, row, EditMax);col = 0;row = 35;
-	addButton(tenBtn, "Ten", col, row, EditTension);col += 70;
 	addButton(tenaBtn, "TAtk", col, row, EditTenAtt);col += 70;
 	addButton(tenrBtn, "TRel", col, row, EditTenRel);col += 70;
+	addButton(tenBtn, "Ten", col, row, EditTension);col += 70;
 
 	row = 0;
 	col = 0; // layout during resized()
