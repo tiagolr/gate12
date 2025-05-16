@@ -24,7 +24,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		button.setBounds(col, row, w, h);
 		button.onClick = [this, shape]() {
 			audioProcessor.sequencer->selectedShape = audioProcessor.sequencer->selectedShape == shape ? SNone : shape;
-			audioProcessor.showPaintWidget = shape == SPTool;
+			audioProcessor.showPaintWidget = audioProcessor.sequencer->selectedShape == SPTool;
 			auto editMode = audioProcessor.sequencer->editMode;
 			if (editMode != EditMin && editMode != EditMax) {
 				audioProcessor.sequencer->editMode = EditMax;
