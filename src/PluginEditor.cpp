@@ -456,48 +456,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     };
     row += 35;
 
-    // PAINT TOOL
-    col = PLUG_PADDING;
-    addAndMakeVisible(paintEditButton);
-    paintEditButton.setButtonText("Edit");
-    paintEditButton.setComponentID("button");
-    paintEditButton.setBounds(col, row+40/2-25/2, 60, 25);
-    paintEditButton.onClick = [this]() {
-        audioProcessor.togglePaintEditMode();
-    };
-
-    col += 65;
-    addAndMakeVisible(paintPrevButton);
-    paintPrevButton.setBounds(col+2, row+2, 20, 20);
-    paintPrevButton.setAlpha(0.f);
-    paintPrevButton.onClick = [this]() {
-        int page = audioProcessor.paintPage - 1;
-        if (page < 0) page = 3;
-        audioProcessor.paintPage = page;
-        toggleUIComponents();
-    };
-
-    addAndMakeVisible(paintPageLabel);
-    paintPageLabel.setText("16-24", dontSendNotification);
-    paintPageLabel.setJustificationType(Justification::centred);
-    paintPageLabel.setColour(Label::textColourId, Colour(COLOR_NEUTRAL));
-    paintPageLabel.setBounds(col, row+25-2, 45, 16);
-
-    col += 25;
-    addAndMakeVisible(paintNextButton);
-    paintNextButton.setBounds(col-2, row+2, 20, 20);
-    paintNextButton.setAlpha(0.f);
-    paintNextButton.onClick = [this]() {
-        int page = audioProcessor.paintPage + 1;
-        if (page > 3) page = 0;
-        audioProcessor.paintPage = page;
-        toggleUIComponents();
-    };
-
-    col += 25;
     paintWidget = std::make_unique<PaintToolWidget>(p);
     addAndMakeVisible(*paintWidget);
-    paintWidget->setBounds(col,row,PLUG_WIDTH - PLUG_PADDING - col, 40);
+    paintWidget->setBounds(PLUG_PADDING,row,PLUG_WIDTH - PLUG_PADDING * 2, 40);
 
     row += 50;
     col = PLUG_PADDING;
@@ -662,16 +623,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
     auto uimode = audioProcessor.uimode;
     paintButton.setToggleState(uimode == UIMode::Paint || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Paint), dontSendNotification);
-    paintEditButton.setVisible(audioProcessor.showPaintWidget);
-    paintEditButton.setToggleState(uimode == UIMode::PaintEdit, dontSendNotification);
-    paintNextButton.setVisible(audioProcessor.showPaintWidget);
-    paintPrevButton.setVisible(audioProcessor.showPaintWidget);
-    paintPageLabel.setVisible(audioProcessor.showPaintWidget);
-
     sequencerButton.setToggleState(uimode == UIMode::Seq || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Seq), dontSendNotification);
-
-    int firstPaintPat = audioProcessor.paintPage * 8 + 1;
-    paintPageLabel.setText(String(firstPaintPat) + "-" + String(firstPaintPat+7), dontSendNotification);
+    paintWidget->toggleUIComponents();
 
     repaint();
 }
@@ -752,29 +705,6 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
         triCenter.translated(triRadius, 0)
     );
     g.fillPath(nudgeRightTriangle);
-
-    // draw rotate paint page triangles
-    if (audioProcessor.showPaintWidget) {
-        g.setColour(Colour(COLOR_ACTIVE));
-        triCenter = paintNextButton.getBounds().toFloat().getCentre();
-        triRadius = 5.f;
-        juce::Path paintNextTriangle;
-        paintNextTriangle.addTriangle(
-            triCenter.translated(-triRadius, -triRadius),
-            triCenter.translated(-triRadius, triRadius),
-            triCenter.translated(triRadius, 0)
-        );
-        g.fillPath(paintNextTriangle);
-
-        triCenter = paintPrevButton.getBounds().toFloat().getCentre();
-        juce::Path paintPrevTriangle;
-        paintPrevTriangle.addTriangle(
-            triCenter.translated(-triRadius, 0),
-            triCenter.translated(triRadius, -triRadius),
-            triCenter.translated(triRadius, triRadius)
-        );
-        g.fillPath(paintPrevTriangle);
-    }   
 
     // draw undo redo buttons
     auto canUndo = audioProcessor.uimode == UIMode::Seq

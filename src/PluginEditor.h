@@ -87,10 +87,6 @@ private:
     std::unique_ptr<AudioDisplay> audioDisplay;
     TextButton paintButton;
     TextButton sequencerButton;
-    TextButton paintEditButton;
-    TextButton paintNextButton;
-    TextButton paintPrevButton;
-    Label paintPageLabel;
     ComboBox pointMenu;
     Label pointLabel;
     TextButton loopButton;
