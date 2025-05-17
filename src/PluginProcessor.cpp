@@ -687,6 +687,7 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<double>& buffer, juce:
 {
     processBlockByType(buffer, midiMessages);
 }
+
 template <typename FloatType>
 void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, juce::MidiBuffer& midiMessages)
 {
@@ -847,6 +848,12 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         if (bipolarCC) val -= 64;
         auto cc = MidiMessage::controllerEvent(outputCCChan + 1, outputCC-1, val);
         midiMessages.addEvent(cc, 0);
+    }
+
+    // keep beatPos in sync with playhead so plugin can be bypassed and return to its sync pos
+    if (playing) {
+        beatPos = ppqPosition;
+        ratePos = beatPos * secondsPerBeat * ratehz;
     }
 
     for (int sample = 0; sample < numSamples; ++sample) {
