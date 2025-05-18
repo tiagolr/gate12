@@ -100,6 +100,9 @@ void Rotary::mouseDown(const juce::MouseEvent& e)
 
 void Rotary::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
+    if (event.mods.isLeftButtonDown() || event.mods.isRightButtonDown()) {
+        return; // prevent crash, param is already mutating
+    }
     auto speed = (event.mods.isShiftDown() ? 0.01f : 0.05f);
     auto slider_change = wheel.deltaY > 0 ? speed : wheel.deltaY < 0 ? -speed : 0;
     auto param = audioProcessor.params.getParameter(paramId);

@@ -1136,6 +1136,20 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
         state.setProperty("pattern" + juce::String(i), var(oss.str()), nullptr);
     }
 
+    // serialize sequencer cells
+    std::ostringstream oss;
+    for (const auto& cell : sequencer->cells) {
+        oss << cell.shape << ' '
+            << cell.lshape << ' '
+            << cell.ptool << ' '
+            << cell.invertx << ' '
+            << cell.miny << ' '
+            << cell.maxy << ' '
+            << cell.tenatt << ' '
+            << cell.tenrel << '\n';
+    }
+    state.setProperty("seqcells", var(oss.str()), nullptr);
+
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 
@@ -1192,6 +1206,20 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
             auto tensionrel = (double)params.getRawParameterValue("tensionrel")->load();
             patterns[i]->setTension(tension, tensionatk, tensionrel, dualTension);
             patterns[i]->buildSegments();
+        }
+
+        if (state.hasProperty("seqcells")) {
+            auto str = state.getProperty("seqcells").toString().toStdString();
+            sequencer->cells.clear();
+            std::istringstream iss(str);
+            Cell cell;
+            int shape, lshape;
+            while (iss >> shape >> lshape >> cell.ptool >> cell.invertx 
+                >> cell.miny >> cell.maxy >> cell.tenatt >> cell.tenrel) {
+                cell.shape = static_cast<CellShape>(shape);
+                cell.lshape = static_cast<CellShape>(lshape);
+                sequencer->cells.push_back(cell);
+            }
         }
     }
 
