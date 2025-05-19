@@ -49,10 +49,12 @@ void GridSelector::mouseDown(const juce::MouseEvent& e)
         .withTargetScreenArea({menuPos.getX(), menuPos.getY(), 1, 1}),
         [this](int result) {
             if (result == 0) return;
-            auto param = audioProcessor.params.getParameter("grid");
-            param->beginChangeGesture();
-            param->setValueNotifyingHost(param->convertTo0to1(result-1.f));
-            param->endChangeGesture();
+            MessageManager::callAsync([this, result]() {
+                auto param = audioProcessor.params.getParameter("grid");
+                param->beginChangeGesture();
+                param->setValueNotifyingHost(param->convertTo0to1(result-1.f));
+                param->endChangeGesture();
+            });
         }
     );
     
