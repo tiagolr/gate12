@@ -139,7 +139,7 @@ void Pattern::buildSegments()
         pts.push_back({0, 2.0, 0.5, 0.0, 1});
     }
     else if (pts.size() == 1) {
-        pts.push_back({0, -1.0, pts[0].y, 0.0, 1});
+        pts.insert(pts.begin(), {0, -1.0, pts[0].y, 0.0, 1});
         pts.push_back({0, 2.0, pts[0].y, 0.0, 1});
     }
     else {
@@ -346,16 +346,28 @@ double Pattern::get_y_smooth_stairs(Segment seg, double x)
 double Pattern::get_y_at(double x)
 {
     std::lock_guard<std::mutex> lock(mtx); // prevents crash while building segments
-    for (auto seg = segments.begin(); seg != segments.end(); ++seg) {
-        if (seg->x1 <= x && seg->x2 >= x) {
-            if (seg->type == PointType::Hold) return seg->y1; // hold
-            if (seg->type == PointType::Curve) return get_y_curve(*seg, x);
-            if (seg->type == PointType::SCurve) return get_y_scurve(*seg, x);
-            if (seg->type == PointType::Pulse) return get_y_pulse(*seg, x);
-            if (seg->type == PointType::Wave) return get_y_wave(*seg, x);
-            if (seg->type == PointType::Triangle) return get_y_triangle(*seg, x);
-            if (seg->type == PointType::Stairs) return get_y_stairs(*seg, x);
-            if (seg->type == PointType::SmoothSt) return get_y_smooth_stairs(*seg, x);
+    int low = 0;
+    int high = static_cast<int>(segments.size()) - 1;
+
+    // binary search the segment containing x
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        const auto& seg = segments[mid];
+
+        if (x < seg.x1) {
+            high = mid - 1;
+        } else if (x > seg.x2) {
+            low = mid + 1;
+        } else {
+            if (seg.type == PointType::Hold) return seg.y1; // hold
+            if (seg.type == PointType::Curve) return get_y_curve(seg, x);
+            if (seg.type == PointType::SCurve) return get_y_scurve(seg, x);
+            if (seg.type == PointType::Pulse) return get_y_pulse(seg, x);
+            if (seg.type == PointType::Wave) return get_y_wave(seg, x);
+            if (seg.type == PointType::Triangle) return get_y_triangle(seg, x);
+            if (seg.type == PointType::Stairs) return get_y_stairs(seg, x);
+            if (seg.type == PointType::SmoothSt) return get_y_smooth_stairs(seg, x);
+            return -1;
         }
     }
 
