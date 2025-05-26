@@ -51,7 +51,7 @@ void TextDial::mouseUp(const juce::MouseEvent& e) {
 void TextDial::mouseDrag(const juce::MouseEvent& e) {
     auto change = e.getPosition() - last_mouse_position;
     last_mouse_position = e.getPosition();
-    auto speed = (e.mods.isCtrlDown() ? 40.0f : 4.0f) * 200.0f;
+    auto speed = (e.mods.isShiftDown() ? 40.0f : 4.0f) * 200.0f;
     auto slider_change = float(change.getX() - change.getY()) / speed;
     cur_normed_value += slider_change;
     cur_normed_value = jlimit(0.0f, 1.0f, cur_normed_value);
@@ -72,7 +72,7 @@ void TextDial::mouseDoubleClick(const juce::MouseEvent& e)
 void TextDial::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
     if (event.mods.isAnyMouseButtonDown()) {
-        return; // prevent crash, param has already begin change gesture
+        return; // prevent crash, beginChangeGesture is in progress
     }
     auto speed = (event.mods.isShiftDown() ? 0.01f : 0.05f);
     auto slider_change = wheel.deltaY > 0 ? speed : wheel.deltaY < 0 ? -speed : 0;
