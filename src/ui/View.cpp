@@ -334,8 +334,8 @@ int View::getHoveredMidpoint(int x, int y)
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);
-        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, 
-            (int)xy[0] - MPOINT_HOVER_RADIUS, (int)xy[1] - MPOINT_HOVER_RADIUS, MPOINT_HOVER_RADIUS * 2, MPOINT_HOVER_RADIUS * 2)) 
+        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - MPOINT_HOVER_RADIUS, 
+            (int)xy[1] - MPOINT_HOVER_RADIUS, MPOINT_HOVER_RADIUS * 2, MPOINT_HOVER_RADIUS * 2)) 
         {
             return i;
         }
@@ -447,11 +447,9 @@ void View::mouseUp(const juce::MouseEvent& e)
         }
         else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
             auto& mpoint = getPointFromMidpoint(selectedMidpoint);
-            auto& next = getPointFromMidpoint(selectedMidpoint + 1);
-            double midx = (mpoint.x + next.x) / 2.;
-            int x = (int)(midx * winw + winx) + getScreenPosition().x;
-            int y = (int)(audioProcessor.viewPattern->get_y_at(midx) * winh + winy) + getScreenPosition().y;
-            Desktop::getInstance().setMousePosition(juce::Point<int>(x, y));
+            int x = e.getMouseDownX();
+            int y = (int)(audioProcessor.viewPattern->get_y_at((x - winx) / (double)winw) * winh + winy);
+            Desktop::getInstance().setMousePosition(juce::Point<int>(x + getScreenPosition().x, y + getScreenPosition().y));
         }
         else if (preSelectionStart.x > -1 && (std::abs(preSelectionStart.x - preSelectionEnd.x) > 4 || 
                  std::abs(preSelectionStart.y - preSelectionEnd.y) > 4))
