@@ -264,7 +264,7 @@ std::vector<double> View::getMidpointXY(Segment seg)
 
 void View::drawMidPoints(Graphics& g)
 {
-    auto segs = audioProcessor.viewPattern->segments;
+    auto segs = audioProcessor.viewPattern->getSegments();
 
     // draw midpoints
     g.setColour(Colour(COLOR_ACTIVE));
@@ -330,7 +330,7 @@ int View::getHoveredPoint(int x, int y)
 
 int View::getHoveredMidpoint(int x, int y)
 {
-    auto segs = audioProcessor.viewPattern->segments;
+    auto segs = audioProcessor.viewPattern->getSegments();
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);

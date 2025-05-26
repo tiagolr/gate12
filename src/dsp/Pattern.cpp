@@ -158,6 +158,14 @@ void Pattern::buildSegments()
     }
 }
 
+// thread safe get segments
+// prevents getting segments during clear
+std::vector<Segment> Pattern::getSegments() 
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    return segments;
+}
+
 void Pattern::loadSine() {
     clear();
     insertPoint(0, 1, 0.2, 2);

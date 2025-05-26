@@ -31,7 +31,7 @@ namespace globals {
 	inline const int MAX_PLUG_WIDTH = 640 * 3;
 	inline const int MAX_PLUG_HEIGHT = 650 * 2;
 	inline const int PLUG_PADDING = 15;
-	inline const int HOVER_RADIUS = 6;
+	inline const int HOVER_RADIUS = 7;
 	inline const int POINT_RADIUS = 4;
 	inline const int MPOINT_RADIUS = 3;
 	inline const int MPOINT_HOVER_RADIUS = 5;

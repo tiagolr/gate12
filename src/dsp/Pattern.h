@@ -75,6 +75,7 @@ public:
     void loadRandom(int grid);
     void copy();
     void paste();
+    std::vector<Segment> getSegments();
     int getWaveCount(Segment seg);
 
     double get_y_curve(Segment seg, double x);
