@@ -321,7 +321,7 @@ int View::getHoveredPoint(int x, int y)
     for (auto i = 0; i < points.size(); ++i) {
         auto xx = (int)(points[i].x * winw + winx);
         auto yy = (int)(points[i].y * winh + winy);
-        if (pointInRect(x, y, xx - POINT_RADIUS, yy - POINT_RADIUS, POINT_RADIUS * 2, POINT_RADIUS * 2)) {
+        if (pointInRect(x, y, xx - HOVER_RADIUS, yy - HOVER_RADIUS, HOVER_RADIUS * 2, HOVER_RADIUS * 2)) {
             return i;
         }
     }
@@ -334,7 +334,9 @@ int View::getHoveredMidpoint(int x, int y)
     for (auto i = 0; i < segs.size(); ++i) {
         auto& seg = segs[i];
         auto xy = getMidpointXY(seg);
-        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - MPOINT_RADIUS, (int)xy[1] - MPOINT_RADIUS, MPOINT_RADIUS * 2, MPOINT_RADIUS * 2)) {
+        if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, 
+            (int)xy[0] - MPOINT_HOVER_RADIUS, (int)xy[1] - MPOINT_HOVER_RADIUS, MPOINT_HOVER_RADIUS * 2, MPOINT_HOVER_RADIUS * 2)) 
+        {
             return i;
         }
     }
