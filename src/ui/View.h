@@ -77,7 +77,7 @@ private:
     int snapshotIdx = 0; // used for undo after drag
 
     // Multiselect
-    Multiselect multiselect;
+    Multiselect multiSelect;
     Point<int> preSelectionStart = Point(-1,-1);
     Point<int> preSelectionEnd = Point(-1,-1);
 
