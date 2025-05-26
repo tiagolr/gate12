@@ -437,7 +437,8 @@ void View::mouseUp(const juce::MouseEvent& e)
         if (std::abs(e.getDistanceFromDragStartX()) < 4 && std::abs(e.getDistanceFromDragStartY()) < 4)
             showContextMenu(e);
     }
-    else {
+    else if (!e.mods.isRightButtonDown()) 
+    {
         if (audioProcessor.uimode == UIMode::Paint) {
             Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
             paintTool.mouseUp(e);
@@ -446,7 +447,6 @@ void View::mouseUp(const juce::MouseEvent& e)
             // ----
         }
         else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
-            auto& mpoint = getPointFromMidpoint(selectedMidpoint);
             int x = e.getMouseDownX();
             int y = (int)(audioProcessor.viewPattern->get_y_at((x - winx) / (double)winw) * winh + winy);
             Desktop::getInstance().setMousePosition(juce::Point<int>(x + getScreenPosition().x, y + getScreenPosition().y));
@@ -463,23 +463,8 @@ void View::mouseUp(const juce::MouseEvent& e)
         else if (!multiSelect.selectionPoints.empty()) { // finished dragging selection
             multiSelect.clearSelection();
         } 
-        else if (hoverPoint == -1 && hoverMidpoint == -1) {
-            double px = e.getPosition().x;
-            double py = e.getPosition().y;
-            if (isSnapping(e)) {
-                double grid = (double)audioProcessor.getCurrentGrid();
-                double gridx = double(winw) / grid;
-                double gridy = double(winh) / grid;
-                px = std::round(double(px - winx) / gridx) * gridx + winx;
-                py = std::round(double(py - winy) / gridy) * gridy + winy;
-            }
-            px = double(px - winx) / (double)winw;
-            py = double(py - winy) / (double)winh;
-            if (px >= 0 && px <= 1 && py >= 0 && py <= 1) { // point in env window
-                audioProcessor.viewPattern->insertPoint(px, py, 0, audioProcessor.pointMode);
-                audioProcessor.viewPattern->sortPoints(); // keep things consistent, avoids reorders later
-            }
-            audioProcessor.viewPattern->buildSegments();
+        else if (hoverPoint == -1 && hoverMidpoint == -1 && e.mods.isAltDown()) {
+            insertNewPoint(e);
         }
     }
     // if there were changes on mouseup, create undo point from previous snapshot
@@ -491,6 +476,26 @@ void View::mouseUp(const juce::MouseEvent& e)
     selectedMidpoint = -1;
     selectedPoint = -1;
     rmousePoint = -1;
+}
+
+void View::insertNewPoint(const MouseEvent& e)
+{
+    double px = e.getPosition().x;
+    double py = e.getPosition().y;
+    if (isSnapping(e)) {
+        double grid = (double)audioProcessor.getCurrentGrid();
+        double gridx = double(winw) / grid;
+        double gridy = double(winh) / grid;
+        px = std::round(double(px - winx) / gridx) * gridx + winx;
+        py = std::round(double(py - winy) / gridy) * gridy + winy;
+    }
+    px = double(px - winx) / (double)winw;
+    py = double(py - winy) / (double)winh;
+    if (px >= 0 && px <= 1 && py >= 0 && py <= 1) { // point in env window
+        audioProcessor.viewPattern->insertPoint(px, py, 0, audioProcessor.pointMode);
+        audioProcessor.viewPattern->sortPoints(); // keep things consistent, avoids reorders later
+    }
+    audioProcessor.viewPattern->buildSegments();
 }
 
 void View::mouseMove(const juce::MouseEvent& e)
@@ -647,8 +652,11 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
         hoverPoint = -1;
         hoverMidpoint = -1;
     }
-    if (pt == -1 && mid > -1) {
+    else if (pt == -1 && mid > -1) {
         getPointFromMidpoint(mid).tension = 0;
+    }
+    else if (pt == -1 && mid == -1) {
+        insertNewPoint(e);
     }
 
     if (snapshotIdx == audioProcessor.viewPattern->index) {

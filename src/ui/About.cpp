@@ -28,6 +28,7 @@ void About::paint(Graphics& g)
 	g.drawText("- Shift toggles snap on/off.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Mouse wheel on view changes grid size.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Right click points changes point type.", bounds.removeFromTop(25), Justification::centredLeft);
+	g.drawText("- Alt + click inserts new point.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Alt + drag selection handles skews selected points.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Right click + drag in paint mode changes paint tool tension", bounds.removeFromTop(25), Justification::centredLeft);
 };

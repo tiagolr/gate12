@@ -126,6 +126,7 @@ After creating a sequence click `Apply` to save it as the current pattern and ed
 - `Shift` toggles snap on/off.
 - `Mouse wheel` on view changes grid size
 - `Right click` points changes point type.
+- `Alt + click` inserts new points.
 - `Alt + drag` selection handles skews selected points.
 - `Right click + drag` in paint mode changes paint tool tension.
 

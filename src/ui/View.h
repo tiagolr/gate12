@@ -61,6 +61,8 @@ public:
     bool isCollinear(Segment seg);
     bool pointInRect(int x, int y, int xx, int yy, int w, int h);
 
+    void insertNewPoint(const MouseEvent& event);
+
 private:
     int selectedPoint = -1;
     int selectedMidpoint = -1;
