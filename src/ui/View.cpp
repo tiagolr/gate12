@@ -727,6 +727,8 @@ void View::showContextMenu(const juce::MouseEvent& event)
     menu.addItem(1, "Select all");
     menu.addItem(2, "Deselect");
     menu.addSeparator();
+    menu.addItem(5, "Copy");
+    menu.addItem(6, "Paste");
     menu.addItem(3, "Clear");
     if (!multiselect.selectionPoints.empty()) {
         menu.addItem(4, "Delete points");
@@ -734,17 +736,26 @@ void View::showContextMenu(const juce::MouseEvent& event)
 
     menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this](int result) {
         if (result == 0) return;
-        if (result == 1) multiselect.selectAll();
-        if (result == 2) multiselect.clearSelection();
-        if (result == 3) {
+        else if (result == 1) multiselect.selectAll();
+        else if (result == 2) multiselect.clearSelection();
+        else if (result == 3) {
             auto snapshot = audioProcessor.viewPattern->points;
             audioProcessor.viewPattern->clear();
             audioProcessor.viewPattern->buildSegments();
             audioProcessor.createUndoPointFromSnapshot(snapshot);
         }
-        if (result == 4 && !multiselect.selectionPoints.empty()) {
+        else if (result == 4 && !multiselect.selectionPoints.empty()) {
             audioProcessor.createUndoPoint();
             multiselect.deleteSelectedPoints();
+        }
+        else if (result == 5) {
+            audioProcessor.viewPattern->copy();
+        }
+        else if (result == 6) {
+            auto snapshot = audioProcessor.viewPattern->points;
+            audioProcessor.viewPattern->paste();
+            audioProcessor.viewPattern->buildSegments();
+            audioProcessor.createUndoPointFromSnapshot(snapshot);
         }
     });
 }
