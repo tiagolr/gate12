@@ -109,6 +109,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 		if (randomMin > randomMax)
 			randomRange.setMinAndMaxValues(randomMax, randomMax);
 	};
+	randomRange.setVelocityModeParameters(1.0,1,0.0,true,ModifierKeys::Flags::shiftModifier);
 
 	addAndMakeVisible(clearBtn);
 	clearBtn.setButtonText("Clear");
