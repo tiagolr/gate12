@@ -100,12 +100,12 @@ private:
     void calcRelativeQuadCoords(Rectangle<double> area);
     void applyRelativeQuadCoords(Rectangle<double> area);
 
-	Rectangle<int> selectionAreaStart = Rectangle<int>(); // used to drag or scale selection area
+	Rectangle<double> selectionAreaStart = Rectangle<double>(); // used to drag or scale selection area
     Quad selectionQuadStart = {Vec2(0.0,0.0), Vec2(1.0, 0.0), Vec2(0.0, 1.0), Vec2(1.0,1.0)};
     GATE12AudioProcessor& audioProcessor;
 
     bool isSnapping(const MouseEvent& e);
     Vec2 pointToVec(Point<double> p);
-    Rectangle<int> quadToRect(Quad q);
+    Rectangle<double> quadToRect(Quad q);
     bool isCollinear(const std::vector<SelPoint>& p, bool xaxis);
 };

@@ -1,10 +1,10 @@
 /*
-  ==============================================================================
+==============================================================================
 
-    Multiselect.cpp
-    Author:  tiagolr
+Multiselect.cpp
+Author:  tiagolr
 
-  ==============================================================================
+==============================================================================
 */
 #include "Multiselect.h"
 #include "../PluginProcessor.h"
@@ -52,7 +52,7 @@ void Multiselect::draw(Graphics& g)
         quadPath.lineTo((float)q[2].x, (float)q[2].y);
         quadPath.closeSubPath();
         g.strokePath(quadPath, PathStrokeType(1.0f));
-        
+
         drawHandles(g);
     }
 }
@@ -97,7 +97,7 @@ void Multiselect::drawHandles(Graphics& g)
         g.fillRect(tlRect);g.fillRect(trRect);g.fillRect(blRect);g.fillRect(brRect);
         g.fillRect(mlRect);g.fillRect(mrRect);g.fillRect(tmRect);g.fillRect(bmRect);
     }
-    
+
     g.setColour(Colours::white);
     if (isCollinearX && isCollinearY) {
         // draw nothing
@@ -127,7 +127,7 @@ void Multiselect::mouseDown(const MouseEvent& e)
     (void)e;
     selectionQuadStart = getQuadExpanded();
     selectionAreaStart = quadToRect(selectionQuadStart);
-    calcRelativeQuadCoords(selectionAreaStart.toDouble());
+    calcRelativeQuadCoords(selectionAreaStart);
 }
 
 void Multiselect::mouseUp(const MouseEvent& e)
@@ -162,7 +162,7 @@ void Multiselect::calcRelativeQuadCoords(Rectangle<double> area)
     quadrel[2] = Vec2((quad[2].x - x) * invW, (quad[2].y - y) * invH);
     quadrel[3] = Vec2((quad[3].x - x) * invW, (quad[3].y - y) * invH);
 }
- 
+
 void Multiselect::applyRelativeQuadCoords(Rectangle<double> area)
 {
     const double x = area.getX();
@@ -220,7 +220,7 @@ void Multiselect::mouseMove(const MouseEvent& e)
         else if (!cx && !cy && size > 1 && Rectangle<int>(bl.getX(), bl.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::bottomLeft;
         else if (!cy && size > 1 && Rectangle<int>(bm.getX(), bm.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::bottomMid;
         else if (!cx && !cy && size > 1 && Rectangle<int>(br.getX(), br.getY(), 0, 0).expanded(3).contains(pos)) mouseHover = MouseHover::bottomRight;
-        else if (quadToRect(q).contains(pos)) {
+        else if (quadToRect(q).contains(pos.toDouble())) {
             juce::Path quadPath;
             quadPath.startNewSubPath((float)q[0].x, (float)q[0].y);
             quadPath.lineTo((float)q[1].x, (float)q[1].y);
@@ -344,36 +344,36 @@ void Multiselect::mouseDrag(const MouseEvent& e)
 
 void Multiselect::dragArea(const MouseEvent& e) 
 {
-    auto mouse = e.getPosition();
-    auto mouseDown = e.getMouseDownPosition();
+    auto mouse = e.getPosition().toDouble();
+    auto mouseDown = e.getMouseDownPosition().toDouble();
 
     auto selectionArea = selectionAreaStart;
-    int left = selectionArea.getX();
-    int right = selectionArea.getRight();
-    int top = selectionArea.getY();
-    int bottom = selectionArea.getBottom();
+    double left = selectionArea.getX();
+    double right = selectionArea.getRight();
+    double top = selectionArea.getY();
+    double bottom = selectionArea.getBottom();
 
-    int distl = 0; // distance left to grid used for snapping
-    int distr = 0; // distance right
-    int distt = 0;
-    int distb = 0;
+    double distl = 0; // distance left to grid used for snapping
+    double distr = 0; // distance right
+    double distt = 0;
+    double distb = 0;
 
     if (isSnapping(e)) {
         double grid = (double)audioProcessor.getCurrentGrid();
         double gridx = double(winw) / grid;
         double gridy = double(winh) / grid;
-        mouse.x = (int)(std::round((mouse.x - winx) / gridx) * gridx + winx);
-        mouse.y = (int)(std::round((mouse.y - winy) / gridy) * gridy + winy);
-        mouseDown.x = (int)(std::round((mouseDown.x - winx) / gridx) * gridx + winx);
-        mouseDown.y = (int)(std::round((mouseDown.y - winy) / gridy) * gridy + winy);
-        distl = (int)(std::round((left - winx) / gridx) * gridx + winx) - left;
-        distr = (int)(std::round((right - winx) / gridx) * gridx + winx) - right;
-        distt = (int)(std::round((top - winy) / gridy) * gridy + winy) - top;
-        distb = (int)(std::round((bottom - winy) / gridy) * gridy + winy) - bottom;
+        mouse.x = std::round((mouse.x - winx) / gridx) * gridx + winx;
+        mouse.y = std::round((mouse.y - winy) / gridy) * gridy + winy;
+        mouseDown.x = std::round((mouseDown.x - winx) / gridx) * gridx + winx;
+        mouseDown.y = std::round((mouseDown.y - winy) / gridy) * gridy + winy;
+        distl = std::round((left - winx) / gridx) * gridx + winx - left;
+        distr = std::round((right - winx) / gridx) * gridx + winx - right;
+        distt = std::round((top - winy) / gridy) * gridy + winy - top;
+        distb = std::round((bottom - winy) / gridy) * gridy + winy - bottom;
     }
 
-    int dx = mouse.x - mouseDown.x;
-    int dy = mouse.y - mouseDown.y;
+    double dx = mouse.x - mouseDown.x;
+    double dy = mouse.y - mouseDown.y;
 
     if (mouseHover == MouseHover::area) {
         left += dx + distl;
@@ -463,7 +463,7 @@ void Multiselect::dragArea(const MouseEvent& e)
         selectionArea.setY(winy);
         selectionArea.setHeight(winh);
     }
-    applyRelativeQuadCoords(selectionArea.toDouble());
+    applyRelativeQuadCoords(selectionArea);
     updatePointsToSelection();
 }
 
@@ -591,21 +591,21 @@ Vec2 Multiselect::pointToVec(Point<double> p)
     return Vec2(p.getX(), p.getY());
 }
 
-Rectangle<int> Multiselect::quadToRect(Quad q)
+Rectangle<double> Multiselect::quadToRect(Quad q)
 {
-    int minx = winx + winw;
-    int maxx = -1;
-    int miny = winy + winh;
-    int maxy = -1;
+    double minx = double(winx + winw);
+    double maxx = double(-1);
+    double miny = double(winy + winh);
+    double maxy = double(-1);
     for (auto& p : q) {
-        auto x = (int)p.x;
-        auto y = (int)p.y;
+        auto x = p.x;
+        auto y = p.y;
         if (x < minx) minx = x;
         if (x > maxx) maxx = x;
         if (y < miny) miny = y;
         if (y > maxy) maxy = y;
     }
-    return Rectangle<int>(minx, miny, maxx-minx, maxy-miny);
+    return Rectangle<double>(minx, miny, maxx-minx, maxy-miny);
 }
 
 bool Multiselect::isCollinear(const std::vector<SelPoint>& points, bool xaxis)
