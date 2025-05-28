@@ -296,32 +296,32 @@ void Multiselect::recalcSelectionArea()
     selectionPoints = selPoints;
 
     // calculate selection area based on points positions
-    int minx = winx + winw;
-    int maxx = -1;
-    int miny = winy + winh;
-    int maxy = -1;
+    double minx = (double)winx + winw;
+    double maxx = (double)-1;
+    double miny = (double)winy + winh;
+    double maxy = (double)-1;
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
-        int x = (int)(p.x * winw + winx);
-        int y = (int)(p.y * winh + winy);
+        double x = (p.x * winw + winx);
+        double y = (p.y * winh + winy);
         if (x < minx) minx = x;
         if (x > maxx) maxx = x;
         if (y < miny) miny = y;
         if (y > maxy) maxy = y;
     }
 
-    auto selectionArea = Rectangle<int>(minx, miny, maxx - minx, maxy - miny);
-    quad[0] = pointToVec(selectionArea.getTopLeft().toDouble());
-    quad[1] = pointToVec(selectionArea.getTopRight().toDouble());
-    quad[2] = pointToVec(selectionArea.getBottomLeft().toDouble());
-    quad[3] = pointToVec(selectionArea.getBottomRight().toDouble());
+    auto selectionArea = Rectangle<double>(minx, miny, maxx - minx, maxy - miny);
+    quad[0] = pointToVec(selectionArea.getTopLeft());
+    quad[1] = pointToVec(selectionArea.getTopRight());
+    quad[2] = pointToVec(selectionArea.getBottomLeft());
+    quad[3] = pointToVec(selectionArea.getBottomRight());
 
     for (size_t i = 0; i < selectionPoints.size(); ++i) {
         auto& p = selectionPoints[i];
         double x = p.x * winw + winx;
         double y = p.y * winh + winy;
-        p.areax = std::max(0.0, std::min(1.0, (x - selectionArea.getX()) / (double)selectionArea.getWidth()));
-        p.areay = std::max(0.0, std::min(1.0, (y - selectionArea.getY()) / (double)selectionArea.getHeight()));
+        p.areax = std::max(0.0, std::min(1.0, (x - selectionArea.getX()) / selectionArea.getWidth()));
+        p.areay = std::max(0.0, std::min(1.0, (y - selectionArea.getY()) / selectionArea.getHeight()));
     }
 }
 
@@ -370,6 +370,11 @@ void Multiselect::dragArea(const MouseEvent& e)
         distr = std::round((right - winx) / gridx) * gridx + winx - right;
         distt = std::round((top - winy) / gridy) * gridy + winy - top;
         distb = std::round((bottom - winy) / gridy) * gridy + winy - bottom;
+
+        if (std::fabs(distl) < 1) distl = 0; // dont move points if already very close to the grid, fixes dragging sequencer points after apply
+        if (std::fabs(distr) < 1) distr = 0;
+        if (std::fabs(distt) < 1) distt = 0; 
+        if (std::fabs(distb) < 1) distb = 0;
     }
 
     double dx = mouse.x - mouseDown.x;
