@@ -42,7 +42,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	addButton(tenBtn, "Ten", col, row, EditTension);col += 70;
 
 	row = 0;
-	col = maxBtn.getBounds().getRight() + 25; // layout during resized()
+	col = maxBtn.getBounds().getRight() + 20; // layout during resized()
 	addToolButton(silenceBtn, col, row, 25, 25, CellShape::SSilence); col += 25;
 	addToolButton(lineBtn, col, row, 25, 25, CellShape::SLine); col += 25;
 	addToolButton(rampdnBtn, col, row, 25, 25, CellShape::SRampDn); col += 25;
