@@ -30,6 +30,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("tensionrel", "Release Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 2),
+        std::make_unique<juce::AudioParameterInt>("seqstep", "Sequencer Step", 0, (int)std::size(GRID_SIZES)-1, 2),
         // audio trigger params
         std::make_unique<juce::AudioParameterChoice>("algo", "Audio Algorithm", StringArray { "Simple", "Drums" }, 0),
         std::make_unique<juce::AudioParameterFloat>("threshold", "Audio Threshold", NormalisableRange<float>(0.0f, 1.0f), 0.5f),
@@ -165,6 +166,12 @@ void GATE12AudioProcessor::setScale(float s)
 int GATE12AudioProcessor::getCurrentGrid()
 {
     auto gridIndex = (int)params.getRawParameterValue("grid")->load();
+    return GRID_SIZES[gridIndex];
+}
+
+int GATE12AudioProcessor::getCurrentSeqStep()
+{
+    auto gridIndex = (int)params.getRawParameterValue("seqstep")->load();
     return GRID_SIZES[gridIndex];
 }
 
@@ -1126,6 +1133,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("paintPage", paintPage, nullptr);
     state.setProperty("pointMode", pointMode, nullptr);
     state.setProperty("audioIgnoreHitsWhilePlaying", audioIgnoreHitsWhilePlaying, nullptr);
+    state.setProperty("linkSeqToGrid", linkSeqToGrid, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -1189,6 +1197,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         paintPage = (int)state.getProperty("paintPage");
         pointMode = state.hasProperty("pointMode") ? (int)state.getProperty("pointMode") : 1;
         audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");
+        linkSeqToGrid = state.hasProperty("linkSeqToGrid") ? (bool)state.getProperty("linkSeqToGrid") : true;
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();

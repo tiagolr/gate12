@@ -1,30 +1,48 @@
 #include "GridSelector.h"
 #include "../PluginProcessor.h"
 
-GridSelector::GridSelector(GATE12AudioProcessor& p) : audioProcessor(p)
+GridSelector::GridSelector(GATE12AudioProcessor& p, bool seqStepSelector) 
+    : audioProcessor(p)
+    , seqStepSelector(seqStepSelector)
 {
-    audioProcessor.params.addParameterListener("grid", this);
+    audioProcessor.params.addParameterListener(seqStepSelector ? "seqstep" : "grid", this);
 }
 
 GridSelector::~GridSelector()
 {
-    audioProcessor.params.removeParameterListener("grid", this);
+    audioProcessor.params.removeParameterListener(seqStepSelector ? "seqstep" : "grid", this);
 }
 
 void GridSelector::parameterChanged(const juce::String& parameterID, float newValue) 
 {
-    (void)parameterID;
-    (void)newValue;
+    auto seqstep = audioProcessor.params.getParameter("seqstep")->getValue();
+    auto grid = audioProcessor.params.getParameter("grid")->getValue();
+    if (audioProcessor.linkSeqToGrid) {
+        if (parameterID == "seqstep" && newValue != grid) {
+            juce::MessageManager::callAsync([this, seqstep] {
+                audioProcessor.params.getParameter("grid")
+                    ->setValueNotifyingHost(seqstep);
+                });
+        }
+        if (parameterID == "grid" && newValue != seqstep) {
+            juce::MessageManager::callAsync([this, grid] {
+                audioProcessor.params.getParameter("seqstep")
+                    ->setValueNotifyingHost(grid);
+                });
+        }
+    }
     juce::MessageManager::callAsync([this] { repaint(); });
 }
 
 void GridSelector::paint(juce::Graphics& g) {
     g.fillAll(Colour(COLOR_BG));
 
-    int gridSize = audioProcessor.getCurrentGrid();
+    int gridSize = seqStepSelector
+        ? audioProcessor.getCurrentSeqStep()
+        : audioProcessor.getCurrentGrid();
     g.setFont(16);
     g.setColour(Colour(COLOR_ACTIVE));
-    g.drawFittedText("Grid " + String(gridSize), getLocalBounds(), Justification::centredLeft, 1);
+    g.drawFittedText((seqStepSelector ? "Step " : "Grid ") + String(gridSize), getLocalBounds(), Justification::centredLeft, 1);
 }
 
 void GridSelector::mouseDown(const juce::MouseEvent& e) 
@@ -50,12 +68,10 @@ void GridSelector::mouseDown(const juce::MouseEvent& e)
         [this](int result) {
             if (result == 0) return;
             MessageManager::callAsync([this, result]() {
-                auto param = audioProcessor.params.getParameter("grid");
-                param->beginChangeGesture();
+                auto param = audioProcessor.params.getParameter(seqStepSelector ? "seqstep": "grid");
                 param->setValueNotifyingHost(param->convertTo0to1(result-1.f));
-                param->endChangeGesture();
-            });
+                });
         }
     );
-    
+
 }

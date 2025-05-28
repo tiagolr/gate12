@@ -10,7 +10,7 @@ class GATE12AudioProcessor;
 
 class GridSelector : public juce::SettableTooltipClient, public juce::Component, private juce::AudioProcessorValueTreeState::Listener {
 public:
-    GridSelector(GATE12AudioProcessor&);
+    GridSelector(GATE12AudioProcessor&, bool seqStepSelector = false);
     ~GridSelector() override;
     void paint(juce::Graphics& g) override;
 
@@ -18,6 +18,7 @@ public:
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
 
-protected:
+private:
+    bool seqStepSelector;
     GATE12AudioProcessor& audioProcessor;
 };

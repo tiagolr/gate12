@@ -786,6 +786,8 @@ void GATE12AudioProcessorEditor::resized()
 {
     if (!init) return; // defer resized() call during constructor
 
+    about->setBounds(0,0,getWidth(), getHeight());
+
     // layout right aligned components and view
     // first row
     auto col = getWidth() - PLUG_PADDING;

@@ -1,10 +1,10 @@
 /*
-  ==============================================================================
+==============================================================================
 
-    Multiselect.h
-    Author:  tiagolr
+Multiselect.h
+Author:  tiagolr
 
-  ==============================================================================
+==============================================================================
 */
 #pragma once
 
@@ -58,17 +58,17 @@ inline Vec2 bilinearInterpolate(const Quad& quad, double u, double v) {
 class Multiselect
 {
 public:
-	Multiselect(GATE12AudioProcessor& p) : audioProcessor(p) {}
-	~Multiselect() {}
+    Multiselect(GATE12AudioProcessor& p) : audioProcessor(p) {}
+    ~Multiselect() {}
 
     void setViewBounds(int _x, int _y, int _w, int _h);
 
-	void mouseDown(const MouseEvent& e);
+    void mouseDown(const MouseEvent& e);
     void mouseMove(const MouseEvent& e);
     void mouseDrag(const MouseEvent& e);
     void mouseUp(const MouseEvent& e);
-	void drawBackground(Graphics& g);
-	void draw(Graphics& g);
+    void drawBackground(Graphics& g);
+    void draw(Graphics& g);
     void drawHandles(Graphics& g);
 
     void recalcSelectionArea();
@@ -79,6 +79,7 @@ public:
 
     int mouseHover = -1; // flag for hovering selection drag handles, 0 area, 1 top left corner, 2 top center etc..
     std::vector<SelPoint> selectionPoints;
+    bool dragging = false;
 
 private:
     int winx = 0;
@@ -100,7 +101,7 @@ private:
     void calcRelativeQuadCoords(Rectangle<double> area);
     void applyRelativeQuadCoords(Rectangle<double> area);
 
-	Rectangle<double> selectionAreaStart = Rectangle<double>(); // used to drag or scale selection area
+    Rectangle<double> selectionAreaStart = Rectangle<double>(); // used to drag or scale selection area
     Quad selectionQuadStart = {Vec2(0.0,0.0), Vec2(1.0, 0.0), Vec2(0.0, 1.0), Vec2(1.0,1.0)};
     GATE12AudioProcessor& audioProcessor;
 

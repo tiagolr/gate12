@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../Globals.h"
+#include "GridSelector.h"
 
 using namespace globals;
 class GATE12AudioProcessor;
@@ -11,6 +12,8 @@ public:
     SequencerWidget(GATE12AudioProcessor& p);
     ~SequencerWidget() override {}
     void resized() override;
+
+    std::unique_ptr<GridSelector> stepSelector;
 
     TextButton maxBtn;
     TextButton tenBtn;
@@ -32,6 +35,7 @@ public:
 
     TextButton applyBtn;
     TextButton resetBtn;
+    TextButton linkStepBtn;
 
     double randomMin = 0.0;
     double randomMax = 1.0;
@@ -39,6 +43,7 @@ public:
     void updateButtonsState();
     void paint(Graphics& g) override;
     void mouseDown(const juce::MouseEvent& e) override;
+    void drawChain(Graphics& g, Rectangle<int> bounds, Colour color, Colour background);
 
 private:
     GATE12AudioProcessor& audioProcessor;

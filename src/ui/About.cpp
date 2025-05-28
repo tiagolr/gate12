@@ -23,6 +23,9 @@ void About::paint(Graphics& g)
 	g.setColour(Colour(COLOR_ACTIVE));
 	g.drawText("github.com/tiagolr/gate12", bounds.removeFromTop(25), Justification::centred);
 	g.setColour(Colours::white);
+	auto w = PLUG_WIDTH - 100;
+	bounds.setWidth(w);
+	bounds.setX(getWidth() / 2 - w/2);
 	bounds.removeFromTop(40);
 	g.drawText("- Shift for fine slider adjustments.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Shift toggles snap on/off.", bounds.removeFromTop(25), Justification::centredLeft);
@@ -30,6 +33,7 @@ void About::paint(Graphics& g)
 	g.drawText("- Right click points changes point type.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Alt + click inserts new point.", bounds.removeFromTop(25), Justification::centredLeft);
 	g.drawText("- Alt + drag selection handles skews selected points.", bounds.removeFromTop(25), Justification::centredLeft);
-	g.drawText("- Right click + drag in paint mode changes paint tool tension", bounds.removeFromTop(25), Justification::centredLeft);
+	g.drawText("- Right click + drag in paint mode changes paint tool tension.", bounds.removeFromTop(25), Justification::centredLeft);
+	g.drawText("- Shift + mouse wheel in sequencer changes step size.", bounds.removeFromTop(25), Justification::centredLeft);
 };
 

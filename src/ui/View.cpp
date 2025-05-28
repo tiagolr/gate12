@@ -670,7 +670,22 @@ void View::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelD
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
         return;
 
-    (void)event;
+    if (audioProcessor.uimode == UIMode::Seq && (event.mods.isShiftDown() || event.mods.isAltDown())) {
+        int grid = (int)audioProcessor.params.getRawParameterValue("seqstep")->load();
+        auto param = audioProcessor.params.getParameter("seqstep");
+        int newgrid = grid + (wheel.deltaY > 0.f ? -1 : 1);
+        if (audioProcessor.linkSeqToGrid) {
+            audioProcessor.linkSeqToGrid = false;
+        }
+        // constrain grid size to stay on straights or tripplets
+        if (!(grid == 4 && newgrid == 5) && !(grid == 5 && newgrid == 4)) {
+            param->beginChangeGesture();
+            param->setValueNotifyingHost(param->convertTo0to1((float)newgrid));
+            param->endChangeGesture();
+        }
+        return;
+    }
+
     int grid = (int)audioProcessor.params.getRawParameterValue("grid")->load();
     auto param = audioProcessor.params.getParameter("grid");
     int newgrid = grid + (wheel.deltaY > 0.f ? -1 : 1);
