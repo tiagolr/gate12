@@ -18,7 +18,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("grid", this);
     audioProcessor.params.addParameterListener("trigger", this);
-    audioProcessor.params.addParameterListener("pattern", this);
 
     auto col = PLUG_PADDING;
     auto row = PLUG_PADDING;
@@ -147,10 +146,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
         btn->setComponentID(i == 0 ? "leftPattern" : i == 11 ? "rightPattern" : "pattern");
         btn->onClick = [i, this]() {
             MessageManager::callAsync([i, this] {
-                auto param = audioProcessor.params.getParameter("pattern");
-                param->beginChangeGesture();
-                param->setValueNotifyingHost(param->convertTo0to1((float)(i + 1)));
-                param->endChangeGesture();
+                audioProcessor.queuePattern(i+1);
             });
         };
         addAndMakeVisible(*btn);
@@ -502,7 +498,6 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
     delete customLookAndFeel;
     audioProcessor.params.removeParameterListener("sync", this);
     audioProcessor.params.removeParameterListener("trigger", this);
-    audioProcessor.params.removeParameterListener("pattern", this);
     audioProcessor.removeChangeListener(this);
 }
 

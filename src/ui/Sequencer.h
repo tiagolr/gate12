@@ -73,7 +73,6 @@ public:
     void apply();
     void clear();
     void build();
-    Pattern* getCurrentPattern();
     std::vector<PPoint> buildSeg(Cell cell);
     int getCellIndex(double minx, double maxx);
     int getCellIndexAt(double x);

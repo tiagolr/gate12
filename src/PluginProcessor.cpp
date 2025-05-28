@@ -672,13 +672,6 @@ void GATE12AudioProcessor::queuePattern(int patidx)
             interval = interval * 4;
         queuedPatternCountdown = (interval - timeInSamples % interval) % interval;
     }
-
-    MessageManager::callAsync([this, patidx] {
-        auto param = params.getParameter("pattern");
-        param->beginChangeGesture();
-        param->setValueNotifyingHost(param->convertTo0to1((float)(patidx)));
-        param->endChangeGesture();
-    });
 }
 
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
@@ -1134,6 +1127,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("pointMode", pointMode, nullptr);
     state.setProperty("audioIgnoreHitsWhilePlaying", audioIgnoreHitsWhilePlaying, nullptr);
     state.setProperty("linkSeqToGrid", linkSeqToGrid, nullptr);
+    state.setProperty("currpattern", pattern->index + 1, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -1198,6 +1192,14 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         pointMode = state.hasProperty("pointMode") ? (int)state.getProperty("pointMode") : 1;
         audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");
         linkSeqToGrid = state.hasProperty("linkSeqToGrid") ? (bool)state.getProperty("linkSeqToGrid") : true;
+        int currpattern = 1;
+        if (!state.hasProperty("currpattern"))
+            currpattern = (int)params.getRawParameterValue("pattern")->load();
+        else
+            currpattern = state.getProperty("currpattern");
+        queuePattern(currpattern);
+        auto param = params.getParameter("pattern");
+        param->setValueNotifyingHost(param->convertTo0to1((float)currpattern));
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();
