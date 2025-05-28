@@ -46,7 +46,7 @@ class Pattern
 public:
     uint64_t versionID = 0; // unique pattern ID, used by UI to detect pattern changes and update selection
     static std::vector<PPoint> copy_pattern;
-    const double PI = 3.14159265358979323846;
+    static constexpr double PI = 3.14159265358979323846;
     int index;
     std::vector<PPoint> points;
     std::vector<Segment> segments;
