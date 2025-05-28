@@ -16,6 +16,7 @@ enum CellShape {
     STri,
     SLine,
     SPTool,
+    SLPoint,
 };
 
 enum SeqEditMode {
@@ -97,6 +98,7 @@ private:
     std::vector<PPoint> silence;
     std::vector<PPoint> ramp;
     std::vector<PPoint> tri;
+    std::vector<PPoint> lpoint;
     std::vector<PPoint> line;
 
     std::vector<PPoint> backup;

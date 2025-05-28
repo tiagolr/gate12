@@ -21,6 +21,7 @@ public:
     TextButton rampupBtn;
     TextButton rampdnBtn;
     TextButton lineBtn;
+    TextButton lpointBtn;
     TextButton triBtn;
     TextButton ptoolBtn;
 
