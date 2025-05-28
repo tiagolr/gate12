@@ -106,7 +106,7 @@ Audio transients can be used to trigger the envelope or restart its cycle, its h
 
 MIDI can be used to trigger the envelope or restart its cycle, it can also be used to change patterns (defaults to channel 10).
 
-#### Pattern sync
+OB#### Pattern sync
 
 Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
 
@@ -129,6 +129,7 @@ After creating a sequence click `Apply` to save it as the current pattern and ed
 - `Alt + click` inserts new points.
 - `Alt + drag` selection handles skews selected points.
 - `Right click + drag` in paint mode changes paint tool tension.
+- `Shift + mouse wheel` to change sequencer step size.
 
 ## MacOS
 
