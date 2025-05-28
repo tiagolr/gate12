@@ -12,11 +12,9 @@ public:
     ~SequencerWidget() override {}
     void resized() override;
 
-    TextButton minBtn;
     TextButton maxBtn;
     TextButton tenBtn;
-    TextButton tenaBtn;
-    TextButton tenrBtn;
+    TextButton skewBtn;
     TextButton flipXBtn;
 
     TextButton silenceBtn;

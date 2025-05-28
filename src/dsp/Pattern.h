@@ -59,7 +59,7 @@ public:
     Pattern(int index);
     void incrementVersion(); // generates a new unique ID for this pattern
 
-    int insertPoint(double x, double y, double tension, int type);
+    int insertPoint(double x, double y, double tension, int type, bool sort = true);
     void sortPoints();
     void setTension(double t, double tatk, double trel, bool dual); // sets global tension multiplier
     void removePoint(double x, double y);
@@ -67,6 +67,7 @@ public:
     void removePointsInRange(double x1, double x2);
     void invert();
     void reverse();
+    void doublePattern();
     void rotate(double x);
     void clear();
     void buildSegments();

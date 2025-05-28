@@ -16,7 +16,6 @@ enum CellShape {
     STri,
     SLine,
     SPTool,
-    SLink,
 };
 
 enum SeqEditMode {
@@ -26,7 +25,8 @@ enum SeqEditMode {
     EditTenAtt,
     EditTenRel,
     EditInvertX,
-    EditSilence // used for randomize only
+    EditSkew,
+    EditSilence, // used for randomize only
 };
 
 struct Cell { 
@@ -34,10 +34,13 @@ struct Cell {
     CellShape lshape; // used to temporarily change type and revert back
     int ptool; // paint tool
     bool invertx;
+    double minx;
+    double maxx;
     double miny;
     double maxy;
     double tenatt; // attack tension
     double tenrel; // release tension
+    double skew;
 };
 
 class Sequencer {
@@ -67,10 +70,15 @@ public:
     void apply();
     void clear();
     void build();
-    std::vector<PPoint> buildSeg(double minx, double maxx, Cell cell);
-    std::vector<Rectangle<int>> getSegButtons();
+    std::vector<PPoint> buildSeg(Cell cell);
+    int getCellIndex(double minx, double maxx);
+    std::vector<Cell*> getCellsInRange(double minx, double maxx);
+    int addCell(double minx, double maxx);
+    void clearSegment(double minx, double maxx, bool removeAll);
     void rotateRight();
     void rotateLeft();
+    void doublePattern();
+    void sortCells();
 
     void randomize(SeqEditMode mode, double min, double max);
     void clear(SeqEditMode mode);
@@ -83,8 +91,6 @@ public:
     void redo();
 
 private:
-    int hoverButton = -1;
-    CellShape hoverButtonType = CellShape::SSilence; // used for dragging multiple buttons assigning the same type
     CellShape startHoverShape = CellShape::SLine; // used for dragging multiple buttons with the same type
     bool startInvertX = false; // used to drag toggle all segments to the same invertx
     Point<int> lmousepos;
@@ -104,7 +110,6 @@ private:
     GATE12AudioProcessor& audioProcessor;
 
     bool isSnapping(const MouseEvent& e);
-    void processLinkCells(std::vector<PPoint>& pts, int grid);
     std::vector<PPoint> removeCollinearPoints(std::vector<PPoint>& pts);
     bool compareCells(const std::vector<Cell>& a, const std::vector<Cell>& b);
 };

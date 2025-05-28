@@ -37,14 +37,12 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 
 	int col = 0;int row = 0;
 	addButton(flipXBtn, "FlipX", col, row, EditInvertX);col += 70;
-	addButton(minBtn, "Min", col, row, EditMin);col += 70;
-	addButton(maxBtn, "Max", col, row, EditMax);col = 0;row = 35;
-	addButton(tenaBtn, "TAtk", col, row, EditTenAtt);col += 70;
-	addButton(tenrBtn, "TRel", col, row, EditTenRel);col += 70;
+	addButton(maxBtn, "Paint", col, row, EditMax);col = 0;row = 35;
+	addButton(skewBtn, "Skew", col, row, EditSkew);col += 70;
 	addButton(tenBtn, "Ten", col, row, EditTension);col += 70;
 
 	row = 0;
-	col = 0; // layout during resized()
+	col = maxBtn.getBounds().getRight() + 25; // layout during resized()
 	addToolButton(silenceBtn, col, row, 25, 25, CellShape::SSilence); col += 25;
 	addToolButton(lineBtn, col, row, 25, 25, CellShape::SLine); col += 25;
 	addToolButton(rampdnBtn, col, row, 25, 25, CellShape::SRampDn); col += 25;
@@ -69,9 +67,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	randomMenuBtn.setBounds(col,row,25,25);
 	randomMenuBtn.onClick = [this]() {
 		PopupMenu menu;
-		menu.addItem(3, "Random Silence");
 		menu.addItem(1, "Random All");
-		menu.addItem(2, "Random All + Silence");
 		Point<int> pos = localPointToGlobal(randomMenuBtn.getBounds().getTopRight());
 		menu.showMenuAsync(PopupMenu::Options().withTargetScreenArea({ pos.getX(), pos.getY(), 1, 1 }), [this](int result) {
 			if (result == 1 || result == 2) {
@@ -154,15 +150,6 @@ void SequencerWidget::resized()
 	col -= 70;
 	applyBtn.setBounds(col-60,row,60,25);
 
-	row = 0;
-	col = getLocalBounds().getCentreX() - 25*7/2;
-	silenceBtn.setBounds(col, row, 25, 25); col+= 25;
-	lineBtn.setBounds(col, row, 25, 25); col+= 25;
-	rampdnBtn.setBounds(col, row, 25, 25); col+= 25;
-	rampupBtn.setBounds(col, row, 25, 25); col+= 25;
-	triBtn.setBounds(col, row, 25, 25); col+= 25;
-	ptoolBtn.setBounds(col, row, 25, 25); col+= 25;
-
 	auto bounds = clearBtn.getBounds();
 	clearBtn.setBounds(bounds.withRightX(getWidth()));
 
@@ -178,10 +165,8 @@ void SequencerWidget::updateButtonsState()
 	auto mode = audioProcessor.sequencer->editMode;
 	auto modeColor = audioProcessor.sequencer->getEditModeColour(audioProcessor.sequencer->editMode);
 	maxBtn.setToggleState(mode == SeqEditMode::EditMax, dontSendNotification);
-	minBtn.setToggleState(mode == SeqEditMode::EditMin, dontSendNotification);
 	flipXBtn.setToggleState(mode == SeqEditMode::EditInvertX, dontSendNotification);
-	tenaBtn.setToggleState(mode == SeqEditMode::EditTenAtt, dontSendNotification);
-	tenrBtn.setToggleState(mode == SeqEditMode::EditTenRel, dontSendNotification);
+	skewBtn.setToggleState(mode == SeqEditMode::EditSkew, dontSendNotification);
 	tenBtn.setToggleState(mode == SeqEditMode::EditTension, dontSendNotification);
 	randomBtn.setColour(TextButton::buttonColourId, modeColor);
 	randomRange.setColour(Slider::backgroundColourId, Colour(COLOR_BG).brighter(0.1f));

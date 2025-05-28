@@ -29,7 +29,7 @@ void Pattern::incrementVersion()
 void Pattern::sortPoints()
 {
     std::sort(points.begin(), points.end(), [](const PPoint& a, const PPoint& b) { 
-        return a.x == b.x ? a.id < b.id : a.x < b.x; 
+        return a.x < b.x; 
     });
 }
 
@@ -41,14 +41,15 @@ void Pattern::setTension(double t, double tatk, double trel, bool dual)
     tensionMult.store(t);
 }
 
-int Pattern::insertPoint(double x, double y, double tension, int type)
+int Pattern::insertPoint(double x, double y, double tension, int type, bool sort)
 {
     auto id = pointsIDCounter;
     pointsIDCounter += 1;
 
     const PPoint p = { id, x, y, tension, type };
     points.push_back(p);
-    sortPoints();
+    if (sort)
+        sortPoints();
 
     // return point index
     auto pidx = std::find_if(points.begin(), points.end(), [id](const PPoint& p) { return p.id == id; });
@@ -120,6 +121,20 @@ void Pattern::rotate(double x) {
         if (p->x > 1.0) p->x -= 1.0;
     }
     sortPoints();
+    incrementVersion();
+}
+
+void Pattern::doublePattern()
+{
+    auto pts = points;
+    for (auto& p : pts) {
+        insertPoint(p.x + 1.0, p.y, p.tension, p.type, false);
+    }
+
+    for (auto& p : points) {
+        p.x /= 2.0;
+    }
+
     incrementVersion();
 }
 

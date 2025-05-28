@@ -1143,10 +1143,13 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
             << cell.lshape << ' '
             << cell.ptool << ' '
             << cell.invertx << ' '
+            << cell.minx << ' '
+            << cell.maxx << ' '
             << cell.miny << ' '
             << cell.maxy << ' '
             << cell.tenatt << ' '
-            << cell.tenrel << '\n';
+            << cell.tenrel << ' '
+            << cell.skew << '\n';
     }
     state.setProperty("seqcells", var(oss.str()), nullptr);
 
@@ -1197,7 +1200,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
                 int type;
                 std::istringstream iss(str);
                 while (iss >> x >> y >> tension >> type) {
-                    patterns[i]->insertPoint(x,y,tension,type);
+                    patterns[i]->insertPoint(x,y,tension,type, false);
                 }
             }
 
@@ -1215,7 +1218,9 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
             Cell cell;
             int shape, lshape;
             while (iss >> shape >> lshape >> cell.ptool >> cell.invertx 
-                >> cell.miny >> cell.maxy >> cell.tenatt >> cell.tenrel) {
+                >> cell.minx >> cell.maxx >> cell.miny >> cell.maxy >> cell.tenatt
+                >> cell.tenrel >> cell.skew) 
+            {
                 cell.shape = static_cast<CellShape>(shape);
                 cell.lshape = static_cast<CellShape>(lshape);
                 sequencer->cells.push_back(cell);
