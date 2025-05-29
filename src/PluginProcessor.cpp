@@ -86,7 +86,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     sequencer = new Sequencer(*this);
     pattern = patterns[0];
     viewPattern = pattern;
-    preSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= viewport width 
+    preSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= viewport width
     postSamples.resize(MAX_PLUG_WIDTH, 0);
     monSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
     value = new RCSmoother();
@@ -254,8 +254,8 @@ void GATE12AudioProcessor::setUIMode(UIMode mode)
 
 void GATE12AudioProcessor::togglePaintMode()
 {
-    setUIMode(uimode == UIMode::Paint 
-        ? UIMode::Normal 
+    setUIMode(uimode == UIMode::Paint
+        ? UIMode::Normal
         : UIMode::Paint
     );
 }
@@ -271,7 +271,7 @@ void GATE12AudioProcessor::togglePaintEditMode()
 void GATE12AudioProcessor::toggleSequencerMode()
 {
     setUIMode(uimode == UIMode::Seq
-        ? UIMode::Normal 
+        ? UIMode::Normal
         : UIMode::Seq
     );
 }
@@ -292,7 +292,7 @@ void GATE12AudioProcessor::setViewPattern(int index)
     sendChangeMessage();
 }
 
-void GATE12AudioProcessor::setPaintTool(int index) 
+void GATE12AudioProcessor::setPaintTool(int index)
 {
     paintTool = index;
     if (uimode == UIMode::PaintEdit) {
@@ -427,8 +427,8 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 {
     (void)samplesPerBlock;
     int trigger = (int)params.getRawParameterValue("trigger")->load();
-    setLatencySamples(trigger == Trigger::Audio 
-        ? static_cast<int>(sampleRate * LATENCY_MILLIS / 1000.0) 
+    setLatencySamples(trigger == Trigger::Audio
+        ? static_cast<int>(sampleRate * LATENCY_MILLIS / 1000.0)
         : 0
     );
     lpFilterL.clear(0.0);
@@ -481,8 +481,8 @@ void GATE12AudioProcessor::onSlider()
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger) {
         auto latency = getLatencySamples();
-        setLatencySamples(trigger == Trigger::Audio 
-            ? static_cast<int>(getSampleRate() * LATENCY_MILLIS / 1000.0) 
+        setLatencySamples(trigger == Trigger::Audio
+            ? static_cast<int>(getSampleRate() * LATENCY_MILLIS / 1000.0)
             : 0
         );
         if (getLatencySamples() != latency && playing) {
@@ -492,7 +492,7 @@ void GATE12AudioProcessor::onSlider()
         clearLatencyBuffers();
         ltrigger = trigger;
     }
-    if (trigger == Trigger::Sync && alwaysPlaying) 
+    if (trigger == Trigger::Sync && alwaysPlaying)
         alwaysPlaying = false; // force alwaysPlaying off when trigger is not MIDI or Audio
 
     if (trigger != Trigger::MIDI && midiTrigger)
@@ -646,7 +646,7 @@ double inline GATE12AudioProcessor::getY(double x, double min, double max)
     return min + (max - min) * (1 - pattern->get_y_at(x));
 }
 
-void GATE12AudioProcessor::setSmooth() 
+void GATE12AudioProcessor::setSmooth()
 {
     if (dualSmooth) {
         float attack = params.getRawParameterValue("attack")->load();
@@ -670,7 +670,7 @@ void GATE12AudioProcessor::queuePattern(int patidx)
 
     if (playing && patsync != PatSync::Off) {
         int interval = samplesPerBeat;
-        if (patsync == PatSync::QuarterBeat) 
+        if (patsync == PatSync::QuarterBeat)
             interval = interval / 4;
         else if (patsync == PatSync::HalfBeat)
             interval = interval / 2;
@@ -709,7 +709,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     // Get playhead info
     if (auto* phead = getPlayHead()) {
         if (auto pos = phead->getPosition()) {
-            if (auto ppq = pos->getPpqPosition()) 
+            if (auto ppq = pos->getPpqPosition())
                 ppqPosition = *ppq;
             if (auto tempo = pos->getBpm()) {
                 beatsPerSecond = *tempo / 60.0;
@@ -742,9 +742,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     int audioInputs = inputBusCount > 0 ? getChannelCountOfBus(true, 0) : 0;
     int sideInputs = inputBusCount > 1 ? getChannelCountOfBus(true, 1) : 0;
 
-    if (!audioInputs || !audioOutputs) 
+    if (!audioInputs || !audioOutputs)
         return;
-    
+
     double mix = (double)params.getRawParameterValue("mix")->load();
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     int sync = (int)params.getRawParameterValue("sync")->load();
@@ -916,14 +916,14 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
         // Sync mode
         if (trigger == Trigger::Sync) {
-            xpos = sync > 0 
+            xpos = sync > 0
                 ? beatPos / syncQN + phase
                 : ratePos + phase;
             xpos -= std::floor(xpos);
-            
+
             double newypos = getY(xpos, min, max);
             ypos = value->process(newypos, newypos > ypos);
-            
+
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
             applyGain(sample, ypos, lsample, rsample);
@@ -952,7 +952,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             }
 
             double newypos = getY(xpos, min, max);
-            ypos = value->process(newypos, newypos > ypos);    
+            ypos = value->process(newypos, newypos > ypos);
 
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
@@ -964,7 +964,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         // Audio mode
         else if (trigger == Trigger::Audio) {
             int latency = (int)latBufferL.size();
-            
+
             // read audio samples
             double lsample = (double)buffer.getSample(0, sample);
             double rsample = (double)buffer.getSample(audioInputs > 1 ? 1 : 0, sample);
@@ -993,8 +993,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             latMonitorBufferL[latpos] = monSampleL;
             latMonitorBufferR[latpos] = monSampleR;
 
-            if (transDetectorL.detect(algo, monSampleL, threshold, sense) || 
-                transDetectorR.detect(algo, monSampleR, threshold, sense)) 
+            if (transDetectorL.detect(algo, monSampleL, threshold, sense) ||
+                transDetectorR.detect(algo, monSampleR, threshold, sense))
             {
                 transDetectorL.startCooldown();
                 transDetectorR.startCooldown();
@@ -1014,10 +1014,10 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             for (int channel = 0; channel < audioOutputs; ++channel) {
                 buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? lsample : rsample));
             }
-            
+
             auto hit = audioTriggerCountdown == 0; // there was an audio transient trigger in this sample
             processMonitorSample(monSampleL, monSampleR, hit);
-           
+
             // envelope processing
             auto inc = sync > 0
                 ? beatsPerSample / syncQN
@@ -1067,7 +1067,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             }
 
             double newypos = getY(xpos, min, max);
-            ypos = value->process(newypos, newypos > ypos);    
+            ypos = value->process(newypos, newypos > ypos);
 
             if (useMonitor) {
                 for (int channel = 0; channel < audioOutputs; ++channel) {
@@ -1111,10 +1111,6 @@ juce::AudioProcessorEditor* GATE12AudioProcessor::createEditor()
 //==============================================================================
 void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    bool isSeqMode = uimode == UIMode::Seq;
-    if (isSeqMode)
-        sequencer->close();
-
     auto state = ValueTree("PluginState");
     state.appendChild(params.copyState(), nullptr);
     state.setProperty("version", PROJECT_VERSION, nullptr);
@@ -1140,6 +1136,11 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
         auto points = patterns[i]->points;
+
+        if (uimode == Seq && i == sequencer->patternIdx) {
+            points = sequencer->backup;
+        }
+
         for (const auto& point : points) {
             oss << point.x << " " << point.y << " " << point.tension << " " << point.type << " ";
         }
@@ -1165,16 +1166,13 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
-
-    if (isSeqMode) 
-        sequencer->open();
 }
 
 void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    bool isSeqMode = uimode == UIMode::Seq;
-    if (isSeqMode)
+    if (uimode == Seq) {
         sequencer->close();
+    }
 
     std::unique_ptr<juce::XmlElement>xmlState (getXmlFromBinary (data, sizeInBytes));
     if (!xmlState) return;
@@ -1236,9 +1234,9 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
             std::istringstream iss(str);
             Cell cell;
             int shape, lshape;
-            while (iss >> shape >> lshape >> cell.ptool >> cell.invertx 
+            while (iss >> shape >> lshape >> cell.ptool >> cell.invertx
                 >> cell.minx >> cell.maxx >> cell.miny >> cell.maxy >> cell.tenatt
-                >> cell.tenrel >> cell.skew) 
+                >> cell.tenrel >> cell.skew)
             {
                 cell.shape = static_cast<CellShape>(shape);
                 cell.lshape = static_cast<CellShape>(lshape);
@@ -1247,7 +1245,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         }
     }
 
-    setUIMode(UIMode::Normal);
+    setUIMode(Normal);
 }
 
 //==============================================================================

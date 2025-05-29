@@ -31,7 +31,7 @@ enum SeqEditMode {
     EditSilence, // used for randomize only
 };
 
-struct Cell { 
+struct Cell {
     CellShape shape;
     CellShape lshape; // used to temporarily change type and revert back
     int ptool; // paint tool
@@ -52,6 +52,7 @@ public:
     SeqEditMode editMode = SeqEditMode::EditMax;
     CellShape selectedShape = CellShape::SRampDn;
     int patternIdx = -1;
+    std::vector<PPoint> backup;
 
     Sequencer(GATE12AudioProcessor& p);
     ~Sequencer() {}
@@ -105,7 +106,6 @@ private:
     std::vector<PPoint> line;
     std::vector<PPoint> lpoint;
 
-    std::vector<PPoint> backup;
     std::vector<Cell> snapshot;
     Pattern* pat;
     Pattern* tmp; // temp pattern used for painting
