@@ -16,7 +16,6 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
-    audioProcessor.params.addParameterListener("grid", this);
     audioProcessor.params.addParameterListener("trigger", this);
 
     auto col = PLUG_PADDING;
@@ -504,17 +503,13 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
 void GATE12AudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* source)
 {
     (void)source;
-
     MessageManager::callAsync([this] { toggleUIComponents(); });
 }
 
 void GATE12AudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
 {
+    (void)parameterID;
     (void)newValue;
-    if (parameterID == "grid" && audioProcessor.uimode == UIMode::Seq) {
-        audioProcessor.sequencer->build();
-    }
-
     MessageManager::callAsync([this]() { toggleUIComponents(); });
 };
 
@@ -617,7 +612,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
     auto uimode = audioProcessor.uimode;
     paintButton.setToggleState(uimode == UIMode::Paint || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Paint), dontSendNotification);
-    sequencerButton.setToggleState(uimode == UIMode::Seq || (uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Seq), dontSendNotification);
+    sequencerButton.setToggleState(audioProcessor.sequencer->isOpen, dontSendNotification);
     paintWidget->toggleUIComponents();
 
     repaint();

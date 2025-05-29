@@ -222,8 +222,9 @@ void GATE12AudioProcessor::createUndoPointFromSnapshot(std::vector<PPoint> snaps
 void GATE12AudioProcessor::setUIMode(UIMode mode)
 {
     MessageManager::callAsync([this, mode]() {
-        if (mode != UIMode::Seq && uimode == UIMode::Seq)
+        if ((mode != Seq && mode != PaintEdit) && sequencer->isOpen) {
             sequencer->close();
+        }
 
         if (mode == UIMode::Normal) {
             viewPattern = pattern;
@@ -241,6 +242,9 @@ void GATE12AudioProcessor::setUIMode(UIMode mode)
             showSequencer = false;
         }
         else if (mode == UIMode::Seq) {
+            if (sequencer->isOpen) {
+                sequencer->close(); // just in case its changing from PaintEdit back to sequencer
+            }
             sequencer->open();
             viewPattern = pattern;
             showPaintWidget = sequencer->selectedShape == CellShape::SPTool;
@@ -893,7 +897,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         // process queued pattern
         if (queuedPattern) {
             if (!playing || queuedPatternCountdown == 0) {
-                if (uimode == UIMode::Seq) {
+                if (sequencer->isOpen) {
                     sequencer->close();
                     setUIMode(UIMode::Normal);
                 }
@@ -1137,7 +1141,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
         std::ostringstream oss;
         auto points = patterns[i]->points;
 
-        if (uimode == Seq && i == sequencer->patternIdx) {
+        if (sequencer->isOpen && i == sequencer->patternIdx) {
             points = sequencer->backup;
         }
 
@@ -1170,7 +1174,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 
 void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    if (uimode == Seq) {
+    if (sequencer->isOpen) {
         sequencer->close();
     }
 
@@ -1198,14 +1202,6 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         pointMode = state.hasProperty("pointMode") ? (int)state.getProperty("pointMode") : 1;
         audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");
         linkSeqToGrid = state.hasProperty("linkSeqToGrid") ? (bool)state.getProperty("linkSeqToGrid") : true;
-        int currpattern = 1;
-        if (!state.hasProperty("currpattern"))
-            currpattern = (int)params.getRawParameterValue("pattern")->load();
-        else
-            currpattern = state.getProperty("currpattern");
-        queuePattern(currpattern);
-        auto param = params.getParameter("pattern");
-        param->setValueNotifyingHost(param->convertTo0to1((float)currpattern));
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();
@@ -1243,6 +1239,15 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
                 sequencer->cells.push_back(cell);
             }
         }
+
+        int currpattern = 1;
+        if (!state.hasProperty("currpattern"))
+            currpattern = (int)params.getRawParameterValue("pattern")->load();
+        else
+            currpattern = state.getProperty("currpattern");
+        queuePattern(currpattern);
+        auto param = params.getParameter("pattern");
+        param->setValueNotifyingHost(param->convertTo0to1((float)currpattern));
     }
 
     setUIMode(Normal);
