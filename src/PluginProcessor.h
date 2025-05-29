@@ -90,7 +90,11 @@ public:
 //==============================================================================
 /**
 */
-class GATE12AudioProcessor  : public AudioProcessor, public AudioProcessorParameter::Listener, public ChangeBroadcaster
+class GATE12AudioProcessor  
+    : public AudioProcessor
+    , public AudioProcessorParameter::Listener
+    , public ChangeBroadcaster
+    , private juce::AudioProcessorValueTreeState::Listener
 {
 public:
     static constexpr int GRID_SIZES[] = {
@@ -189,6 +193,7 @@ public:
     //==============================================================================
     GATE12AudioProcessor();
     ~GATE12AudioProcessor() override;
+    void parameterChanged (const juce::String& parameterID, float newValue) override;
 
     void loadSettings();
     void saveSettings();
