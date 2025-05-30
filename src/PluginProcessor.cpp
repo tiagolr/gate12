@@ -430,11 +430,6 @@ void GATE12AudioProcessor::changeProgramName (int index, const juce::String& new
 void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     (void)samplesPerBlock;
-    int trigger = (int)params.getRawParameterValue("trigger")->load();
-    setLatencySamples(trigger == Trigger::Audio
-        ? static_cast<int>(sampleRate * LATENCY_MILLIS / 1000.0)
-        : 0
-    );
     lpFilterL.clear(0.0);
     lpFilterR.clear(0.0);
     hpFilterL.clear(0.0);
@@ -442,7 +437,7 @@ void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     transDetectorL.clear(sampleRate);
     transDetectorR.clear(sampleRate);
     std::fill(monSamples.begin(), monSamples.end(), 0.0);
-    onSlider();
+    onSlider(); // sets latency on first run
 }
 
 void GATE12AudioProcessor::releaseResources()
@@ -481,12 +476,13 @@ void GATE12AudioProcessor::onSlider()
 {
     setSmooth();
     auto srate = getSampleRate();
-
     int trigger = (int)params.getRawParameterValue("trigger")->load();
-    if (trigger != ltrigger) {
+    if (trigger != ltrigger || antiClick != lantiClick) {
         auto latency = getLatencySamples();
+        int antiClickLatency = getAntiClickLatency(srate);
         setLatencySamples(trigger == Trigger::Audio
-            ? static_cast<int>(getSampleRate() * LATENCY_MILLIS / 1000.0)
+            ? int(srate * AUDIO_LATENCY_MILLIS / 1000.0) + antiClickLatency
+            : trigger == MIDI ? antiClickLatency 
             : 0
         );
         if (getLatencySamples() != latency && playing) {
@@ -495,6 +491,7 @@ void GATE12AudioProcessor::onSlider()
         }
         clearLatencyBuffers();
         ltrigger = trigger;
+        lantiClick = antiClick;
     }
     if (trigger == Trigger::Sync && alwaysPlaying)
         alwaysPlaying = false; // force alwaysPlaying off when trigger is not MIDI or Audio
@@ -578,7 +575,7 @@ void GATE12AudioProcessor::onPlay()
     transDetectorL.clear(srate);
     transDetectorR.clear(srate);
 
-    if (trigger == 0 || alwaysPlaying) {
+    if (trigger == Trigger::Sync || alwaysPlaying) {
         restartEnv(false);
     }
 }
@@ -652,18 +649,30 @@ double inline GATE12AudioProcessor::getY(double x, double min, double max)
 
 void GATE12AudioProcessor::setSmooth()
 {
-    if (dualSmooth) {
-        float attack = params.getRawParameterValue("attack")->load();
-        float release = params.getRawParameterValue("release")->load();
-        attack *= attack;
-        release *= release;
-        value->setup(attack * 0.25, release * 0.25, getSampleRate());
+    float attack = 0;
+    float release = 0;
+    auto srate = getSampleRate();
+
+    if (antiClickCooldown > 0) {
+        int latency = getAntiClickLatency(srate);
+        double alpha = 1.0 - std::pow(1.0 - 0.90, 1.0 / latency); // chatGPT formula to reach xx% of the target value
+        double res = (1.0 / alpha - 1.0) / srate;
+        value->setup(res, res, srate);
+        return;
+    }
+    else if (dualSmooth) {
+        attack = params.getRawParameterValue("attack")->load();
+        release = params.getRawParameterValue("release")->load();
     }
     else {
-        float lfosmooth = params.getRawParameterValue("smooth")->load();
-        lfosmooth *= lfosmooth;
-        value->setup(lfosmooth * 0.25, lfosmooth * 0.25, getSampleRate());
+        float smooth = params.getRawParameterValue("smooth")->load();
+        attack = smooth;
+        release = smooth;
     }
+
+    attack *= attack;
+    release *= release;
+    value->setup(attack * 0.25, release * 0.25, srate);
 }
 
 void GATE12AudioProcessor::queuePattern(int patidx)
@@ -684,6 +693,22 @@ void GATE12AudioProcessor::queuePattern(int patidx)
             interval = interval * 4;
         queuedPatternCountdown = (interval - timeInSamples % interval) % interval;
     }
+}
+
+void GATE12AudioProcessor::setAntiClick(int ac)
+{
+    jassert(ac >= 0 && ac <= 2);
+    antiClick = ac;
+    paramChanged = true;
+}
+
+int GATE12AudioProcessor::getAntiClickLatency(double srate)
+{
+    return antiClick == 1
+        ? (int)(ANTICLICK_LOW_MILLIS / 1000.0 * srate)
+        : antiClick == 2 
+        ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0 * srate)
+        : 0;
 }
 
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
@@ -883,11 +908,12 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         queuePattern(patidx + 1);
                     }
                     else if (trigger == Trigger::MIDI) {
-                        clearDrawBuffers();
-                        midiTrigger = !alwaysPlaying;
-                        trigpos = 0.0;
-                        trigphase = phase;
-                        restartEnv(true);
+                        antiClickCooldown = antiClick == 1 
+                            ? (int)(ANTICLICK_LOW_MILLIS / 1000.0 * srate)
+                            : antiClick == 2 
+                            ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0 * srate)
+                            : 0;
+                        setSmooth();
                     }
                 }
             }
@@ -936,6 +962,28 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
         // MIDI mode
         else if (trigger == Trigger::MIDI) {
+            int latency = (int)latBufferL.size(); // latency is used in MIDI mode for anti-click only
+            int readPos = latency > 0 ? (latpos + 1) % latency : 0;
+
+            // read audio samples into latency buffer
+            double lsample, rsample;
+            if (latency > 0) {
+                latBufferL[latpos] = (double)buffer.getSample(0, sample);
+                latBufferR[latpos] = (double)buffer.getSample(audioInputs > 1 ? 1 : 0, sample);
+
+                lsample = latBufferL[readPos];
+                rsample = latBufferR[readPos];
+
+                // write delayed samples to buffer to later apply dry/wet mix
+                for (int channel = 0; channel < audioOutputs; ++channel) {
+                    buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? lsample : rsample));
+                }
+            }
+            else {
+                lsample = (double)buffer.getSample(0, sample);
+                rsample = (double)buffer.getSample(audioInputs > 1 ? 1 : 0, sample);
+            }
+
             auto inc = sync > 0
                 ? beatsPerSample / syncQN
                 : 1 / srate * ratehz;
@@ -955,14 +1003,19 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 }
             }
 
-            double newypos = getY(xpos, min, max);
+            double newypos = antiClickCooldown > 0
+                ? newypos = getY(phase, min, max) // if anti clicking move the Y towards the the start Y position
+                : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
+
             ypos = value->process(newypos, newypos > ypos);
 
-            auto lsample = (double)buffer.getSample(0, sample);
-            auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
             applyGain(sample, ypos, lsample, rsample);
             double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
+
+            if (latency > 0) {
+                latpos = (latpos + 1) % latency;
+            }
         }
 
         // Audio mode
@@ -1002,13 +1055,13 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             {
                 transDetectorL.startCooldown();
                 transDetectorR.startCooldown();
-                int offset = (int)(params.getRawParameterValue("offset")->load() * LATENCY_MILLIS / 1000.f * srate);
-                audioTriggerCountdown = std::max(0, getLatencySamples() + offset);
+                int offset = (int)(params.getRawParameterValue("offset")->load() * AUDIO_LATENCY_MILLIS / 1000.f * srate);
+                audioTriggerCountdown = std::max(0, int((AUDIO_LATENCY_MILLIS / 1000.0 * srate) + offset));
                 hitamp = transDetectorL.hit ? std::fabs(monSampleL) : std::fabs(monSampleR);
             }
 
             // read the sample 'latency' samples ago
-            int readPos = (latpos + latency - 1) % latency;
+            int readPos = (latpos + 1) % latency;
             lsample = latBufferL[readPos];
             rsample = latBufferR[readPos];
             monSampleL = latMonitorBufferL[readPos];
@@ -1019,8 +1072,15 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? lsample : rsample));
             }
 
-            auto hit = audioTriggerCountdown == 0; // there was an audio transient trigger in this sample
-            processMonitorSample(monSampleL, monSampleR, hit);
+            bool hit = audioTriggerCountdown == 0; // there was an audio transient trigger in this sample, not counting the anticlick lag
+
+            // HIT - start another countdown, this time for anticlick
+            if (hit && (alwaysPlaying || !audioIgnoreHitsWhilePlaying || trigposSinceHit > 0.98)) {
+                antiClickCooldown = getAntiClickLatency(srate);
+                setSmooth();
+            }
+
+            processMonitorSample(monSampleL, monSampleR, antiClickCooldown == 0);
 
             // envelope processing
             auto inc = sync > 0
@@ -1032,7 +1092,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             xpos -= std::floor(xpos);
 
             // send output midi notes on audio trigger hit
-            if (hit && outputATMIDI > 0) {
+            if (antiClickCooldown == 0 && outputATMIDI > 0) {
                 auto noteOn = MidiMessage::noteOn(1, outputATMIDI - 1, (float)hitamp);
                 midiMessages.addEvent(noteOn, sample);
 
@@ -1049,15 +1109,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 }
             }
 
-            if (hit && (alwaysPlaying || !audioIgnoreHitsWhilePlaying || trigposSinceHit > 0.98)) {
-                clearDrawBuffers();
-                audioTrigger = !alwaysPlaying;
-                trigpos = 0.0;
-                trigphase = phase;
-                trigposSinceHit = 0.0;
-                restartEnv(true);
-            }
-
             if (!alwaysPlaying) {
                 if (audioTrigger) {
                     if (trigpos >= 1.0) { // envelope finished, stop trigger
@@ -1070,7 +1121,10 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 }
             }
 
-            double newypos = getY(xpos, min, max);
+            double newypos = antiClickCooldown > 0
+                ? newypos = getY(phase, min, max) // if anti clicking move the Y towards the the start Y position
+                : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
+
             ypos = value->process(newypos, newypos > ypos);
 
             if (useMonitor) {
@@ -1096,6 +1150,27 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         ratePos += 1 / srate * ratehz;
         if (playing)
             timeInSamples += 1;
+
+        if (antiClickCooldown >= 0) {
+            if (antiClickCooldown == 0 && trigger == MIDI) {
+                clearDrawBuffers();
+                midiTrigger = !alwaysPlaying;
+                trigpos = 0.0;
+                trigphase = phase;
+                restartEnv(true);
+                setSmooth();
+            }
+            if (antiClickCooldown == 0 && trigger == Audio) {
+                clearDrawBuffers();
+                audioTrigger = !alwaysPlaying;
+                trigpos = 0.0;
+                trigphase = phase;
+                trigposSinceHit = 0.0;
+                restartEnv(true);
+                setSmooth();
+            }
+            antiClickCooldown -= 1;
+        }
     }
 
     drawSeek.store(playing && (trigger == Trigger::Sync || midiTrigger || audioTrigger));
@@ -1136,6 +1211,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("audioIgnoreHitsWhilePlaying", audioIgnoreHitsWhilePlaying, nullptr);
     state.setProperty("linkSeqToGrid", linkSeqToGrid, nullptr);
     state.setProperty("currpattern", pattern->index + 1, nullptr);
+    state.setProperty("antiClick", antiClick, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -1202,6 +1278,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         pointMode = state.hasProperty("pointMode") ? (int)state.getProperty("pointMode") : 1;
         audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");
         linkSeqToGrid = state.hasProperty("linkSeqToGrid") ? (bool)state.getProperty("linkSeqToGrid") : true;
+        antiClick = state.hasProperty("antiClick") ? (int)state.getProperty("antiClick") : 1;
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();

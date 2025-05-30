@@ -125,6 +125,8 @@ public:
     int paintPage = 0;
     int pointMode = 1; // Hold, Curve, S-curve, Pulse, Wave etc..
     int linkSeqToGrid = true; // sequencer step linked to grid size
+    int antiClick = 1; // 0 = off, 1 = low, 2 = high
+    int lantiClick = -1;
 
     // State
     Pattern* pattern; // current pattern used for audio processing
@@ -147,6 +149,7 @@ public:
     double ltensionrel = -10.0;
     RCSmoother* value; // smooths envelope value
     bool showLatencyWarning = false;
+    int antiClickCooldown = -1;
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope
@@ -210,6 +213,8 @@ public:
     void setViewPattern(int index);
     void setPaintTool(int index);
     void restorePaintPatterns();
+    void setAntiClick(int ac);
+    int getAntiClickLatency(double srate);
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

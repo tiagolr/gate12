@@ -67,7 +67,13 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	output.addSeparator();
 	output.addItem(701, "Bipolar CC", true, audioProcessor.bipolarCC);
 
+	PopupMenu antiClick;
+	antiClick.addItem(7331, "Off", true, audioProcessor.antiClick == 0);
+	antiClick.addItem(7332, "Low", true, audioProcessor.antiClick == 1);
+	antiClick.addItem(7333, "High", true, audioProcessor.antiClick == 2);
+
 	PopupMenu options;
+	options.addSubMenu("Anti-click", antiClick);
 	options.addSubMenu("Output", output);
 	options.addSubMenu("Pattern select chn", triggerChn);
 	options.addSubMenu("Audio trigger", audioTrigger);
@@ -275,6 +281,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			}
 			else if (result == 1000) {
 				toggleAbout();
+			}
+			else if (result >= 7331 && result <= 7333) {
+				audioProcessor.setAntiClick(result - 7331);
 			}
 		}
 	);

@@ -20,7 +20,9 @@ namespace globals {
 	inline unsigned int COLOR_SEQ_TENR = 0xffffB950;
 	inline unsigned int COLOR_SEQ_SKEW = 0xffffB950;
 
-	inline const int LATENCY_MILLIS = 5;
+	inline const int ANTICLICK_LOW_MILLIS = 5;
+	inline const int ANTICLICK_HIGH_MILLIS = 10;
+	inline const int AUDIO_LATENCY_MILLIS = 5;
 	inline const int AUDIO_COOLDOWN_MILLIS = 50;
 	inline const int AUDIO_DRUMSBUF_MILLIS = 20;
 	inline const int AUDIO_NOTE_LENGTH_MILLIS = 100; 
