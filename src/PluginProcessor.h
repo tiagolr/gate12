@@ -150,6 +150,9 @@ public:
     RCSmoother* value; // smooths envelope value
     bool showLatencyWarning = false;
     int antiClickCooldown = -1;
+    double antiClickStart = 0.0;
+    double antiClickTarget = 0.0;
+    int antiClickSamples = 0;
 
     // Audio mode state
     bool audioTrigger = false; // flag audio has triggered envelope
@@ -284,6 +287,19 @@ private:
     ApplicationProperties settings;
     std::vector<MidiInMsg> midiIn; // midi buffer used to process midi messages offset
     std::vector<MidiOutMsg> midiOut;
+
+    double tween_ease_inout(double t, double start, double target_, double duration) {
+        t = std::clamp(t, 0.0, duration);
+        double target = target_ - start;
+        double tn = t / duration;
+
+        if (tn < 0.5)
+            return target / 2.0 * (2 * tn) * (2 * tn) + start;
+        else {
+            double tt = 2 * tn - 1;
+            return -target / 2.0 * (tt * (tt - 2.0) - 1.0) + start;
+        }
+    }
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GATE12AudioProcessor)

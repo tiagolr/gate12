@@ -653,14 +653,7 @@ void GATE12AudioProcessor::setSmooth()
     float release = 0;
     auto srate = getSampleRate();
 
-    if (antiClickCooldown > 0) {
-        int latency = getAntiClickLatency(srate);
-        double alpha = 1.0 - std::pow(1.0 - 0.90, 1.0 / latency); // chatGPT formula to reach xx% of the target value
-        double res = (1.0 / alpha - 1.0) / srate;
-        value->setup(res, res, srate);
-        return;
-    }
-    else if (dualSmooth) {
+    if (dualSmooth) {
         attack = params.getRawParameterValue("attack")->load();
         release = params.getRawParameterValue("release")->load();
     }
@@ -908,12 +901,10 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         queuePattern(patidx + 1);
                     }
                     else if (trigger == Trigger::MIDI) {
-                        antiClickCooldown = antiClick == 1 
-                            ? (int)(ANTICLICK_LOW_MILLIS / 1000.0 * srate)
-                            : antiClick == 2 
-                            ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0 * srate)
-                            : 0;
-                        setSmooth();
+                        antiClickCooldown = getAntiClickLatency(srate);
+                        antiClickSamples = antiClickCooldown;
+                        antiClickStart = ypos;
+                        antiClickTarget = getY(phase, min, max);
                     }
                 }
             }
@@ -1003,8 +994,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 }
             }
 
-            double newypos = antiClickCooldown > 0
-                ? newypos = getY(phase, min, max) // if anti clicking move the Y towards the the start Y position
+            double newypos = antiClickCooldown >= 0
+                ? newypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples)
                 : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
 
             ypos = value->process(newypos, newypos > ypos);
@@ -1077,7 +1068,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             // HIT - start another countdown, this time for anticlick
             if (hit && (alwaysPlaying || !audioIgnoreHitsWhilePlaying || trigposSinceHit > 0.98)) {
                 antiClickCooldown = getAntiClickLatency(srate);
-                setSmooth();
+                antiClickSamples = antiClickCooldown;
+                antiClickStart = ypos;
+                antiClickTarget = getY(phase, min, max);
             }
 
             processMonitorSample(monSampleL, monSampleR, antiClickCooldown == 0);
@@ -1121,8 +1114,8 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 }
             }
 
-            double newypos = antiClickCooldown > 0
-                ? newypos = getY(phase, min, max) // if anti clicking move the Y towards the the start Y position
+            double newypos = antiClickCooldown >= 0
+                ? newypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples)
                 : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
 
             ypos = value->process(newypos, newypos > ypos);
@@ -1158,7 +1151,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 trigpos = 0.0;
                 trigphase = phase;
                 restartEnv(true);
-                setSmooth();
             }
             if (antiClickCooldown == 0 && trigger == Audio) {
                 clearDrawBuffers();
@@ -1167,7 +1159,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 trigphase = phase;
                 trigposSinceHit = 0.0;
                 restartEnv(true);
-                setSmooth();
             }
             antiClickCooldown -= 1;
         }
