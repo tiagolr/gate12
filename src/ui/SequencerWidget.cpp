@@ -42,7 +42,7 @@ SequencerWidget::SequencerWidget(GATE12AudioProcessor& p) : audioProcessor(p)
 	col = maxBtn.getBounds().getRight() + 20;
 	addToolButton(silenceBtn, col, row, 25, 25, CellShape::SSilence); col += 25;
 	addToolButton(lineBtn, col, row, 25, 25, CellShape::SLine); col += 25;
-	addToolButton(lpointBtn, col, row, 25, 25, CellShape::SLPoint); col += 25;
+	addToolButton(sineBtn, col, row, 25, 25, CellShape::SSine); col += 25;
 	addToolButton(rampdnBtn, col, row, 25, 25, CellShape::SRampDn); col += 25;
 	addToolButton(rampupBtn, col, row, 25, 25, CellShape::SRampUp); col += 25;
 	addToolButton(triBtn, col, row, 25, 25, CellShape::STri); col += 25;
@@ -249,16 +249,15 @@ void SequencerWidget::paint(Graphics& g)
 	linePath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()));
 	g.strokePath(linePath, PathStrokeType(1.f));
 
-	bounds = lpointBtn.getBounds().toFloat();
-	g.setColour(seq->selectedShape == CellShape::SLPoint ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
+	bounds = sineBtn.getBounds().toFloat();
+	g.setColour(seq->selectedShape == CellShape::SSine ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));
 	//g.drawRect(bounds);
 	auto r = 3.0f;
 	bounds.expand(-5,-5);
-	Path lppath;
-	lppath.startNewSubPath(bounds.getBottomLeft().withY(bounds.getCentreY()));
-	lppath.lineTo(bounds.getBottomRight().withY(bounds.getCentreY()));
-	g.strokePath(lppath, PathStrokeType(1.f));
-	g.fillEllipse(bounds.getX() - r, bounds.getCentreY()-r, r*2, r*2);
+	Path sinepath;
+	sinepath.startNewSubPath(bounds.getBottomLeft());
+	sinepath.cubicTo(bounds.getBottomRight(), bounds.getTopLeft(), bounds.getTopRight());
+	g.strokePath(sinepath, PathStrokeType(1.f));
 
 	bounds = ptoolBtn.getBounds().toFloat();
 	g.setColour(seq->selectedShape == CellShape::SPTool ? Colour(COLOR_ACTIVE) : Colour(COLOR_NEUTRAL));

@@ -11,7 +11,8 @@ Sequencer::Sequencer(GATE12AudioProcessor& p) : audioProcessor(p)
     ramp.push_back({ 0, 1.0, 1.0, 0.0, 1 });
     line.push_back({ 0, 0.0, 0.0, 0.0, 1 });
     line.push_back({ 0, 1.0, 0.0, 0.0, 1 });
-    lpoint.push_back({ 0, 0.0, 0.0, 0.0, 1 });
+    sine.push_back({ 0, 0.25, 1.0, 0.2, 2 });
+    sine.push_back({ 0, 0.75, 0.0, 0.2, 2 });
     tri.push_back({ 0, 0.0, 1.0, 0.0, 1 });
     tri.push_back({ 0, 0.5, 0.0, 0.0, 1 });
     tri.push_back({ 0, 1.0, 1.0, 0.0, 1 });
@@ -176,7 +177,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     auto segBounds = getSegBounds(seg);
 
     // toggle editMin if the edit point is closer to min than max
-    if (editMode == EditMax && !isDrag && selectedShape != SLine && selectedShape != SLPoint) {
+    if (editMode == EditMax && !isDrag && selectedShape != SLine && selectedShape != SSine) {
         auto dymax = std::abs(e.getPosition().y - segBounds.getY()); ////
         auto dymin = std::abs(e.getPosition().y - segBounds.getBottom());
         if ((e.getPosition().y > segBounds.getBottom()) || (dymin < dymax && dymin < 50)) {
@@ -186,7 +187,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     else if (editMode == EditNone && !isDrag) {
         auto dymax = std::abs(e.getPosition().y - segBounds.getY()); ////
         auto dymin = std::abs(e.getPosition().y - segBounds.getBottom());
-        editNoneEditsMax = dymin > dymax || selectedShape == SLine || selectedShape == SLPoint;
+        editNoneEditsMax = dymin > dymax || selectedShape == SLine || selectedShape == SSine;
     }
 
     if (e.mods.isRightButtonDown()) {
@@ -518,7 +519,7 @@ std::vector<PPoint> Sequencer::buildSeg(Cell cell)
         : cell.shape == SRampDn ? ramp
         : cell.shape == STri ? tri
         : cell.shape == SLine ? line
-        : cell.shape == SLPoint ? lpoint
+        : cell.shape == SSine ? sine
         : cell.shape == SPTool ? audioProcessor.getPaintPatern(cell.ptool)->points
         : silence;
 
