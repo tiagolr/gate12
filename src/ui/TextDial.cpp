@@ -16,7 +16,9 @@ void TextDial::parameterChanged(const juce::String& parameterID, float newValue)
 {
     (void)parameterID;
     (void)newValue;
-    repaint();
+    MessageManager::callAsync([this] {
+        repaint();
+    });
 }
 
 void TextDial::paint(juce::Graphics& g) {
