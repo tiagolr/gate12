@@ -31,6 +31,7 @@
 Also check other plugins from this collection:
 
 * [TIME-12](https://github.com/tiagolr/time12) - An envelope based delay modulator.
+* [FILT-R](https://github.com/tiagolr/filtr) - An envelope based filter modulator.
 
 ## Whats new
 
