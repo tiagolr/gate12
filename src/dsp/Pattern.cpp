@@ -140,13 +140,18 @@ void Pattern::doublePattern()
 
 void Pattern::clear()
 {
+    std::lock_guard<std::mutex> lock(pointsmtx);
     points.clear();
     incrementVersion();
 }
 
 void Pattern::buildSegments()
 {
-    auto pts = points; // make points copy
+    std::vector<PPoint> pts;
+    {
+        std::lock_guard<std::mutex> lock(pointsmtx);
+        pts = points;
+    }
     // add ghost points outside the 0..1 boundary
     // allows the pattern to repeat itself and rotate seamlessly
     if (pts.size() == 0) {

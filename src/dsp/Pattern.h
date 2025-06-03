@@ -99,4 +99,5 @@ private:
     static inline uint64_t pointsIDCounter = 1; // static global ID counter
     bool dualTension = false;
     std::mutex mtx;
+    std::mutex pointsmtx;
 };
