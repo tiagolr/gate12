@@ -177,7 +177,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     auto segBounds = getSegBounds(seg);
 
     // toggle editMin if the edit point is closer to min than max
-    if (editMode == EditMax && !isDrag && selectedShape != SLine && selectedShape != SSine) {
+    if (editMode == EditMax && !isDrag && selectedShape != SLine) {
         auto dymax = std::abs(e.getPosition().y - segBounds.getY()); ////
         auto dymin = std::abs(e.getPosition().y - segBounds.getBottom());
         if ((e.getPosition().y > segBounds.getBottom()) || (dymin < dymax && dymin < 50)) {
@@ -187,7 +187,7 @@ void Sequencer::onMouseSegment(const MouseEvent& e, bool isDrag) {
     else if (editMode == EditNone && !isDrag) {
         auto dymax = std::abs(e.getPosition().y - segBounds.getY()); ////
         auto dymin = std::abs(e.getPosition().y - segBounds.getBottom());
-        editNoneEditsMax = dymin > dymax || selectedShape == SLine || selectedShape == SSine;
+        editNoneEditsMax = dymin > dymax || selectedShape == SLine;
     }
 
     if (e.mods.isRightButtonDown()) {
