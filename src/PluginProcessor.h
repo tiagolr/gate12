@@ -112,6 +112,7 @@ public:
     bool alwaysPlaying = false;
     bool dualSmooth = true; // use either single smooth or attack and release
     bool dualTension = false;
+    int midiTriggerChn = 0;
     int triggerChn = 9; // Midi pattern trigger channel, defaults to channel 10
     bool useMonitor = false;
     bool useSidechain = false;
@@ -139,6 +140,7 @@ public:
     double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play
     double trigposSinceHit = 1.0; // used by audioIgnoreHitsWhilePlaying option
     double trigphase = 0.0; // phase when trigger occurs, used to sync the background wave draw
+    bool queuedMidiTrigger = false;
     double syncQN = 1.0; // sync quarter notes
     int ltrigger = -1; // last trigger mode
     bool midiTrigger = false; // flag midi has triggered envelope
@@ -218,6 +220,7 @@ public:
     void restorePaintPatterns();
     void setAntiClick(int ac);
     int getAntiClickLatency(double srate);
+    void startMidiTrigger();
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;

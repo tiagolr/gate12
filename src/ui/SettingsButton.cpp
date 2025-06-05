@@ -23,6 +23,13 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	uiScale.addItem(4, "175%", true, audioProcessor.scale == 1.75f);
 	uiScale.addItem(5, "200%", true, audioProcessor.scale == 2.0f);
 
+	PopupMenu midiTriggerChn;
+	midiTriggerChn.addItem(2010, "Off", true, audioProcessor.midiTriggerChn == -1);
+	for (int i = 0; i < 16; i++) {
+		midiTriggerChn.addItem(2010 + i + 1, String(i + 1), true, audioProcessor.midiTriggerChn == i);
+	}
+	midiTriggerChn.addItem(2027, "Any", true, audioProcessor.midiTriggerChn == 16);
+
 	PopupMenu triggerChn;
 	triggerChn.addItem(10, "Off", true, audioProcessor.triggerChn == -1);
 	for (int i = 0; i < 16; i++) {
@@ -75,6 +82,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	PopupMenu options;
 	options.addSubMenu("Anti-click", antiClick);
 	options.addSubMenu("Output", output);
+	options.addSubMenu("MIDI trigger chn", midiTriggerChn);
 	options.addSubMenu("Pattern select chn", triggerChn);
 	options.addSubMenu("Audio trigger", audioTrigger);
 	options.addSeparator();
@@ -169,6 +177,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			else if (result >= 1 && result <= 5) { // UI Scale
 				audioProcessor.setScale(result == 5 ? 2.0f : result == 4 ? 1.75f : result == 3 ? 1.5f : result == 2 ? 1.25f : 1.0f);
 				onScaleChange();
+			}
+			else if (result >= 2010 && result <= 2027) {
+				audioProcessor.midiTriggerChn = result - 2010 - 1;
 			}
 			else if (result >= 10 && result <= 27) { // Trigger channel
 				audioProcessor.triggerChn = result - 10 - 1;

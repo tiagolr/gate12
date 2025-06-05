@@ -668,6 +668,18 @@ void GATE12AudioProcessor::setSmooth()
     value->setup(attack * 0.25, release * 0.25, srate);
 }
 
+void GATE12AudioProcessor::startMidiTrigger()
+{
+    double srate = getSampleRate();
+    double phase = (double)params.getRawParameterValue("phase")->load();
+    double min = (double)params.getRawParameterValue("min")->load();
+    double max = (double)params.getRawParameterValue("max")->load();
+    antiClickCooldown = getAntiClickLatency(srate);
+    antiClickSamples = antiClickCooldown;
+    antiClickStart = ypos;
+    antiClickTarget = getY(phase, min, max);
+}
+
 void GATE12AudioProcessor::queuePattern(int patidx)
 {
     queuedPattern = patidx;
@@ -851,7 +863,6 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             });
         }
     }
-    midiMessages.clear();
 
     // Process midi out queue
     for (auto it = midiOut.begin(); it != midiOut.end();) {
@@ -900,11 +911,13 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                         auto patidx = msg.note % 12;
                         queuePattern(patidx + 1);
                     }
-                    else if (trigger == Trigger::MIDI) {
-                        antiClickCooldown = getAntiClickLatency(srate);
-                        antiClickSamples = antiClickCooldown;
-                        antiClickStart = ypos;
-                        antiClickTarget = getY(phase, min, max);
+                    if (trigger == Trigger::MIDI && (msg.channel == midiTriggerChn || midiTriggerChn == 16)) {
+                        if (queuedPattern) {
+                            queuedMidiTrigger = true;
+                        }
+                        else {
+                            startMidiTrigger();
+                        }
                     }
                 }
             }
@@ -929,6 +942,10 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                     sendChangeMessage();
                 });
                 queuedPattern = 0;
+                if (queuedMidiTrigger) {
+                    startMidiTrigger();
+                    queuedMidiTrigger = false;
+                }
             }
             if (queuedPatternCountdown > 0) {
                 queuedPatternCountdown -= 1;
@@ -1203,6 +1220,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("linkSeqToGrid", linkSeqToGrid, nullptr);
     state.setProperty("currpattern", pattern->index + 1, nullptr);
     state.setProperty("antiClick", antiClick, nullptr);
+    state.setProperty("midiTriggerChn", midiTriggerChn, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -1270,6 +1288,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         audioIgnoreHitsWhilePlaying = (bool)state.getProperty("audioIgnoreHitsWhilePlaying");
         linkSeqToGrid = state.hasProperty("linkSeqToGrid") ? (bool)state.getProperty("linkSeqToGrid") : true;
         antiClick = state.hasProperty("antiClick") ? (int)state.getProperty("antiClick") : 1;
+        midiTriggerChn = (int)state.getProperty("midiTriggerChn");
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();
