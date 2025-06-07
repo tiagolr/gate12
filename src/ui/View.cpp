@@ -83,11 +83,11 @@ void View::paint(Graphics& g) {
         audioProcessor.sequencer->drawBackground(g);
 
     if (uimode == UIMode::Normal || uimode == UIMode::Seq) {
+        if (audioProcessor.drawSidechain) {
+            drawWave(g, audioProcessor.sideSamples, Colour(COLOR_ACTIVE).brighter(0.75f));
+        }
         drawWave(g, audioProcessor.preSamples, Colour(0xff7f7f7f));
         drawWave(g, audioProcessor.postSamples, Colour(COLOR_ACTIVE));
-        if (audioProcessor.drawSidechain) {
-            drawWave(g, audioProcessor.sideSamples, Colour(COLOR_ACTIVE).brighter(0.5f));
-        }
     }
 
     drawGrid(g);
