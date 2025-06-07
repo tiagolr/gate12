@@ -145,7 +145,9 @@ public:
     int ltrigger = -1; // last trigger mode
     bool midiTrigger = false; // flag midi has triggered envelope
     int winpos = 0;
-    int lwinpos = 0;
+    int lwinpos = 0; // used to draw wave samples
+    int sidewinpos = 0; // used to draw sidechain samples
+    int lsidewinpos = 0;
     double ltension = -10.0;
     double ltensionatk = -10.0;
     double ltensionrel = -10.0;
@@ -184,6 +186,7 @@ public:
     // UI State
     std::vector<double> preSamples; // used by view to draw pre audio
     std::vector<double> postSamples; // used by view to draw post audio
+    std::vector<double> sideSamples; // used by view to draw sidechain
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
     std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
     std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
@@ -197,6 +200,7 @@ public:
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
     bool showPaintWidget = false;
     bool showSequencer = false;
+    bool drawSidechain = true;
 
     //==============================================================================
     GATE12AudioProcessor();

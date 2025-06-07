@@ -88,6 +88,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     viewPattern = pattern;
     preSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= viewport width
     postSamples.resize(MAX_PLUG_WIDTH, 0);
+    sideSamples.resize(MAX_PLUG_WIDTH, 0);
     monSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
     value = new RCSmoother();
 
@@ -612,6 +613,7 @@ void GATE12AudioProcessor::clearDrawBuffers()
 {
     std::fill(preSamples.begin(), preSamples.end(), 0.0);
     std::fill(postSamples.begin(), postSamples.end(), 0.0);
+    std::fill(sideSamples.begin(), sideSamples.end(), 0.0);
 }
 
 void GATE12AudioProcessor::clearLatencyBuffers()
@@ -810,6 +812,22 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             postSamples[winpos] = postamp;
     };
 
+    auto processSideDisplaySample = [&](double pos, int samp) {
+        if (!sideInputs) return;
+        auto lsamp = buffer.getSample(audioInputs, samp);
+        auto rsamp = buffer.getSample(sideInputs > 1 ? audioInputs + 1 : audioInputs, samp);
+        auto ampvalue = std::max(std::fabs(lsamp), std::fabs(rsamp));
+
+        sidewinpos = (int)std::floor(pos * viewW);
+        if (lsidewinpos != sidewinpos) {
+            sideSamples[sidewinpos] = 0.0;
+        }
+        lsidewinpos = sidewinpos;
+        if (sideSamples[sidewinpos] < ampvalue) {
+            sideSamples[sidewinpos] = ampvalue;
+        }
+    };
+
     double monIncrementPerSample = 1.0 / ((srate * 2) / monW); // 2 seconds of audio displayed on monitor
     auto processMonitorSample = [&](double lsamp, double rsamp, bool hit) {
         double indexd = monpos.load();
@@ -896,7 +914,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         beatPos = ppqPosition;
         ratePos = beatPos * secondsPerBeat * ratehz;
     }
-
+    
     for (int sample = 0; sample < numSamples; ++sample) {
         if (playing && looping && beatPos >= loopEnd) {
             beatPos = loopStart + (beatPos - loopEnd);
@@ -966,6 +984,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
             applyGain(sample, ypos, lsample, rsample);
             processDisplaySample(xpos, ypos, lsample, rsample);
+            processSideDisplaySample(xpos, sample);
         }
 
         // MIDI mode
@@ -1020,6 +1039,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             applyGain(sample, ypos, lsample, rsample);
             double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
+            processSideDisplaySample(viewx, sample);
 
             if (latency > 0) {
                 latpos = (latpos + 1) % latency;
@@ -1148,6 +1168,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             double viewx = (alwaysPlaying || audioTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
             processDisplaySample(viewx, ypos, lsample, rsample);
+            processSideDisplaySample(viewx, sample);
             latpos = (latpos + 1) % latency;
 
             if (audioTriggerCountdown > -1)
@@ -1221,6 +1242,7 @@ void GATE12AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("currpattern", pattern->index + 1, nullptr);
     state.setProperty("antiClick", antiClick, nullptr);
     state.setProperty("midiTriggerChn", midiTriggerChn, nullptr);
+    state.setProperty("drawSidechain", drawSidechain, nullptr);
 
     for (int i = 0; i < 12; ++i) {
         std::ostringstream oss;
@@ -1289,6 +1311,7 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
         linkSeqToGrid = state.hasProperty("linkSeqToGrid") ? (bool)state.getProperty("linkSeqToGrid") : true;
         antiClick = state.hasProperty("antiClick") ? (int)state.getProperty("antiClick") : 1;
         midiTriggerChn = (int)state.getProperty("midiTriggerChn");
+        drawSidechain = (bool)state.getProperty("drawSidechain", true);
 
         for (int i = 0; i < 12; ++i) {
             patterns[i]->clear();

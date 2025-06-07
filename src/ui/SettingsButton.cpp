@@ -85,6 +85,7 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	options.addSubMenu("MIDI trigger chn", midiTriggerChn);
 	options.addSubMenu("Pattern select chn", triggerChn);
 	options.addSubMenu("Audio trigger", audioTrigger);
+	options.addItem(9999, "Draw sidechain", true, audioProcessor.drawSidechain);
 	options.addSeparator();
 	options.addItem(30, "Dual smooth", true, audioProcessor.dualSmooth);
 	options.addItem(31, "Dual tension", true, audioProcessor.dualTension);
@@ -295,6 +296,9 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 			}
 			else if (result >= 7331 && result <= 7333) {
 				audioProcessor.setAntiClick(result - 7331);
+			}
+			else if (result == 9999) {
+				audioProcessor.drawSidechain = !audioProcessor.drawSidechain;
 			}
 		}
 	);
