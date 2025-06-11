@@ -139,9 +139,9 @@ MacOS builds are untested and unsigned, please let me know of any issues by open
 Because the builds are unsigned you may have to run the following commands:
 
 ```bash
-sudo xattr -dr com.apple.quarantine /path/to/your/plugins/gate12.component
-sudo xattr -dr com.apple.quarantine /path/to/your/plugins/gate12.vst3
-sudo xattr -dr com.apple.quarantine /path/to/your/plugins/gate12.lv3
+sudo xattr -dr com.apple.quarantine /path/to/your/plugins/GATE-12.component
+sudo xattr -dr com.apple.quarantine /path/to/your/plugins/GATE-12.vst3
+sudo xattr -dr com.apple.quarantine /path/to/your/plugins/GATE-12.lv2
 ```
 
 The commands above will recursively remove the quarantine flag from the plugins.
