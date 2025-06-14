@@ -154,8 +154,8 @@ void SettingsButton::mouseDown(const juce::MouseEvent& e)
 	load.addSubMenu("Patterns 13-25", patterns2);
 	load.addSubMenu("Patterns 26-38", patterns3);
 	load.addSeparator();
-	load.addItem(1001, "Import pats");
-	load.addItem(1002, "Export pats");
+	load.addItem(1001, "Import Pats");
+	load.addItem(1002, "Export Pats");
 	load.addSubMenu("Other", loadOther);
 
 
