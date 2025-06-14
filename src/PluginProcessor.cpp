@@ -483,7 +483,7 @@ void GATE12AudioProcessor::onSlider()
         int antiClickLatency = getAntiClickLatency(srate);
         setLatencySamples(trigger == Trigger::Audio
             ? int(srate * AUDIO_LATENCY_MILLIS / 1000.0) + antiClickLatency
-            : trigger == MIDI ? antiClickLatency 
+            : trigger == MIDI ? antiClickLatency
             : 0
         );
         if (getLatencySamples() != latency && playing) {
@@ -713,7 +713,7 @@ int GATE12AudioProcessor::getAntiClickLatency(double srate)
 {
     return antiClick == 1
         ? (int)(ANTICLICK_LOW_MILLIS / 1000.0 * srate)
-        : antiClick == 2 
+        : antiClick == 2
         ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0 * srate)
         : 0;
 }
@@ -914,7 +914,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
         beatPos = ppqPosition;
         ratePos = beatPos * secondsPerBeat * ratehz;
     }
-    
+
     for (int sample = 0; sample < numSamples; ++sample) {
         if (playing && looping && beatPos >= loopEnd) {
             beatPos = loopStart + (beatPos - loopEnd);
@@ -1361,6 +1361,27 @@ void GATE12AudioProcessor::setStateInformation (const void* data, int sizeInByte
     }
 
     setUIMode(Normal);
+}
+
+void GATE12AudioProcessor::importPatterns()
+{
+    if (sequencer->isOpen)
+        sequencer->close();
+
+    auto tensionParams = TensionParameters((double)params.getRawParameterValue("tension")->load(),
+                             (double)params.getRawParameterValue("tensionatk")->load(),
+                             (double)params.getRawParameterValue("tensionrel")->load(), dualTension);
+
+    patternManager.importPatterns(patterns,tensionParams);
+    setUIMode(UIMode::Normal);
+}
+
+void GATE12AudioProcessor::exportPatterns()
+{
+    if (sequencer->isOpen)
+        sequencer->close();
+    patternManager.exportPatterns(patterns);
+    setUIMode(UIMode::Normal);
 }
 
 //==============================================================================

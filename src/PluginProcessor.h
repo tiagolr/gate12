@@ -18,6 +18,7 @@
 #include <deque>
 #include "Globals.h"
 #include "ui/Sequencer.h"
+#include "utils/PatternManager.h"
 
 using namespace globals;
 
@@ -47,6 +48,16 @@ enum PatSync {
     Beat_x1,
     Beat_x2,
     Beat_x4
+};
+
+struct TensionParameters {
+    double tension;
+    double tensionAtk;
+    double tensionRel;
+    bool dualTension;
+
+    TensionParameters(double t = 0.0, double ta = 0.0, double tr = 0.0, bool dual = false)
+        : tension(t), tensionAtk(ta), tensionRel(tr), dualTension(dual) {}
 };
 
 enum UIMode {
@@ -90,7 +101,7 @@ public:
 //==============================================================================
 /**
 */
-class GATE12AudioProcessor  
+class GATE12AudioProcessor
     : public AudioProcessor
     , public AudioProcessorParameter::Listener
     , public ChangeBroadcaster
@@ -279,7 +290,8 @@ public:
     //==============================================================================
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
+    void exportPatterns();
+    void importPatterns();
     //=========================================================
 
     AudioProcessorValueTreeState params;
@@ -294,6 +306,7 @@ private:
     ApplicationProperties settings;
     std::vector<MidiInMsg> midiIn; // midi buffer used to process midi messages offset
     std::vector<MidiOutMsg> midiOut;
+    PatternManager patternManager;
 
     double tween_ease_inout(double t, double start, double target_, double duration) {
         t = std::clamp(t, 0.0, duration);

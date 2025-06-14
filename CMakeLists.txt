@@ -69,6 +69,12 @@ file(GLOB DSP_SOURCES
 )
 source_group(Source\\dsp FILES ${DSP_SOURCES})
 
+file(GLOB UTILS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp
+)
+source_group(Source\\utils FILES ${UTILS_SOURCES})
+
 # Make the SourceFiles buildable
 target_sources(${PROJECT_NAME} PRIVATE ${src})
 
