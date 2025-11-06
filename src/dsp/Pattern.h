@@ -62,6 +62,7 @@ public:
 
     int insertPoint(double x, double y, double tension, int type, bool sort = true);
     void sortPoints();
+    void sortPointsSafe();
     void setTension(double t, double tatk, double trel, bool dual); // sets global tension multiplier
     void removePoint(double x, double y);
     void removePoint(int i);

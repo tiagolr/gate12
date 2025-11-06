@@ -28,11 +28,19 @@ void Pattern::incrementVersion()
 
 void Pattern::sortPoints()
 {
-    std::lock_guard<std::mutex> lock(pointsmtx);
-    std::sort(points.begin(), points.end(), [](const PPoint& a, const PPoint& b) { 
-        return a.x < b.x; 
+    std::sort(points.begin(), points.end(), [](const PPoint& a, const PPoint& b) {
+        return a.x < b.x;
     });
 }
+
+void Pattern::sortPointsSafe()
+{
+    std::lock_guard<std::mutex> lock(pointsmtx);
+    std::sort(points.begin(), points.end(), [](const PPoint& a, const PPoint& b) {
+        return a.x < b.x;
+    });
+}
+
 
 void Pattern::setTension(double t, double tatk, double trel, bool dual)
 {
@@ -115,7 +123,7 @@ void Pattern::rotate(double x) {
     if (x > 1.0) x = 1.0;
     if (x < -1.0) x = -1.0;
     for (auto p = points.begin(); p != points.end(); ++p) {
-        if (p->x == 0.0) p->x += 1e-9; // FIX - distinguish 1.0 and 0.0 points 
+        if (p->x == 0.0) p->x += 1e-9; // FIX - distinguish 1.0 and 0.0 points
         if (p->x == 1.0) p->x -= 1e-9; //
         p->x += x;
         if (p->x < 0.0) p->x += 1.0;
@@ -181,7 +189,7 @@ void Pattern::buildSegments()
 
 // thread safe get segments
 // prevents getting segments during clear
-std::vector<Segment> Pattern::getSegments() 
+std::vector<Segment> Pattern::getSegments()
 {
     std::lock_guard<std::mutex> lock(mtx);
     return segments;
@@ -448,7 +456,7 @@ void Pattern::undo()
 
 void Pattern::redo()
 {
-    if (redoStack.empty()) 
+    if (redoStack.empty())
         return;
 
     undoStack.push_back(points);
