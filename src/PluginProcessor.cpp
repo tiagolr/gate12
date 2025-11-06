@@ -17,7 +17,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterInt>("pattern", "Pattern", 1, 12, 1),
         std::make_unique<juce::AudioParameterChoice>("patsync", "Pattern Sync", StringArray { "Off", "1/4 Beat", "1/2 Beat", "1 Beat", "2 Beats", "4 Beats"}, 0),
         std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio" }, 0),
-        std::make_unique<juce::AudioParameterChoice>("sync", "Sync", StringArray { "Rate Hz", "1/16", "1/8", "1/4", "1/2", "1/1", "2/1", "4/1", "1/16t", "1/8t", "1/4t", "1/2t", "1/1t", "1/16.", "1/8.", "1/4.", "1/2.", "1/1." }, 5),
+        std::make_unique<juce::AudioParameterChoice>("sync", "Sync", StringArray { "Rate Hz", "1/256", "1/128", "1/64", "1/32", "1/16", "1/8", "1/4", "1/2", "1/1", "2/1", "4/1", "1/16t", "1/8t", "1/4t", "1/2t", "1/1t", "1/16.", "1/8.", "1/4.", "1/2.", "1/1." }, 9),
         std::make_unique<juce::AudioParameterFloat>("rate", "Rate Hz", juce::NormalisableRange<float>(0.01f, 5000.0f, 0.01f, 0.2f), 1.0f),
         std::make_unique<juce::AudioParameterFloat>("phase", "Phase", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
         std::make_unique<juce::AudioParameterFloat>("min", "Min", 0.0f, 1.0f, 0.0f),
@@ -515,23 +515,27 @@ void GATE12AudioProcessor::onSlider()
 
     auto sync = (int)params.getRawParameterValue("sync")->load();
     if (sync == 0) syncQN = 1.; // not used
-    else if (sync == 1) syncQN = 1./4.; // 1/16
-    else if (sync == 2) syncQN = 1./2.; // 1/8
-    else if (sync == 3) syncQN = 1./1.; // 1/4
-    else if (sync == 4) syncQN = 1.*2.; // 1/2
-    else if (sync == 5) syncQN = 1.*4.; // 1bar
-    else if (sync == 6) syncQN = 1.*8.; // 2bar
-    else if (sync == 7) syncQN = 1.*16.; // 4bar
-    else if (sync == 8) syncQN = 1./6.; // 1/16t
-    else if (sync == 9) syncQN = 1./3.; // 1/8t
-    else if (sync == 10) syncQN = 2./3.; // 1/4t
-    else if (sync == 11) syncQN = 4./3.; // 1/2t
-    else if (sync == 12) syncQN = 8./3.; // 1/1t
-    else if (sync == 13) syncQN = 1./4.*1.5; // 1/16.
-    else if (sync == 14) syncQN = 1./2.*1.5; // 1/8.
-    else if (sync == 15) syncQN = 1./1.*1.5; // 1/4.
-    else if (sync == 16) syncQN = 2./1.*1.5; // 1/2.
-    else if (sync == 17) syncQN = 4./1.*1.5; // 1/1.
+    else if (sync == 1) syncQN = 1. / 64.; // 1/256
+    else if (sync == 2) syncQN = 1. / 32.; // 1/128
+    else if (sync == 3) syncQN = 1. / 16.; // 1/64
+    else if (sync == 4) syncQN = 1. / 8.; // 1/32
+    else if (sync == 5) syncQN = 1. / 4.; // 1/16
+    else if (sync == 6) syncQN = 1. / 2.; // 1/8
+    else if (sync == 7) syncQN = 1. / 1.; // 1/4
+    else if (sync == 8) syncQN = 1. * 2.; // 1/2
+    else if (sync == 9) syncQN = 1. * 4.; // 1bar
+    else if (sync == 10) syncQN = 1. * 8.; // 2bar
+    else if (sync == 11) syncQN = 1. * 16.; // 4bar
+    else if (sync == 12) syncQN = 1. / 6.; // 1/16t
+    else if (sync == 13) syncQN = 1. / 3.; // 1/8t
+    else if (sync == 14) syncQN = 2. / 3.; // 1/4t
+    else if (sync == 15) syncQN = 4. / 3.; // 1/2t
+    else if (sync == 16) syncQN = 8. / 3.; // 1/1t
+    else if (sync == 17) syncQN = 1. / 4. * 1.5; // 1/16.
+    else if (sync == 18) syncQN = 1. / 2. * 1.5; // 1/8.
+    else if (sync == 19) syncQN = 1. / 1. * 1.5; // 1/4.
+    else if (sync == 20) syncQN = 2. / 1. * 1.5; // 1/2.
+    else if (sync == 21) syncQN = 4. / 1. * 1.5; // 1/1.
 
     auto highcut = (double)params.getRawParameterValue("highcut")->load();
     auto lowcut = (double)params.getRawParameterValue("lowcut")->load();
