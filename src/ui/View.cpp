@@ -634,7 +634,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
             if (point.x <= prev.x && prev.x - point.x < 20. / winw)
                 point.x = prev.x + 1e-8;
         }
-        audioProcessor.viewPattern->sortPoints();
+        audioProcessor.viewPattern->sortPointsSafe();
         audioProcessor.viewPattern->buildSegments();
     }
 
