@@ -27,11 +27,11 @@ void View::timerCallback()
         if (audioProcessor.uimode != luimode)
             multiSelect.clearSelection();
         preSelectionStart = Point<int>(-1,-1);
-        selectedMidpoint = -1;
-        selectedPoint = -1;
+        selectedMidpoint = 0;
+        selectedPoint = 0;
         multiSelect.mouseHover = -1;
-        hoverPoint = -1;
-        hoverMidpoint = -1;
+        hoverPoint = 0;
+        hoverMidpoint = 0;
         multiSelect.recalcSelectionArea();
         patternID = audioProcessor.viewPattern->versionID;
     }
@@ -213,18 +213,20 @@ void View::drawPoints(Graphics& g)
     }
 
     g.setColour(Colours::white.withAlpha(0.5f));
-    if (selectedPoint == -1 && selectedMidpoint == -1 && hoverPoint > -1)
+    if (!selectedPoint && !selectedMidpoint && hoverPoint)
     {
-        auto xx = points[hoverPoint].x * winw + winx;
-        auto yy = points[hoverPoint].y * winh + winy;
+        auto& pt = getPoint(hoverPoint);
+        auto xx = pt.x * winw + winx;
+        auto yy = pt.y * winh + winy;
         g.fillEllipse((float)(xx - HOVER_RADIUS), (float)(yy - HOVER_RADIUS), (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
     g.setColour(Colours::red.withAlpha(0.5f));
-    if (selectedPoint != -1)
+    if (selectedPoint)
     {
-        auto xx = points[selectedPoint].x * winw + winx;
-        auto yy = points[selectedPoint].y * winh + winy;
+        auto& pt = getPoint(selectedPoint);
+        auto xx = pt.x * winw + winx;
+        auto yy = pt.y * winh + winy;
         g.fillEllipse((float)(xx - 4.0), (float)(yy-4.0), 8.0f, 8.0f);
     }
 }
@@ -280,16 +282,20 @@ void View::drawMidPoints(Graphics& g)
 
     // draw hovered midpoint
     g.setColour(Colour(COLOR_ACTIVE).withAlpha(0.5f));
-    if (selectedPoint == -1 && selectedMidpoint == -1 && hoverMidpoint != -1) {
-        auto& seg = segs[hoverMidpoint];
+    if (!selectedPoint && !selectedMidpoint && hoverMidpoint) {
+        auto idx = getPointIndex(hoverMidpoint);
+        auto next = idx + 1;
+        auto& seg = segs[next];
         auto xy = getMidpointXY(seg);
         g.fillEllipse((float)xy[0] - HOVER_RADIUS, (float)xy[1] - HOVER_RADIUS, (float)HOVER_RADIUS * 2.f, (float)HOVER_RADIUS * 2.f);
     }
 
     // draw selected midpoint
     g.setColour(Colour(COLOR_ACTIVE));
-    if (selectedMidpoint != -1) {
-        auto& seg = segs[selectedMidpoint];
+    if (selectedMidpoint) {
+        auto idx = getPointIndex(hoverMidpoint);
+        auto next = idx + 1;
+        auto& seg = segs[next];
         auto xy = getMidpointXY(seg);
         g.fillEllipse((float)xy[0] - 3.0f, (float)xy[1] - 3.0f, 6.0f, 6.0f);
         auto waveCount = audioProcessor.viewPattern->getWaveCount(seg);
@@ -318,20 +324,20 @@ void View::drawSeek(Graphics& g)
     g.drawEllipse((float)(xpos * winw + winx - 5.f), (float)((1 - ypos) * winh + winy - 5.f), 10.0f, 10.0f, 1.0f);
 }
 
-int View::getHoveredPoint(int x, int y)
+uint64_t View::getHoveredPoint(int x, int y)
 {
     auto points = audioProcessor.viewPattern->points;
     for (auto i = 0; i < points.size(); ++i) {
         auto xx = (int)(points[i].x * winw + winx);
         auto yy = (int)(points[i].y * winh + winy);
         if (pointInRect(x, y, xx - HOVER_RADIUS, yy - HOVER_RADIUS, HOVER_RADIUS * 2, HOVER_RADIUS * 2)) {
-            return i;
+            return points[i].id;
         }
     }
-    return -1;
+    return 0;
 };
 
-int View::getHoveredMidpoint(int x, int y)
+uint64_t View::getHoveredMidpoint(int x, int y)
 {
     auto segs = audioProcessor.viewPattern->getSegments();
     for (auto i = 0; i < segs.size(); ++i) {
@@ -340,19 +346,41 @@ int View::getHoveredMidpoint(int x, int y)
         if (!isCollinear(seg) && seg.type != PointType::Hold && pointInRect(x, y, (int)xy[0] - MPOINT_HOVER_RADIUS, 
             (int)xy[1] - MPOINT_HOVER_RADIUS, MPOINT_HOVER_RADIUS * 2, MPOINT_HOVER_RADIUS * 2)) 
         {
+            return getPointFromSegmentIndex(i).id;
+        }
+    }
+    return 0;
+};
+
+PPoint& View::getPoint(uint64_t id)
+{
+    for (auto& point : audioProcessor.viewPattern->points) {
+        if (point.id == id) {
+            return point;
+        }
+    }
+    return dummyPoint;
+}
+
+int View::getPointIndex(uint64_t id)
+{
+    auto sz = audioProcessor.viewPattern->points.size();
+    for (int i = 0; i < sz; ++i) {
+        if (audioProcessor.viewPattern->points[i].id == id) {
             return i;
         }
     }
-    return -1;
-};
+    return 0;
+}
+
 
 // Midpoint index is derived from segment nu
 // there is an extra segment before the first point
 // so the matching pattern point to each midpoint is midpoint - 1
-PPoint& View::getPointFromMidpoint(int midpoint)
+PPoint& View::getPointFromSegmentIndex(int segidx)
 {
     auto size = (int)audioProcessor.viewPattern->points.size();
-    auto index = midpoint == 0 ? size - 1 : midpoint - 1;
+    auto index = segidx == 0 ? size - 1 : segidx - 1;
 
     if (index >= size)
         index -= size;
@@ -392,20 +420,20 @@ void View::mouseDown(const juce::MouseEvent& e)
         }
 
         selectedPoint = getHoveredPoint(x, y);
-        if (selectedPoint == -1)
+        if (!selectedPoint)
             selectedMidpoint = getHoveredMidpoint(x, y);
 
-        if (selectedPoint == -1 && selectedMidpoint == -1) {
+        if (!selectedPoint && !selectedMidpoint) {
             preSelectionStart = e.getPosition();
             preSelectionEnd = e.getPosition();
         }
 
-        if (selectedPoint > -1 || selectedMidpoint > -1) {
-            if (selectedPoint > -1) {
+        if (selectedPoint || selectedMidpoint) {
+            if (selectedPoint) {
                 setMouseCursor(MouseCursor::NoCursor);
             }
-            if (selectedMidpoint > -1) {
-                origTension = getPointFromMidpoint(selectedMidpoint).tension;
+            if (selectedMidpoint) {
+                origTension = getPointFromSegmentIndex(getPointIndex(selectedMidpoint) + 1).tension;
                 dragStartY = y;
                 e.source.enableUnboundedMouseMovement(true);
                 setMouseCursor(MouseCursor::NoCursor);
@@ -417,7 +445,7 @@ void View::mouseDown(const juce::MouseEvent& e)
             return;
         }
         rmousePoint = getHoveredPoint(x, y);
-        if (rmousePoint > -1) {
+        if (rmousePoint) {
             showPointContextMenu(e);
         }
     }
@@ -436,7 +464,7 @@ void View::mouseUp(const juce::MouseEvent& e)
         return;
     }
 
-    if (e.mods.isRightButtonDown() && rmousePoint == -1) {
+    if (e.mods.isRightButtonDown() && !rmousePoint) {
         if (std::abs(e.getDistanceFromDragStartX()) < 4 && std::abs(e.getDistanceFromDragStartY()) < 4)
             showContextMenu(e);
     }
@@ -446,10 +474,10 @@ void View::mouseUp(const juce::MouseEvent& e)
             Desktop::getInstance().setMousePosition(e.getMouseDownScreenPosition());
             paintTool.mouseUp(e);
         }
-        else if (selectedPoint > -1) { // finished dragging point
+        else if (selectedPoint) { // finished dragging point
             // ----
         }
-        else if (selectedMidpoint > -1) { // finished dragging midpoint, place cursor at midpoint
+        else if (selectedMidpoint) { // finished dragging midpoint, place cursor at midpoint
             int x = e.getMouseDownX();
             int y = (int)(audioProcessor.viewPattern->get_y_at((x - winx) / (double)winw) * winh + winy);
             Desktop::getInstance().setMousePosition(juce::Point<int>(x + getScreenPosition().x, y + getScreenPosition().y));
@@ -466,7 +494,7 @@ void View::mouseUp(const juce::MouseEvent& e)
         else if (!multiSelect.selectionPoints.empty()) { // finished dragging selection
             multiSelect.clearSelection();
         } 
-        else if (hoverPoint == -1 && hoverMidpoint == -1 && e.mods.isAltDown()) {
+        else if (!hoverPoint && !hoverMidpoint && e.mods.isAltDown()) {
             insertNewPoint(e);
         }
     }
@@ -476,9 +504,9 @@ void View::mouseUp(const juce::MouseEvent& e)
     }
 
     preSelectionStart = Point<int>(-1,-1);
-    selectedMidpoint = -1;
-    selectedPoint = -1;
-    rmousePoint = -1;
+    selectedMidpoint = 0;
+    selectedPoint = 0;
+    rmousePoint = 0;
 }
 
 void View::insertNewPoint(const MouseEvent& e)
@@ -503,8 +531,8 @@ void View::insertNewPoint(const MouseEvent& e)
 
 void View::mouseMove(const juce::MouseEvent& e)
 {
-    hoverPoint = -1;
-    hoverMidpoint = -1;
+    hoverPoint = 0;
+    hoverMidpoint = 0;
     multiSelect.mouseHover = -1;
 
     if (!isEnabled() || patternID != audioProcessor.viewPattern->versionID)
@@ -523,7 +551,7 @@ void View::mouseMove(const juce::MouseEvent& e)
     auto pos = e.getPosition();
 
     // if currently dragging a point ignore mouse over events
-    if (selectedPoint > -1 || selectedMidpoint > -1) {
+    if (selectedPoint || selectedMidpoint) {
         return;
     }
 
@@ -536,7 +564,7 @@ void View::mouseMove(const juce::MouseEvent& e)
     int x = pos.x;
     int y = pos.y;
     hoverPoint = getHoveredPoint(x , y);
-    if (hoverPoint == -1)
+    if (!hoverPoint)
         hoverMidpoint = getHoveredMidpoint(x, y);
 }
 
@@ -572,7 +600,7 @@ void View::mouseDrag(const juce::MouseEvent& e)
     int x = pos.x;
     int y = pos.y;
 
-    if (selectedPoint > -1) {
+    if (selectedPoint) {
         auto& points = audioProcessor.viewPattern->points;
         double grid = (double)audioProcessor.getCurrentGrid();
         double gridx = double(winw) / grid;
@@ -588,26 +616,33 @@ void View::mouseDrag(const juce::MouseEvent& e)
         if (yy > 1) yy = 1.0;
         if (yy < 0) yy = 0.0;
 
-        auto& point = points[selectedPoint];
+        auto& point = getPoint(selectedPoint);
+        auto idx = getPointIndex(selectedPoint);
         point.y = yy;
         point.x = xx;
         if (point.x > 1) point.x = 1;
         if (point.x < 0) point.x = 0;
-        if (selectedPoint < points.size() - 1) {
-            auto& next = points[static_cast<size_t>(selectedPoint) + 1];
-            if (point.x >= next.x) point.x = next.x - 1e-8;
+        if (idx < points.size() - 1) {
+            auto nextidx = idx + 1;
+            auto& next = points[nextidx];
+            if (point.x >= next.x && point.x - next.x < 20. / winw)
+                point.x = next.x - 1e-8;
         }
-        if (selectedPoint > 0) {
-            auto& prev = points[static_cast<size_t>(selectedPoint) - 1];
-            if (point.x <= prev.x) point.x = prev.x + 1e-8;
+        if (idx > 0) {
+            auto previdx = idx - 1;
+            auto& prev = points[previdx];
+            if (point.x <= prev.x && prev.x - point.x < 20. / winw)
+                point.x = prev.x + 1e-8;
         }
+        audioProcessor.viewPattern->sortPoints();
         audioProcessor.viewPattern->buildSegments();
     }
 
-    else if (selectedMidpoint > -1) {
+    else if (selectedMidpoint) {
         int distance = y - dragStartY;
-        auto& mpoint = getPointFromMidpoint(selectedMidpoint);
-        auto& next = getPointFromMidpoint(selectedMidpoint + 1);
+        auto mididx = getPointIndex(selectedMidpoint);
+        auto& mpoint = getPointFromSegmentIndex(mididx + 1);
+        auto& next = getPointFromSegmentIndex(mididx + 2);
         if (mpoint.y < next.y) distance *= -1;
         float tension = (float)origTension + float(distance) / 500.f;
         if (tension > 1) tension = 1;
@@ -646,19 +681,19 @@ void View::mouseDoubleClick(const juce::MouseEvent& e)
 
     int x = e.getPosition().x;
     int y = e.getPosition().y;
-    int pt = getHoveredPoint((int)x, (int)y);
-    int mid = getHoveredMidpoint((int)x, (int)y);
+    uint64_t pt = getHoveredPoint((int)x, (int)y);
+    uint64_t mid = getHoveredMidpoint((int)x, (int)y);
     snapshot = audioProcessor.viewPattern->points;
 
-    if (pt > -1) {
-        audioProcessor.viewPattern->removePoint(pt);
-        hoverPoint = -1;
-        hoverMidpoint = -1;
+    if (pt) {
+        audioProcessor.viewPattern->removePoint(getPointIndex(pt));
+        hoverPoint = 0;
+        hoverMidpoint = 0;
     }
-    else if (pt == -1 && mid > -1) {
-        getPointFromMidpoint(mid).tension = 0;
+    else if (!pt && mid) {
+        getPointFromSegmentIndex(getPointIndex(mid) + 1).tension = 0;
     }
-    else if (pt == -1 && mid == -1) {
+    else if (!pt && !mid) {
         insertNewPoint(e);
     }
 
@@ -725,16 +760,16 @@ bool View::keyPressed(const juce::KeyPress& key)
 void View::mouseExit(const MouseEvent& event)
 {
     (void)event;
-    hoverPoint = -1;
-    selectedPoint = -1;
-    selectedMidpoint = -1;
-    hoverMidpoint = -1;
+    hoverPoint = 0;
+    selectedPoint = 0;
+    selectedMidpoint = 0;
+    hoverMidpoint = 0;
 }
 
 void View::showPointContextMenu(const juce::MouseEvent& event)
 {
     (void)event;
-    auto point = rmousePoint;
+    auto point = getPointIndex(rmousePoint);
     int type = audioProcessor.viewPattern->points[point].type;
     PopupMenu menu;
     menu.addItem(1, "Hold", true, type == 0);

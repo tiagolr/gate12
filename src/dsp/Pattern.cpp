@@ -28,6 +28,7 @@ void Pattern::incrementVersion()
 
 void Pattern::sortPoints()
 {
+    std::lock_guard<std::mutex> lock(pointsmtx);
     std::sort(points.begin(), points.end(), [](const PPoint& a, const PPoint& b) { 
         return a.x < b.x; 
     });
