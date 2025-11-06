@@ -21,6 +21,7 @@ enum PointType {
     Triangle,
     Stairs,
     SmoothSt,
+    HalfSine,
 };
 
 struct PPoint {
@@ -86,6 +87,7 @@ public:
     double get_y_triangle(Segment seg, double x);
     double get_y_stairs(Segment seg, double x);
     double get_y_smooth_stairs(Segment seg, double x);
+    double get_y_half_sine(Segment seg, double x);
     double get_y_at(double x);
 
     void createUndo();

@@ -343,6 +343,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     pointMenu.addItem("Triangle", 6);
     pointMenu.addItem("Stairs", 7);
     pointMenu.addItem("Smooth St", 8);
+    pointMenu.addItem("Half Sine", 9);
     pointMenu.setBounds(col, row, 75, 25);
     pointMenu.setSelectedId(audioProcessor.pointMode + 1, dontSendNotification);
     pointMenu.onChange = [this]() {

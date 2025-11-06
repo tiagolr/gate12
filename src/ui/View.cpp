@@ -257,7 +257,7 @@ void View::drawPreSelection(Graphics& g)
 std::vector<double> View::getMidpointXY(Segment seg)
 {
     double x = (std::max(seg.x1, 0.0) + std::min(seg.x2, 1.0)) * 0.5;
-    double y = seg.type > 1 && seg.x1 >= 0.0 && seg.x2 <= 1.0
+    double y = seg.type > 1 && seg.type != PointType::HalfSine && seg.x1 >= 0.0 && seg.x2 <= 1.0
         ? (seg.y1 + seg.y2) / 2
         : audioProcessor.viewPattern->get_y_at(x);
 
@@ -780,6 +780,7 @@ void View::showPointContextMenu(const juce::MouseEvent& event)
     menu.addItem(6, "Triangle", true, type == 5);
     menu.addItem(7, "Stairs", true, type == 6);
     menu.addItem(8, "Smooth stairs", true, type == 7);
+    menu.addItem(9, "Half Sine", true, type == 8);
     menu.showMenuAsync(PopupMenu::Options().withTargetComponent(this).withMousePosition(),[this, point](int result) {
         int type = audioProcessor.viewPattern->points[point].type;
         if (result > 0 && type != result - 1) {
