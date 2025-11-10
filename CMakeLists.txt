@@ -4,7 +4,9 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "Build for 10.13")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-option(BUILD_STANDALONE "Build Standalone plugin format" ON) # Allow overriding from the command line
+option(BUILD_STANDALONE "Build Standalone plugin format" ON)
+option(BUILD_VST3 "Build VST3 plugin format" ON)
+option(BUILD_LV2 "Build LV2 plugin format" ON)
 
 project(GATE12 VERSION 1.2.1)
 
@@ -15,14 +17,18 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(libs/JUCE)
 
-set(plugin_formats
-    VST3
-    LV2
-    AU
-)
+set(plugin_formats AU)
 
 if(BUILD_STANDALONE)
     list(APPEND plugin_formats Standalone)
+endif()
+
+if(BUILD_VST3)
+    list(APPEND plugin_formats VST3)
+endif()
+
+if(BUILD_LV2)
+    list(APPEND plugin_formats LV2)
 endif()
 
 juce_add_plugin(${PROJECT_NAME}
