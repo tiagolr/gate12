@@ -600,7 +600,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
     paintWidget->setVisible(audioProcessor.showPaintWidget);
     seqWidget->setVisible(audioProcessor.showSequencer);
-    seqWidget->setBounds(seqWidget->getBounds().withY(paintWidget->isVisible() 
+    seqWidget->setBounds(seqWidget->getBounds().withY(paintWidget->isVisible()
         ? paintWidget->getBounds().getBottom() + 10
         : paintWidget->getBounds().getY()
     ).withWidth(getWidth() - PLUG_PADDING * 2));
@@ -719,7 +719,7 @@ void GATE12AudioProcessorEditor::drawGear(Graphics& g, Rectangle<int> bounds, fl
     float y = bounds.toFloat().getCentreY();
     float oradius = radius;
     float iradius = radius / 3.f;
-    float cradius = iradius / 1.5f; 
+    float cradius = iradius / 1.5f;
     float coffset = MathConstants<float>::twoPi;
     float inc = MathConstants<float>::twoPi / segs;
 
@@ -791,12 +791,14 @@ void GATE12AudioProcessorEditor::resized()
     mixDial->setBounds(mixDial->getBounds().withRightX(settingsButton->getBounds().getX() - 10));
 
     // knobs row
-    bounds = audioDisplay->getBounds();
-    audioDisplay->setBounds(bounds.withRight(col - useSidechain.getBounds().getWidth() - 10));
     bounds = useSidechain.getBounds();
     useSidechain.setBounds(bounds.withX(col - bounds.getWidth()));
     bounds = useMonitor.getBounds();
     useMonitor.setBounds(bounds.withX(col - bounds.getWidth()));
+    bounds = audioDisplay->getBounds();
+    audioDisplay->setBounds(bounds
+        .withX(offset->getBounds().getRight())
+        .withRight(col - useSidechain.getBounds().getWidth() - 10));
 
     // third row
     bounds = snapButton.getBounds();
