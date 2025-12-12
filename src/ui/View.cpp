@@ -91,6 +91,31 @@ void View::paint(Graphics& g) {
     }
 
     drawGrid(g);
+
+    if (selectedPoint > 0 || hoverPoint > 0) {
+
+        PPoint pt = getPoint(selectedPoint > 0 ? selectedPoint : hoverPoint);
+        auto area = Rectangle<float>((float)(winx + 2), 10.f, 80.f, (float)PLUG_PADDING);
+        g.setColour(Colour(COLOR_NEUTRAL));
+        g.setFont(FontOptions(14.f));
+        auto db = pt.y >= 1.0 ? 0.f : 20 * std::log10(1.0 - pt.y);
+        auto dbstr = pt.y >= 1.0 ? "-Inf" : String(std::round(db * 100) / 100) + " dB";
+        String ystr = String("y = ") + dbstr;
+        g.drawText(ystr, area.translated(70.f, 0.f), Justification::centredLeft, false);
+
+        auto sync = (bool)audioProcessor.params.getRawParameterValue("sync")->load();
+        double duration = audioProcessor.syncQN * audioProcessor.secondsPerBeat;
+        if (!sync) {
+            double ratehz = (double)audioProcessor.params.getRawParameterValue("rate")->load();
+            duration = 1.f / ratehz;
+        }
+        duration *= pt.x;
+        String xstr = "x = " + (duration < 1.0 
+            ? String(std::round(duration * 1000.0)) + " ms" 
+            : String(std::round(duration * 100.f) / 100.f) + " s");
+        g.drawText(xstr, area, Justification::centredLeft, false);
+    }
+
     multiSelect.drawBackground(g);
     drawSegments(g);
 
