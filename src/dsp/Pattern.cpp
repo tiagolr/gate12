@@ -197,8 +197,9 @@ std::vector<Segment> Pattern::getSegments()
 
 void Pattern::loadSine() {
     clear();
-    insertPoint(0, 1, 0.2, 2);
-    insertPoint(0.5, 0, 0.2, 2);
+    insertPoint(0.0, 1, 0, 8);
+    insertPoint(0.5, 0, 0, 8);
+    insertPoint(1, 1, 0, 8);
     rotate(0.25);
 }
 
