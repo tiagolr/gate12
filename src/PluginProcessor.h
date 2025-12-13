@@ -38,7 +38,8 @@ struct MidiOutMsg {
 enum Trigger {
     Sync,
     MIDI,
-    Audio
+    Audio,
+    Free
 };
 
 enum PatSync {
