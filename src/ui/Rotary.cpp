@@ -31,7 +31,6 @@ static float unmapRateSyncNormal(float norm) {
     static constexpr int numSteps = 21;
     float value = std::clamp(norm, 1.0f / numSteps, 1.0f);
     return (value - (1.0f / numSteps)) / (1.0f - (1.0f / numSteps));
-
 }
 
 void Rotary::paint(juce::Graphics& g) {
@@ -87,6 +86,29 @@ void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
         else if (format == RotaryLabel::audioOffset) {
             ss << std::fixed << std::setprecision(1) << slider_val * AUDIO_LATENCY_MILLIS << " ms";
             text = ss.str();
+        }
+        else if (format == rateSync) {
+            if (slider_val == 1) text = "1/256";
+            else if (slider_val == 2) text = "1/128";
+            else if (slider_val == 3) text = "1/64";
+            else if (slider_val == 4) text = "1/32";
+            else if (slider_val == 5) text = "1/16";
+            else if (slider_val == 6) text = "1/8";
+            else if (slider_val == 7) text = "1/4";
+            else if (slider_val == 8) text = "1/2";
+            else if (slider_val == 9) text = "Bar";
+            else if (slider_val == 10) text = "2 Bar";
+            else if (slider_val == 11) text = "4 Bar";
+            else if (slider_val == 12) text = "1/16T";
+            else if (slider_val == 13) text = "1/8T";
+            else if (slider_val == 14) text = "1/4T";
+            else if (slider_val == 15) text = "1/2T";
+            else if (slider_val == 16) text = "1/1T";
+            else if (slider_val == 17) text = "1/16.";
+            else if (slider_val == 18) text = "1/8.";
+            else if (slider_val == 19) text = "1/4.";
+            else if (slider_val == 20) text = "1/2.";
+            else if (slider_val == 21) text = "1/1.";
         }
     }
 
