@@ -27,10 +27,21 @@ void Rotary::parameterChanged(const juce::String& parameterID, float newValue)
     juce::MessageManager::callAsync([this] { repaint(); });
 }
 
+static float unmapRateSyncNormal(float norm) {
+    static constexpr int numSteps = 21;
+    float value = std::clamp(norm, 1.0f / numSteps, 1.0f);
+    return (value - (1.0f / numSteps)) / (1.0f - (1.0f / numSteps));
+
+}
+
 void Rotary::paint(juce::Graphics& g) {
     auto param = audioProcessor.params.getParameter(paramId);
     auto normValue = param->getValue();
     auto value = param->convertFrom0to1(normValue);
+
+    if (format == rateSync) {
+        normValue = unmapRateSyncNormal(normValue);
+    }
 
     draw_rotary_slider(g, normValue); 
     draw_label_value(g, value);
@@ -138,6 +149,9 @@ void Rotary::mouseDrag(const juce::MouseEvent& e) {
     auto slider_change = float(change.getX() - change.getY()) / speed;
     cur_normed_value += slider_change;
     auto param = audioProcessor.params.getParameter(paramId);
+    if (format == rateSync && cur_normed_value < 1.f/22) {
+        cur_normed_value = 1.f / 22;
+    }
     param->setValueNotifyingHost(cur_normed_value);
 }
 

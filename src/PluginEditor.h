@@ -60,6 +60,7 @@ private:
     std::unique_ptr<TextDial> mixDial;
 
     std::unique_ptr<Rotary> rate;
+    std::unique_ptr<Rotary> rateSync;
     std::unique_ptr<Rotary> phase;
     std::unique_ptr<Rotary> min;
     std::unique_ptr<Rotary> max;

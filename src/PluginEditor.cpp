@@ -183,7 +183,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     rate = std::make_unique<Rotary>(p, "rate", "Rate", RotaryLabel::hz1f);
     addAndMakeVisible(*rate);
     rate->setBounds(col,row,80,65);
+
+    rateSync = std::make_unique<Rotary>(p, "sync", "Rate", RotaryLabel::rateSync);
+    addAndMakeVisible(*rateSync);
+    rate->setBounds(rate->getBounds());
     col += 75;
+
 
     phase = std::make_unique<Rotary>(p, "phase", "Phase", RotaryLabel::percx100);
     addAndMakeVisible(*phase);
@@ -539,6 +544,7 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
 
     // layout knobs
     rate->setVisible(!showAudioKnobs);
+    rateSync->setVisible(!showAudioKnobs);
     phase->setVisible(!showAudioKnobs);
     min->setVisible(!showAudioKnobs);
     max->setVisible(!showAudioKnobs);
@@ -561,8 +567,9 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
         auto row = PLUG_PADDING + 35 + 35;
         rate->setVisible(sync == 0);
         rate->setTopLeftPosition(col, row);
-        if (rate->isVisible())
-            col += 75;
+        rateSync->setVisible(!rate->isVisible());
+        rateSync->setBounds(rate->getBounds());
+        col += 75;
         phase->setTopLeftPosition(col, row);
         col += 75;
         min->setTopLeftPosition(col, row);

@@ -14,6 +14,7 @@ enum RotaryLabel {
     gainTodB1f,
     hz1f,
     percx100,
+    rateSync,
     intx100,
     float1,
     float2,
