@@ -148,7 +148,9 @@ public:
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
     double xpos = 0.0; // envelope x pos (0..1)
+    double xpos2 = 0.0; // envelope x pos (0..1) for stereo separation
     double ypos = 0.0; // envelope y pos (0..1)
+    double ypos2 = 0.f; // stereo separated ypos (0..1)
     double trigpos = 0.0; // used by trigger (Audio and MIDI) to detect one one shot envelope play
     double trigposSinceHit = 1.0; // used by audioIgnoreHitsWhilePlaying option
     double trigphase = 0.0; // phase when trigger occurs, used to sync the background wave draw
@@ -164,6 +166,7 @@ public:
     double ltensionatk = -10.0;
     double ltensionrel = -10.0;
     RCSmoother* value; // smooths envelope value
+    RCSmoother* value2; // smooths envelope value for stereo separation
     bool showLatencyWarning = false;
     int antiClickCooldown = -1;
     double antiClickStart = 0.0;
@@ -200,9 +203,12 @@ public:
     std::vector<double> postSamples; // used by view to draw post audio
     std::vector<double> sideSamples; // used by view to draw sidechain
     int viewW = 1; // viewport width, used for buffers of samples to draw waveforms
-    std::atomic<double> xenv = 0.0; // xpos copy using atomic, read by UI thread - attempt to fix rare crash
-    std::atomic<double> yenv = 0.0; // ypos copy using atomic, read by UI thread - attempt to fix rare crash
+    std::atomic<double> xenv = 0.0; // xpos copy using atomic
+    std::atomic<double> xenv2 = 0.0; // xpos copy using atomic, stereo separated
+    std::atomic<double> yenv = 0.0; // ypos copy using atomic
+    std::atomic<double> yenv2 = 0.0; // ypos copy using atomic, stereo separated
     std::atomic<bool> drawSeek = false;
+    std::atomic<bool> drawStereo = false;
     std::vector<double> monSamples; // used to draw transients + waveform preview
     std::atomic<double> monpos = 0.0; // write index of monitor circular buf
     int lmonpos = 0; // last index

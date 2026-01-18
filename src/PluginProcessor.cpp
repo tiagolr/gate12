@@ -6,11 +6,11 @@
 
 GATE12AudioProcessor::GATE12AudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-         .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)
-         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-     )
+    : AudioProcessor(BusesProperties()
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+        .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+    )
     , settings{}
     , params(*this, &undoManager, "PARAMETERS", {
         std::make_unique<juce::AudioParameterFloat>("mix", "Mix", 0.0f, 1.0f, 1.0f),
@@ -19,15 +19,16 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterChoice>("trigger", "Trigger", StringArray { "Sync", "MIDI", "Audio", "Free"}, 0),
         std::make_unique<juce::AudioParameterChoice>("sync", "Sync", StringArray { "Rate Hz", "1/256", "1/128", "1/64", "1/32", "1/16", "1/8", "1/4", "1/2", "1/1", "2/1", "4/1", "1/16t", "1/8t", "1/4t", "1/2t", "1/1t", "1/16.", "1/8.", "1/4.", "1/2.", "1/1." }, 9),
         std::make_unique<juce::AudioParameterFloat>("rate", "Rate Hz", juce::NormalisableRange<float>(0.01f, 5000.0f, 0.00001f, 0.2f), 1.0f),
-        std::make_unique<juce::AudioParameterFloat>("phase", "Phase", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("phase", "Phase", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f),
         std::make_unique<juce::AudioParameterFloat>("min", "Min", 0.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("max", "Max", 0.0f, 1.0f, 1.0f),
-        std::make_unique<juce::AudioParameterFloat>("smooth", "Smooth", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
-        std::make_unique<juce::AudioParameterFloat>("attack", "Attack", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
-        std::make_unique<juce::AudioParameterFloat>("release", "Release", juce::NormalisableRange<float> (0.0f, 1.0f), 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("smooth", "Smooth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("attack", "Attack", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("release", "Release", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tension", "Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tensionatk", "Attack Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tensionrel", "Release Tension", -1.0f, 1.0f, 0.0f),
+        std::make_unique<juce::AudioParameterFloat>("stereo", "Stereo Offset", juce::NormalisableRange<float>(-180.f, 180.f, 1.f), 0.f),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 2),
         std::make_unique<juce::AudioParameterInt>("seqstep", "Sequencer Step", 0, (int)std::size(GRID_SIZES)-1, 2),
@@ -91,6 +92,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
     sideSamples.resize(MAX_PLUG_WIDTH, 0);
     monSamples.resize(MAX_PLUG_WIDTH, 0); // samples array size must be >= audio monitor width
     value = new RCSmoother();
+    value2 = new RCSmoother();
 
     loadSettings();
 }
@@ -594,6 +596,7 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
     double min = (double)params.getRawParameterValue("min")->load();
     double max = (double)params.getRawParameterValue("max")->load();
     double phase = (double)params.getRawParameterValue("phase")->load();
+    double stereo = (double)params.getRawParameterValue("stereo")->load() / 360.0;
 
     if (fromZero) { // restart from phase
         xpos = phase;
@@ -605,7 +608,12 @@ void GATE12AudioProcessor::restartEnv(bool fromZero)
         xpos -= std::floor(xpos);
     }
 
+    xpos2 = xpos + stereo;
+    if (xpos2 < 0.0) xpos2 += 1;
+    if (xpos2 > 1.0) xpos2 -= std::floor(xpos2);
+
     value->reset(getY(xpos, min, max)); // reset smooth
+    value2->reset(getY(xpos2, min, max)); // reset smooth
 }
 
 void GATE12AudioProcessor::onStop()
@@ -675,6 +683,7 @@ void GATE12AudioProcessor::setSmooth()
     attack *= attack;
     release *= release;
     value->setup(attack * 0.25, release * 0.25, srate);
+    value2->setup(attack * 0.25, release * 0.25, srate);
 }
 
 void GATE12AudioProcessor::startMidiTrigger()
@@ -800,13 +809,14 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     int algo = (int)params.getRawParameterValue("algo")->load();
     double threshold = (double)params.getRawParameterValue("threshold")->load();
     double sense = 1.0 - (double)params.getRawParameterValue("sense")->load();
+    double stereo = (double)params.getRawParameterValue("stereo")->load() / 360.0;
     sense = std::pow(sense, 2); // make sensitivity more responsive
     int numSamples = buffer.getNumSamples();
 
     // processes draw wave samples
-    auto processDisplaySample = [&](double pos, double env, double lsamp, double rsamp) {
+    auto processDisplaySample = [&](double pos, double env, double env2, double lsamp, double rsamp) {
         auto preamp = std::max(std::fabs(lsamp), std::fabs(rsamp));
-        auto postamp = preamp * env;
+        auto postamp = std::max(std::fabs(lsamp * env), std::fabs(rsamp * env2));
         winpos = (int)std::floor(pos * viewW);
         if (lwinpos != winpos) {
             preSamples[winpos] = 0.0;
@@ -819,6 +829,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             postSamples[winpos] = postamp;
     };
 
+    // sidechain display
     auto processSideDisplaySample = [&](double pos, int samp) {
         if (!sideInputs) return;
         auto lsamp = buffer.getSample(audioInputs, samp);
@@ -857,9 +868,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
     };
 
     // applies envelope to a sample index
-    auto applyGain = [&](int sampIdx, double env, double lsample, double rsample) {
+    auto applyGain = [&](int sampIdx, double env, double env2, double lsample, double rsample) {
         for (int channel = 0; channel < audioOutputs; ++channel) {
-            auto wet = (channel == 0 ? lsample : rsample) * env;
+            auto wet = (channel == 0 ? lsample * env : rsample * env2);
             auto dry = (double)buffer.getSample(channel, sampIdx);
             if (outputCV) {
                 buffer.setSample(channel, sampIdx, static_cast<FloatType>(env));
@@ -969,7 +980,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 pattern->buildSegments();
                 MessageManager::callAsync([this]() {
                     sendChangeMessage();
-                });
+                    });
                 queuedPattern = 0;
                 if (queuedMidiTrigger) {
                     startMidiTrigger();
@@ -986,15 +997,25 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             xpos = sync > 0
                 ? beatPos / syncQN + phase
                 : ratePos + phase;
-            xpos -= std::floor(xpos);
 
+            xpos -= std::floor(xpos);
             double newypos = getY(xpos, min, max);
             ypos = value->process(newypos, newypos > ypos);
 
+            ypos2 = ypos;
+            xpos2 = xpos;
+            if (std::fabs(stereo) > 1e-4) {
+                xpos2 = xpos + stereo;
+                if (xpos2 < 0.0) xpos2 += 1;
+                xpos2 -= std::floor(xpos2);
+                double newypos2 = getY(xpos2, min, max);
+                ypos2 = value2->process(newypos2, newypos2 > ypos2);
+            }
+
             auto lsample = (double)buffer.getSample(0, sample);
             auto rsample = (double)buffer.getSample(1 % audioInputs, sample);
-            applyGain(sample, ypos, lsample, rsample);
-            processDisplaySample(xpos, ypos, lsample, rsample);
+            applyGain(sample, ypos, ypos2, lsample, rsample);
+            processDisplaySample(xpos, ypos, ypos2, lsample, rsample);
             processSideDisplaySample(xpos, sample);
         }
 
@@ -1026,6 +1047,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 ? beatsPerSample / syncQN
                 : 1 / srate * ratehz;
             xpos += inc;
+
             trigpos += inc;
             xpos -= std::floor(xpos);
 
@@ -1047,9 +1069,20 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             ypos = value->process(newypos, newypos > ypos);
 
-            applyGain(sample, ypos, lsample, rsample);
+            // stereo processing
+            xpos2 = xpos;
+            ypos2 = ypos;
+            if (std::fabs(stereo) > 1e-4) {
+                xpos2 = xpos + stereo;
+                if (xpos2 < 0.0) xpos2 += 1;
+                xpos2 -= std::floor(xpos2);
+                double newypos2 = getY(xpos2, min, max);
+                ypos2 = value2->process(newypos2, newypos2 > ypos2);
+            }
+
+            applyGain(sample, ypos, ypos2, lsample, rsample);
             double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
-            processDisplaySample(viewx, ypos, lsample, rsample);
+            processDisplaySample(viewx, ypos, ypos2, lsample, rsample);
             processSideDisplaySample(viewx, sample);
 
             if (latency > 0) {
@@ -1128,6 +1161,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
                 ? beatsPerSample / syncQN
                 : 1 / srate * ratehz;
             xpos += inc;
+
             trigpos += inc;
             trigposSinceHit += inc;
             xpos -= std::floor(xpos);
@@ -1168,17 +1202,27 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             ypos = value->process(newypos, newypos > ypos);
 
+            xpos2 = xpos;
+            ypos2 = ypos;
+            if (std::fabs(stereo) > 1e-4) {
+                xpos2 = xpos + stereo;
+                if (xpos2 < 0.0) xpos2 += 1;
+                xpos2 -= std::floor(xpos2);
+                double newypos2 = getY(xpos2, min, max);
+                ypos2 = value2->process(newypos2, newypos2 > ypos2);
+            }
+
             if (useMonitor) {
                 for (int channel = 0; channel < audioOutputs; ++channel) {
                     buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? monSampleL : monSampleR));
                 }
             }
             else {
-                applyGain(sample, ypos, lsample, rsample);
+                applyGain(sample, ypos, ypos2, lsample, rsample);
             }
 
             double viewx = (alwaysPlaying || audioTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
-            processDisplaySample(viewx, ypos, lsample, rsample);
+            processDisplaySample(viewx, ypos, ypos2, lsample, rsample);
             processSideDisplaySample(viewx, sample);
             latpos = (latpos + 1) % latency;
 
@@ -1188,6 +1232,9 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
         xenv.store(xpos);
         yenv.store(ypos);
+        xenv2.store(xpos2);
+        yenv2.store(ypos2);
+        drawStereo.store(std::fabs(stereo) > 1e-4);
         beatPos += beatsPerSample;
         ratePos += 1 / srate * ratehz;
         if (playing)
