@@ -31,7 +31,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("stereo", "Stereo Offset", juce::NormalisableRange<float>(-180.f, 180.f, 1.f), 0.f),
         std::make_unique<juce::AudioParameterFloat>("split_low", "Split Low", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35f), 20.f),
         std::make_unique<juce::AudioParameterFloat>("split_high", "Split High", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35f), 20000.f),
-        std::make_unique<juce::AudioParameterChoice>("split_slope", "Split Slope", StringArray{"12dB", "6dB"}, 0),
+        std::make_unique<juce::AudioParameterChoice>("split_slope", "Split Slope", StringArray{"6dB", "12dB"}, 0),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 2),
         std::make_unique<juce::AudioParameterInt>("seqstep", "Sequencer Step", 0, (int)std::size(GRID_SIZES)-1, 2),
@@ -806,6 +806,7 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
     double threshold = (double)params.getRawParameterValue("threshold")->load();
     double sense = 1.0 - (double)params.getRawParameterValue("sense")->load();
     double stereo = (double)params.getRawParameterValue("stereo")->load() / 360.0;
+    int splitSlope = (int)params.getRawParameterValue("split_slope")->load();
     sense = std::pow(sense, 2); // make sensitivity more responsive
     int numSamples = buffer.getNumSamples();
 
@@ -940,7 +941,8 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
     rawBuffer.copyFrom(0, 0, buffer, 0, 0, numSamples);
     rawBuffer.copyFrom(1, 0, buffer, audioInputs > 1 ? 1 : 0, 0, numSamples);
     if (splitter.freqLP > 20.0 || splitter.freqHP < 20000.0) {
-        splitter.processBlock6dB(
+        splitter.processBlock(
+            splitSlope,
             buffer.getReadPointer(0),
             buffer.getReadPointer(audioInputs > 1 ? 1 : 0),
             lowBuffer.getWritePointer(0),

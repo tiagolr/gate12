@@ -28,6 +28,17 @@ void Splitter::clear()
 	lpR2 = 0.f;
 }
 
+void Splitter::processBlock(
+    int slope, const float* left, const float* right,
+    float* lowl, float* lowr, float* midl, float* midr, float* hil,
+    float* hir, int nsamps)
+{
+    if (slope == 0)
+        processBlock6dB(left, right, lowl, lowr, midl, midr, hil, hir, nsamps);
+    else
+        processBlock12dB(left, right, lowl, lowr, midl, midr, hil, hir, nsamps);
+}
+
 void Splitter::processBlock6dB(
     const float* left, const float* right,
     float* lowl, float* lowr,
@@ -60,30 +71,32 @@ void Splitter::processBlock12dB(
     const float* left, const float* right,
     float* lowl, float* lowr,
     float* midl, float* midr,
-    float* hil,  float* hir,
+    float* hil, float* hir,
     int nsamps)
 {
     for (int i = 0; i < nsamps; ++i) {
         const float s0 = left[i];
         const float s1 = right[i];
 
-        // lp
+        // Lp
         lpL = a0LP * s0 - b1LP * lpL;
         lpR = a0LP * s1 - b1LP * lpR;
         lpL2 = a0LP * lpL - b1LP * lpL2;
         lpR2 = a0LP * lpR - b1LP * lpR2;
+
         lowl[i] = lpL2;
         lowr[i] = lpR2;
 
-        // hp
+        // Hp
         hpL = a0HP * s0 - b1HP * hpL;
         hpR = a0HP * s1 - b1HP * hpR;
         hpL2 = a0HP * hpL - b1HP * hpL2;
         hpR2 = a0HP * hpR - b1HP * hpR2;
+
         hil[i] = s0 - hpL2;
         hir[i] = s1 - hpR2;
 
-        // mid
+        // Mid
         midl[i] = s0 - lowl[i] - hil[i];
         midr[i] = s1 - lowr[i] - hir[i];
     }

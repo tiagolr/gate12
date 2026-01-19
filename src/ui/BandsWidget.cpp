@@ -103,7 +103,6 @@ void BandsWidget::paint(Graphics& g)
 	auto bounds = getLocalBounds().reduced(1).toFloat();
 	g.setColour(Colour(COLOR_BG));
 	g.fillRect(bounds);
-	drawWaveform(g);
 	
 	float splitLeft = editor.audioProcessor.params.getRawParameterValue("split_low")->load();
 	float splitRight = editor.audioProcessor.params.getRawParameterValue("split_high")->load();
@@ -118,6 +117,12 @@ void BandsWidget::paint(Graphics& g)
 	lband = { lx - bandw / 2, bounds.getY(), bandw, bounds.getHeight() };
 	auto rx = bounds.getX() + bounds.getWidth() * rnorm;
 	rband = { rx - bandw / 2, bounds.getY(), bandw, bounds.getHeight() };
+
+	g.setColour(Colour(COLOR_ACTIVE).darker(0.8f).withAlpha(0.25f));
+	g.fillRect(bounds.getX(), bounds.getY(), bounds.getWidth() * lnorm, bounds.getHeight());
+	g.fillRect(bounds.getRight() - bounds.getWidth() * (1.f - rnorm), bounds.getY(), bounds.getWidth() * (1.f - rnorm), bounds.getHeight());
+
+	drawWaveform(g);
 
 	g.saveState();
 	g.setColour(Colours::white);
@@ -144,7 +149,7 @@ void BandsWidget::paint(Graphics& g)
 		};
 
 	g.setFont(14.f);
-	g.setColour(Colour(COLOR_NEUTRAL));
+	g.setColour(Colours::white);
 	if (mouseOverBand == 1)
 		g.drawText(formatHz(splitLeft), lband.expanded(40, 0), lnorm > 0.5 ? Justification::left : Justification::right);
 	if (mouseOverBand == 2)
@@ -158,14 +163,24 @@ void BandsWidget::paint(Graphics& g)
 void BandsWidget::mouseMove(const MouseEvent& e)
 {
 	if (isDragging) return;
-	if (lband.contains(e.getPosition().toFloat())) {
-		mouseOverBand = 1;
-	} 
-	else if (rband.contains(e.getPosition().toFloat())) {
-		mouseOverBand = 2;
+	auto bounds = getLocalBounds();
+	bool preferLeft = e.getPosition().x > bounds.getCentreX(); // FIX remove conflicts when picking overlayed bars
+
+	if (preferLeft) {
+		if (lband.contains(e.getPosition().toFloat()))
+			mouseOverBand = 1;
+		else if (rband.contains(e.getPosition().toFloat()))
+			mouseOverBand = 2;
+		else 
+			mouseOverBand = 0;
 	}
 	else {
-		mouseOverBand = 0;
+		if (rband.contains(e.getPosition().toFloat()))
+			mouseOverBand = 2;
+		else if (lband.contains(e.getPosition().toFloat()))
+			mouseOverBand = 1;
+		else
+			mouseOverBand = 0;
 	}
 }
 

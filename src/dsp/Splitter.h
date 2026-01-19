@@ -14,6 +14,7 @@ public:
 	~Splitter() {}
 
 	void setFreqs(float srate, float hp, float lp);
+	void processBlock(int slope, const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void processBlock6dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void processBlock12dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void clear();

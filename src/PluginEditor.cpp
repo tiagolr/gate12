@@ -757,7 +757,7 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     // band button
     if (audioProcessor.showBandsEditor) {
         g.setColour(Colour(COLOR_ACTIVE));
-        g.fillRect(bandsBtn.getBounds().translated(0, 20).withHeight(30));
+        g.fillRoundedRectangle(bandsBtn.getBounds().expanded(2).toFloat(), 3.f);
     }
     g.setColour(Colour(COLOR_BG));
     g.fillRoundedRectangle(bandsBtn.getBounds().toFloat(), 3.f);

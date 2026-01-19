@@ -223,7 +223,7 @@ public:
     UIMode luimode = UIMode::Normal; // last ui mode
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
     bool showPaintWidget = false;
-    bool showBandsEditor = true;
+    bool showBandsEditor = false;
     bool showSequencer = false;
     bool drawSidechain = true;
     size_t bandsFFTWriteIndex = 0;
