@@ -17,6 +17,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
     audioProcessor.params.addParameterListener("trigger", this);
+    audioProcessor.params.addParameterListener("split_low", this);
+    audioProcessor.params.addParameterListener("split_high", this);
 
     auto col = PLUG_PADDING;
     auto row = PLUG_PADDING;
@@ -181,12 +183,21 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(stereoSlider);
     stereoSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.params, "stereo", stereoSlider);
     stereoSlider.setComponentID("stereo_slider");
-    stereoSlider.setTooltip("Stereo offset - click and drag to offset the left and right channels.");
     stereoSlider.setSliderStyle(Slider::LinearBar);
     stereoSlider.setBounds(patSyncMenu.getBounds().translated(patSyncMenu.getWidth() + 10, 0));
     stereoSlider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
     stereoSlider.setTextBoxStyle(Slider::NoTextBox, true, 10, 10);
     stereoSlider.setVelocityBasedMode(true);
+
+    addAndMakeVisible(bandsBtn);
+    bandsBtn.setComponentID("button");
+    bandsBtn.setBounds(stereoSlider.getBounds().translated(stereoSlider.getWidth() + 10, 0));
+    bandsBtn.setButtonText("Bands");
+    bandsBtn.onClick = [this]
+        {
+            audioProcessor.showBandsEditor = !audioProcessor.showBandsEditor;
+            toggleUIComponents();
+        };
 
     // KNOBS ROW
     row += 35;
@@ -310,6 +321,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
             toggleUIComponents();
         });
     };
+
+    bandsWidget = std::make_unique<BandsWidget>(*this);
+    addChildComponent(bandsWidget.get());
+    bandsWidget->setBounds(PLUG_PADDING + 75 * 6, row, 75 * 2 + 10, 65);
 
     // THIRD ROW
     col = PLUG_PADDING;
@@ -518,6 +533,8 @@ GATE12AudioProcessorEditor::~GATE12AudioProcessorEditor()
     delete customLookAndFeel;
     audioProcessor.params.removeParameterListener("sync", this);
     audioProcessor.params.removeParameterListener("trigger", this);
+    audioProcessor.params.removeParameterListener("split_low", this);
+    audioProcessor.params.removeParameterListener("split_high", this);
     audioProcessor.removeChangeListener(this);
 }
 
@@ -638,6 +655,8 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     sequencerButton.setToggleState(audioProcessor.sequencer->isOpen, dontSendNotification);
     paintWidget->toggleUIComponents();
 
+    bandsWidget->setVisible(audioProcessor.showBandsEditor);
+
     repaint();
 }
 
@@ -734,6 +753,25 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
     g.setFont(FontOptions(16.f));
     g.setColour(Colour(COLOR_NEUTRAL));
     g.drawText("Mix", bounds, Justification::centredLeft);
+
+    // band button
+    if (audioProcessor.showBandsEditor) {
+        g.setColour(Colour(COLOR_ACTIVE));
+        g.fillRect(bandsBtn.getBounds().translated(0, 20).withHeight(30));
+    }
+    g.setColour(Colour(COLOR_BG));
+    g.fillRoundedRectangle(bandsBtn.getBounds().toFloat(), 3.f);
+    bounds = bandsBtn.getBounds().toFloat().reduced(3.f);
+    float splitLeft = audioProcessor.params.getRawParameterValue("split_low")->load();
+    float splitRight = audioProcessor.params.getRawParameterValue("split_high")->load();
+    const float logMin = std::log(20.f);
+    const float logScale = 1.f / (std::log(20000.f) - logMin);
+    auto lnorm = (std::log(splitLeft) - logMin) * logScale;
+    auto rnorm = (std::log(splitRight) - logMin) * logScale;
+    auto bw = bounds.getWidth();
+    g.setColour(Colour(COLOR_ACTIVE).darker(0.8f));
+    g.fillRect(bounds.getX(), bounds.getY(), bw * lnorm, bounds.getHeight());
+    g.fillRect(bounds.getRight() - bw * (1.f - rnorm), bounds.getY(), bw * (1.f - rnorm), bounds.getHeight());
 }
 
 void GATE12AudioProcessorEditor::drawGear(Graphics& g, Rectangle<int> bounds, float radius, int segs, Colour color, Colour background)

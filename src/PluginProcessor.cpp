@@ -435,6 +435,7 @@ void GATE12AudioProcessor::changeProgramName (int index, const juce::String& new
 //==============================================================================
 void GATE12AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    srate = (float)sampleRate;
     rawBuffer.setSize(2, samplesPerBlock);
     lowBuffer.setSize(2, samplesPerBlock);
     highBuffer.setSize(2, samplesPerBlock);
@@ -483,11 +484,10 @@ bool GATE12AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
 void GATE12AudioProcessor::onSlider()
 {
     setSmooth();
-    auto srate = getSampleRate();
     int trigger = (int)params.getRawParameterValue("trigger")->load();
     if (trigger != ltrigger || antiClick != lantiClick) {
         auto latency = getLatencySamples();
-        int antiClickLatency = getAntiClickLatency(srate);
+        int antiClickLatency = getAntiClickLatency();
         setLatencySamples(trigger == Trigger::Audio
             ? int(srate * AUDIO_LATENCY_MILLIS / 1000.0) + antiClickLatency
             : trigger == MIDI ? antiClickLatency
@@ -591,9 +591,8 @@ void GATE12AudioProcessor::onPlay()
     trigphase = phase;
 
     audioTriggerCountdown = -1;
-    double srate = getSampleRate();
-    transDetectorL.clear(srate);
-    transDetectorR.clear(srate);
+    transDetectorL.clear((double)srate);
+    transDetectorR.clear((double)srate);
 
     if (trigger == Trigger::Sync || alwaysPlaying) {
         restartEnv(false);
@@ -678,7 +677,6 @@ void GATE12AudioProcessor::setSmooth()
 {
     float attack = 0;
     float release = 0;
-    auto srate = getSampleRate();
 
     if (dualSmooth) {
         attack = params.getRawParameterValue("attack")->load();
@@ -692,17 +690,16 @@ void GATE12AudioProcessor::setSmooth()
 
     attack *= attack;
     release *= release;
-    value->setup(attack * 0.25, release * 0.25, srate);
-    value2->setup(attack * 0.25, release * 0.25, srate);
+    value->setup(attack * 0.25, release * 0.25, (double)srate);
+    value2->setup(attack * 0.25, release * 0.25, (double)srate);
 }
 
 void GATE12AudioProcessor::startMidiTrigger()
 {
-    double srate = getSampleRate();
     double phase = (double)params.getRawParameterValue("phase")->load();
     double min = (double)params.getRawParameterValue("min")->load();
     double max = (double)params.getRawParameterValue("max")->load();
-    antiClickCooldown = getAntiClickLatency(srate);
+    antiClickCooldown = getAntiClickLatency();
     antiClickSamples = antiClickCooldown;
     antiClickStart = ypos;
     antiClickTarget = getY(phase, min, max);
@@ -735,12 +732,12 @@ void GATE12AudioProcessor::setAntiClick(int ac)
     paramChanged = true;
 }
 
-int GATE12AudioProcessor::getAntiClickLatency(double srate)
+int GATE12AudioProcessor::getAntiClickLatency()
 {
     return antiClick == 1
-        ? (int)(ANTICLICK_LOW_MILLIS / 1000.0 * srate)
+        ? (int)(ANTICLICK_LOW_MILLIS / 1000.0)
         : antiClick == 2
-        ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0 * srate)
+        ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0)
         : 0;
 }
 
@@ -752,7 +749,6 @@ bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
 void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals disableDenormals;
-    double srate = getSampleRate();
     int sblock = getBlockSize();
     bool looping = false;
     double loopStart = 0.0;
@@ -1168,7 +1164,7 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
 
             // HIT - start another countdown, this time for anticlick
             if (hit && (alwaysPlaying || !audioIgnoreHitsWhilePlaying || trigposSinceHit > 0.98)) {
-                antiClickCooldown = getAntiClickLatency(srate);
+                antiClickCooldown = getAntiClickLatency();
                 antiClickSamples = antiClickCooldown;
                 antiClickStart = ypos;
                 antiClickTarget = getY(phase, min, max);
@@ -1288,6 +1284,20 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
             buffer.addFrom(1, 0, lowBuffer, 1, 0, numSamples);
             buffer.addFrom(1, 0, highBuffer, 1, 0, numSamples);
         }
+    }
+
+    // prepare FFT buffer for band splitter display
+    if (showBandsEditor) {
+        auto ch0 = buffer.getReadPointer(0);
+        auto ch1 = buffer.getReadPointer(audioInputs > 1 ? 1 : 0);
+        for (int i = 0; i < numSamples; ++i) {
+            bandsFFTBuffer[bandsFFTWriteIndex++] = 0.5f * (ch0[i] + ch1[i]);
+            bandsFFTWriteIndex %= bandsFFTBuffer.size();
+        }
+        bandsFFTReady.store(true, std::memory_order_release);
+    }
+    else {
+        std::fill(bandsFFTBuffer.begin(), bandsFFTBuffer.end(), 0.f);
     }
 
     drawSeek.store(playing && (trigger == Trigger::Sync || midiTrigger || audioTrigger));

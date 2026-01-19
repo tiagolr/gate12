@@ -96,6 +96,7 @@ target_compile_definitions(${PROJECT_NAME}
 juce_generate_juce_header(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
+        juce::juce_dsp
         juce::juce_core
         juce::juce_graphics
         juce::juce_gui_basics

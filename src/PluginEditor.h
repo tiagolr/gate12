@@ -20,6 +20,7 @@
 #include "ui/AudioDisplay.h"
 #include "ui/PaintToolWidget.h"
 #include "ui/SequencerWidget.h"
+#include "ui/BandsWidget.h"
 
 using namespace globals;
 
@@ -38,9 +39,9 @@ public:
     void drawGear(Graphics&g, Rectangle<int> bounds, float radius, int segs, Colour color, Colour bg);
     void drawUndoButton(Graphics& g, juce::Rectangle<float> area, bool invertx, Colour color);
 
+    GATE12AudioProcessor& audioProcessor;
 private:
     bool init = false;
-    GATE12AudioProcessor& audioProcessor;
     CustomLookAndFeel* customLookAndFeel = nullptr;
     std::unique_ptr<About> about;
 
@@ -58,6 +59,8 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patSyncAttachment;
     Slider stereoSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> stereoSliderAttachment;
+    TextButton bandsBtn;
+    std::unique_ptr<BandsWidget> bandsWidget;
     std::unique_ptr<SettingsButton> settingsButton;
     std::unique_ptr<TextDial> mixDial;
 

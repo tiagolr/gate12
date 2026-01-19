@@ -193,6 +193,7 @@ public:
     double hitamp = 0.0; // used to display transient hits on monitor view
 
     // PlayHead state
+    float srate = 44100.f;
     bool playing = false;
     int64_t timeInSamples = 0;
     double beatPos = 0.0; // position in quarter notes
@@ -222,8 +223,12 @@ public:
     UIMode luimode = UIMode::Normal; // last ui mode
     bool showAudioKnobs = false; // used by UI to toggle audio knobs
     bool showPaintWidget = false;
+    bool showBandsEditor = true;
     bool showSequencer = false;
     bool drawSidechain = true;
+    size_t bandsFFTWriteIndex = 0;
+    std::array<float, (1 << BANDS_FFT_ORDER) * 2> bandsFFTBuffer;
+    std::atomic<bool> bandsFFTReady = false;
 
     //==============================================================================
     GATE12AudioProcessor();
@@ -246,7 +251,7 @@ public:
     void setPaintTool(int index);
     void restorePaintPatterns();
     void setAntiClick(int ac);
-    int getAntiClickLatency(double srate);
+    int getAntiClickLatency();
     void startMidiTrigger();
 
     //==============================================================================

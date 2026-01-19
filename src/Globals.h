@@ -28,6 +28,7 @@ namespace globals {
 	constexpr int AUDIO_DRUMSBUF_MILLIS = 20;
 	constexpr int AUDIO_NOTE_LENGTH_MILLIS = 100;
 	constexpr int MAX_UNDO = 100;
+	constexpr int BANDS_FFT_ORDER = 12;
 
 	// view consts
 	constexpr int PLUG_WIDTH = 640;
