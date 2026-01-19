@@ -1,17 +1,17 @@
 #include "Splitter.h"
 
-void Splitter::setFreqs(double srate, double hp, double lp)
+void Splitter::setFreqs(float srate, float hp, float lp)
 {
-	static constexpr double PI = 3.14159265358979323846;
+	static constexpr float PI = 3.14159265358979323846f;
 
-	freqHP = std::clamp(hp, 20.0, std::min(20000.0, srate*0.49));
-	xHP = std::exp(-2.0*PI*freqHP/srate);
-	a0HP = 1.0-xHP;
+	freqHP = std::clamp(hp, 20.0f, std::min(20000.0f, srate*0.49f));
+	xHP = std::exp(-2.0f*PI*freqHP/srate);
+	a0HP = 1.0f-xHP;
 	b1HP = -xHP;
 
-	freqLP = std::clamp(lp, 20., std::min(20000., srate*0.49));
-	xLP = std::exp(-2.0*PI*freqLP/srate);
-	a0LP = 1.0-xLP;
+	freqLP = std::clamp(lp, 20.f, std::min(20000.f, srate*0.49f));
+	xLP = std::exp(-2.0f*PI*freqLP/srate);
+	a0LP = 1.0f-xLP;
 	b1LP = -xLP;
 }
 
@@ -29,15 +29,15 @@ void Splitter::clear()
 }
 
 void Splitter::processBlock6dB(
-    double* left, double* right,
-    double* lowl, double* lowr,
-    double* midl, double* midr,
-    double* hil,  double* hir,
+    const float* left, const float* right,
+    float* lowl, float* lowr,
+    float* midl, float* midr,
+    float* hil,  float* hir,
     int nsamps)
 {
     for (int i = 0; i < nsamps; ++i) {
-        const double s0 = left[i];
-        const double s1 = right[i];
+        const float s0 = left[i];
+        const float s1 = right[i];
 
         lpL = a0LP * s0 - b1LP * lpL;
         lpR = a0LP * s1 - b1LP * lpR;
@@ -57,15 +57,15 @@ void Splitter::processBlock6dB(
 }
 
 void Splitter::processBlock12dB(
-    double* left, double* right,
-    double* lowl, double* lowr,
-    double* midl, double* midr,
-    double* hil,  double* hir,
+    const float* left, const float* right,
+    float* lowl, float* lowr,
+    float* midl, float* midr,
+    float* hil,  float* hir,
     int nsamps)
 {
     for (int i = 0; i < nsamps; ++i) {
-        const double s0 = left[i];
-        const double s1 = right[i];
+        const float s0 = left[i];
+        const float s1 = right[i];
 
         // lp
         lpL = a0LP * s0 - b1LP * lpL;

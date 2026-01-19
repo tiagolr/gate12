@@ -147,9 +147,9 @@ public:
     Pattern* viewPattern; // pattern being edited on the view, usually the audio pattern but can also be a paint mode pattern
     Sequencer* sequencer;
     Splitter splitter;
-    AudioBuffer<double> rawBuffer; // used for freq splitting
-    AudioBuffer<double> lowBuffer; // used for freq splitting
-    AudioBuffer<double> highBuffer; // used for freq splitting
+    AudioBuffer<float> rawBuffer; // used for freq splitting
+    AudioBuffer<float> lowBuffer; // used for freq splitting
+    AudioBuffer<float> highBuffer; // used for freq splitting
     int queuedPattern = 0; // queued pat index, 0 = off
     int64_t queuedPatternCountdown = 0; // samples counter until queued pattern is applied
     double xpos = 0.0; // envelope x pos (0..1)
@@ -275,10 +275,7 @@ public:
     void queuePattern(int patidx);
 
     //==============================================================================
-    void processBlock (AudioBuffer<double>&, MidiBuffer&) override;
     void processBlock (AudioBuffer<float>&, MidiBuffer&) override;
-    template <typename FloatType>
-    void processBlockByType(AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages);
 
     //==============================================================================
     AudioProcessorEditor* createEditor() override;

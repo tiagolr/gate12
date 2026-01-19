@@ -7,31 +7,31 @@
 class Splitter
 {
 public:
-	double freqHP = 20000.;
-	double freqLP = 20.;
+	float freqHP = 20000.f;
+	float freqLP = 20.f;
 
 	Splitter() {}
 	~Splitter() {}
 
-	void setFreqs(double srate, double hp, double lp);
-	void processBlock6dB(double* left, double* right, double* lowl, double* lowr, double* midl, double* midr, double* hil, double* hir, int nsamps);
-	void processBlock12dB(double* left, double* right, double* lowl, double* lowr, double* midl, double* midr, double* hil, double* hir, int nsamps);
+	void setFreqs(float srate, float hp, float lp);
+	void processBlock6dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
+	void processBlock12dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void clear();
 
 private:
-	double xHP = 0.f;
-	double a0HP = 0.f;
-	double b1HP = 0.f;
-	double hpL = 0.f;
-	double hpR = 0.f;
-	double hpL2 = 0.f;
-	double hpR2 = 0.f;
+	float xHP = 0.f;
+	float a0HP = 0.f;
+	float b1HP = 0.f;
+	float hpL = 0.f;
+	float hpR = 0.f;
+	float hpL2 = 0.f;
+	float hpR2 = 0.f;
 
-	double xLP = 0.f;
-	double a0LP = 0.f;
-	double b1LP = 0.f;
-	double lpL = 0.f;
-	double lpR = 0.f;
-	double lpL2 = 0.f;
-	double lpR2 = 0.f;
+	float xLP = 0.f;
+	float a0LP = 0.f;
+	float b1LP = 0.f;
+	float lpL = 0.f;
+	float lpR = 0.f;
+	float lpL2 = 0.f;
+	float lpR2 = 0.f;
 };

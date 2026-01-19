@@ -29,9 +29,9 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("tensionatk", "Attack Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("tensionrel", "Release Tension", -1.0f, 1.0f, 0.0f),
         std::make_unique<juce::AudioParameterFloat>("stereo", "Stereo Offset", juce::NormalisableRange<float>(-180.f, 180.f, 1.f), 0.f),
-        std::make_unique<juce::AudioParameterFloat>("split_low", "Split Low", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35), 20.f),
-        std::make_unique<juce::AudioParameterFloat>("split_high", "Split High", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35), 20000.f),
-        std::make_unique<juce::AudioParameterChoice>("split_slope", StringArray{"12dB", "6dB"}, 0),
+        std::make_unique<juce::AudioParameterFloat>("split_low", "Split Low", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35f), 20.f),
+        std::make_unique<juce::AudioParameterFloat>("split_high", "Split High", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35f), 20000.f),
+        std::make_unique<juce::AudioParameterChoice>("split_slope", "Split Slope", StringArray{"12dB", "6dB"}, 0),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 2),
         std::make_unique<juce::AudioParameterInt>("seqstep", "Sequencer Step", 0, (int)std::size(GRID_SIZES)-1, 2),
@@ -551,9 +551,9 @@ void GATE12AudioProcessor::onSlider()
     hpFilterL.hp(srate, lowcut, 0.707);
     hpFilterR.hp(srate, lowcut, 0.707);
 
-    double splitLow = (double)params.getRawParameterValue("split_low")->load();
-    double splitHigh = (double)params.getRawParameterValue("split_high")->load();
-    splitter.setFreqs(srate, splitLow, splitHigh);
+    float splitLow = params.getRawParameterValue("split_low")->load();
+    float splitHigh = params.getRawParameterValue("split_high")->load();
+    splitter.setFreqs((float)srate, splitLow, splitHigh);
 }
 
 void GATE12AudioProcessor::onTensionChange()
@@ -746,20 +746,10 @@ int GATE12AudioProcessor::getAntiClickLatency(double srate)
 
 bool GATE12AudioProcessor::supportsDoublePrecisionProcessing() const
 {
-    return true;
+    return false;
 }
 
 void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
-{
-    processBlockByType(buffer, midiMessages);
-}
-void GATE12AudioProcessor::processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midiMessages)
-{
-    processBlockByType(buffer, midiMessages);
-}
-
-template <typename FloatType>
-void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals disableDenormals;
     double srate = getSampleRate();
@@ -883,10 +873,10 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             auto wet = (channel == 0 ? lsample * env : rsample * env2);
             auto dry = (double)buffer.getSample(channel, sampIdx);
             if (outputCV) {
-                buffer.setSample(channel, sampIdx, static_cast<FloatType>(env));
+                buffer.setSample(channel, sampIdx, (float)env);
             }
             else {
-                buffer.setSample(channel, sampIdx, static_cast<FloatType>(wet * mix + dry * (1.0 - mix)));
+                buffer.setSample(channel, sampIdx, (float)(wet * mix + dry * (1.0 - mix)));
             }
         }
     };
@@ -964,7 +954,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
             highBuffer.getWritePointer(0),
             highBuffer.getWritePointer(1),
             numSamples
-        )
+        );
     }
 
     for (int sample = 0; sample < numSamples; ++sample) {
@@ -1065,7 +1055,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
                 // write delayed samples to buffer to later apply dry/wet mix
                 for (int channel = 0; channel < audioOutputs; ++channel) {
-                    buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? lsample : rsample));
+                    buffer.setSample(channel, sample, (float)(channel == 0 ? lsample : rsample));
                 }
             }
             else {
@@ -1171,7 +1161,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             // write delayed samples to buffer to later apply dry/wet mix
             for (int channel = 0; channel < audioOutputs; ++channel) {
-                buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? lsample : rsample));
+                buffer.setSample(channel, sample, (float)(channel == 0 ? lsample : rsample));
             }
 
             bool hit = audioTriggerCountdown == 0; // there was an audio transient trigger in this sample, not counting the anticlick lag
@@ -1244,7 +1234,7 @@ void GATE12AudioProcessor::processBlockByType (AudioBuffer<FloatType>& buffer, j
 
             if (useMonitor) {
                 for (int channel = 0; channel < audioOutputs; ++channel) {
-                    buffer.setSample(channel, sample, static_cast<FloatType>(channel == 0 ? monSampleL : monSampleR));
+                    buffer.setSample(channel, sample, (float)(channel == 0 ? monSampleL : monSampleR));
                 }
             }
             else {
