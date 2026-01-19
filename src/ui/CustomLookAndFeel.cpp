@@ -1,5 +1,20 @@
 #include "CustomLookAndFeel.h"
 
+static void drawSliderBevel(Graphics& g, Rectangle<float> bounds, float corner, Colour bg)
+{
+    bounds = bounds.translated(0.5f, 0.5f);
+    juce::ColourGradient gradient(
+        Colour(0xff0F0F0F).withAlpha(0.35f), bounds.getX(), bounds.getY(),
+        Colours::white.withAlpha(0.12f), bounds.getX(), bounds.getBottom(), false
+    );
+    gradient.addColour(0.5, Colour(0xff0F0F0F).withAlpha(0.02f));
+    g.setGradientFill(gradient);
+    g.fillRoundedRectangle(bounds, corner);
+
+    g.setColour(bg);
+    g.fillRoundedRectangle(bounds.expanded(-1.f), corner);
+}
+
 CustomLookAndFeel::CustomLookAndFeel()
 {
   setColour(ComboBox::backgroundColourId, Colour(COLOR_BG));
@@ -117,3 +132,75 @@ void CustomLookAndFeel::positionComboBoxText (ComboBox& box, Label& label)
 
     label.setFont (getComboBoxFont (box));
 }
+
+void CustomLookAndFeel::drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height,
+    float sliderPos, float minSliderPos, float maxSliderPos,
+    const juce::Slider::SliderStyle style, juce::Slider& slider)
+{
+    auto tag = slider.getComponentID();
+    if (tag != "stereo_slider") {
+        LookAndFeel_V4::drawLinearSlider(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
+        return;
+    }
+
+    if (tag == "stereo_slider") {
+        auto bounds = Rectangle<int>(x, y, width, height).toFloat();
+        drawSliderBevel(g, bounds.expanded(0.5f), 4.f, Colour(COLOR_BEVEL));
+        bounds = bounds.reduced(4.f);
+        bounds = bounds.withHeight(bounds.getHeight() + 1);
+
+        g.setColour(Colour(COLOR_ACTIVE).darker(0.5f));
+        Path p;
+        p.addRoundedRectangle(bounds, 4.f);
+        g.saveState();
+        g.reduceClipRegion(p);
+
+        const float valuePos = juce::jmap((float)slider.getValue(),
+            (float)slider.getMinimum(),
+            (float)slider.getMaximum(),
+            bounds.getX(),
+            bounds.getRight());
+
+        const float zeroPos = juce::jmap(0.0f,
+            (float)slider.getMinimum(),
+            (float)slider.getMaximum(),
+            bounds.getX(),
+            bounds.getRight());
+
+        const float snappedValuePos = std::round(valuePos);
+        const float snappedZeroPos = std::round(zeroPos);
+
+        if (snappedValuePos >= snappedZeroPos) {
+            g.fillRect(juce::Rectangle<float>(
+                snappedZeroPos,
+                bounds.getY(),
+                snappedValuePos - snappedZeroPos,
+                bounds.getHeight()));
+        }
+        else {
+            g.fillRect(juce::Rectangle<float>(
+                snappedValuePos,
+                bounds.getY(),
+                snappedZeroPos - snappedValuePos,
+                bounds.getHeight()));
+        }
+
+        String text = slider.isMouseOverOrDragging()
+            ? String(slider.getValue())
+            : "Stereo";
+
+        g.setFont(FontOptions(16.f));
+        g.setColour(Colours::white);
+        g.drawText(text, bounds, Justification::centred);
+
+        // Center line
+        //g.drawLine(snappedZeroPos,
+        //    bounds.getY(),
+        //    snappedZeroPos,
+        //    bounds.getBottom(),
+        //    2.0f);
+
+        g.restoreState();
+        return;
+    }
+};

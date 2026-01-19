@@ -178,6 +178,16 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     patSyncMenu.setBounds(col, row, 75, 25);
     patSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "patsync", patSyncMenu);
 
+    addAndMakeVisible(stereoSlider);
+    stereoSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.params, "stereo", stereoSlider);
+    stereoSlider.setComponentID("stereo_slider");
+    stereoSlider.setTooltip("Stereo offset - click and drag to offset the left and right channels.");
+    stereoSlider.setSliderStyle(Slider::LinearBar);
+    stereoSlider.setBounds(patSyncMenu.getBounds().translated(patSyncMenu.getWidth() + 10, 0));
+    stereoSlider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    stereoSlider.setTextBoxStyle(Slider::NoTextBox, true, 10, 10);
+    stereoSlider.setVelocityBasedMode(true);
+
     // KNOBS ROW
     row += 35;
     col = PLUG_PADDING;

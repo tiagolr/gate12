@@ -56,6 +56,8 @@ private:
     Label patSyncLabel;
     ComboBox patSyncMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> patSyncAttachment;
+    Slider stereoSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> stereoSliderAttachment;
     std::unique_ptr<SettingsButton> settingsButton;
     std::unique_ptr<TextDial> mixDial;
 
@@ -75,7 +77,7 @@ private:
     std::unique_ptr<Rotary> lowcut;
     std::unique_ptr<Rotary> highcut;
     std::unique_ptr<Rotary> offset;
-    
+
     ComboBox algoMenu;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> algoAttachment;
     TextButton useSidechain;
