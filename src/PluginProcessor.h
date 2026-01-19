@@ -175,7 +175,9 @@ public:
     bool showLatencyWarning = false;
     int antiClickCooldown = -1;
     double antiClickStart = 0.0;
+    double antiClickStart2 = 0.0; // anti click for stereo separation
     double antiClickTarget = 0.0;
+    double antiClickTarget2 = 0.0; // anti click for stereo separation
     int antiClickSamples = 0;
 
     // Audio mode state
@@ -323,15 +325,16 @@ private:
     PatternManager patternManager;
 
     double tween_ease_inout(double t, double start, double target_, double duration) {
+        if (duration < 1e-7) return target_;
         t = std::clamp(t, 0.0, duration);
         double target = target_ - start;
         double tn = t / duration;
 
         if (tn < 0.5)
-            return target / 2.0 * (2 * tn) * (2 * tn) + start;
+            return (target / 2.0) * (2 * tn) * (2 * tn) + start;
         else {
             double tt = 2 * tn - 1;
-            return -target / 2.0 * (tt * (tt - 2.0) - 1.0) + start;
+            return -(target / 2.0) * (tt * (tt - 2.0) - 1.0) + start;
         }
     }
 

@@ -1,6 +1,6 @@
 #include "Splitter.h"
 
-void Splitter::setFreqs(float srate, float hp, float lp)
+void Splitter::setFreqs(float srate, float lp, float hp)
 {
 	static constexpr float PI = 3.14159265358979323846f;
 

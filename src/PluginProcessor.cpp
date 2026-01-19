@@ -697,12 +697,19 @@ void GATE12AudioProcessor::setSmooth()
 void GATE12AudioProcessor::startMidiTrigger()
 {
     double phase = (double)params.getRawParameterValue("phase")->load();
+    if (phase < 1e-7) phase += 1e-7; // FIX zero points usually have a very tiny offset
+    double stereo = (double)params.getRawParameterValue("stereo")->load() / 360.0;
+    stereo += phase; 
+    if (stereo < 0.0) stereo += 1.0;
+    if (stereo > 1.0) stereo -= 1.0;
     double min = (double)params.getRawParameterValue("min")->load();
     double max = (double)params.getRawParameterValue("max")->load();
     antiClickCooldown = getAntiClickLatency();
     antiClickSamples = antiClickCooldown;
     antiClickStart = ypos;
     antiClickTarget = getY(phase, min, max);
+    antiClickStart2 = ypos2;
+    antiClickTarget2 = getY(stereo, min, max);
 }
 
 void GATE12AudioProcessor::queuePattern(int patidx)
@@ -735,9 +742,9 @@ void GATE12AudioProcessor::setAntiClick(int ac)
 int GATE12AudioProcessor::getAntiClickLatency()
 {
     return antiClick == 1
-        ? (int)(ANTICLICK_LOW_MILLIS / 1000.0)
+        ? (int)(ANTICLICK_LOW_MILLIS * srate / 1000.0)
         : antiClick == 2
-        ? (int)(ANTICLICK_HIGH_MILLIS / 1000.0)
+        ? (int)(ANTICLICK_HIGH_MILLIS * srate / 1000.0)
         : 0;
 }
 
@@ -1081,22 +1088,36 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
                 }
             }
 
-            double newypos = antiClickCooldown > 0
-                ? newypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples)
-                : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
-
-            ypos = value->process(newypos, newypos > ypos);
-
-            // stereo processing
-            xpos2 = xpos;
-            ypos2 = ypos;
-            if (std::fabs(stereo) > 1e-4) {
-                xpos2 = xpos + stereo;
-                if (xpos2 < 0.0) xpos2 += 1;
-                xpos2 -= std::floor(xpos2);
-                double newypos2 = getY(xpos2, min, max);
-                ypos2 = value2->process(newypos2, newypos2 > ypos2);
+            if (antiClickCooldown >= 0) {
+                // anti-click
+                // tween ypos, the midi trigger will be restarted once the tween completes
+                ypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples);
+                // stereo processing
+                xpos2 = xpos;
+                ypos2 = ypos;
+                if (std::fabs(stereo) > 1e-4) {
+                    xpos2 = xpos + stereo;
+                    if (xpos2 < 0.0) xpos2 += 1;
+                    xpos2 -= std::floor(xpos2);
+                    ypos2 = tween_ease_inout(double(antiClickSamples - antiClickCooldown), antiClickStart2, antiClickTarget2, (double)antiClickSamples);
+                }
             }
+            else {
+                // otherwise get the normal yposition value
+                double newypos = getY(xpos, min, max);
+                ypos = value->process(newypos, newypos > ypos);
+                // stereo processing
+                xpos2 = xpos;
+                ypos2 = ypos;
+                if (std::fabs(stereo) > 1e-4) {
+                    xpos2 = xpos + stereo;
+                    if (xpos2 < 0.0) xpos2 += 1;
+                    xpos2 -= std::floor(xpos2);
+                    double newypos2 = getY(xpos2, min, max);
+                    ypos2 = value2->process(newypos2, newypos2 > ypos2);
+                }
+            }
+
 
             applyGain(sample, ypos, ypos2, lsample, rsample);
             double viewx = (alwaysPlaying || midiTrigger) ? xpos : (trigpos + trigphase) - std::floor(trigpos + trigphase);
@@ -1169,7 +1190,13 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
                 antiClickCooldown = getAntiClickLatency();
                 antiClickSamples = antiClickCooldown;
                 antiClickStart = ypos;
-                antiClickTarget = getY(phase, min, max);
+                auto ph = phase < 1e-7 ? 1e-7 : phase;
+                antiClickTarget = getY(ph, min, max);
+                antiClickStart2 = ypos2;
+                auto ster = stereo + ph;
+                if (ster > 1.0) ster -= 1.0;
+                if (ster < 0.0) ster += 1.0;
+                antiClickTarget2 = getY(ster, min, max);
             }
 
             processMonitorSample(monSampleL, monSampleR, antiClickCooldown == 0);
@@ -1214,20 +1241,34 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
                 }
             }
 
-            double newypos = antiClickCooldown > 0
-                ? newypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples)
-                : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
-
-            ypos = value->process(newypos, newypos > ypos);
-
-            xpos2 = xpos;
-            ypos2 = ypos;
-            if (std::fabs(stereo) > 1e-4) {
-                xpos2 = xpos + stereo;
-                if (xpos2 < 0.0) xpos2 += 1;
-                xpos2 -= std::floor(xpos2);
-                double newypos2 = getY(xpos2, min, max);
-                ypos2 = value2->process(newypos2, newypos2 > ypos2);
+            if (antiClickCooldown >= 0) {
+                // anti-click
+                // tween ypos, the trigger will be start once the tween completes
+                ypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples);
+                // stereo processing
+                xpos2 = xpos;
+                ypos2 = ypos;
+                if (std::fabs(stereo) > 1e-4) {
+                    xpos2 = xpos + stereo;
+                    if (xpos2 < 0.0) xpos2 += 1;
+                    xpos2 -= std::floor(xpos2);
+                    ypos2 = tween_ease_inout(double(antiClickSamples - antiClickCooldown), antiClickStart2, antiClickTarget2, (double)antiClickSamples);
+                }
+            }
+            else {
+                // otherwise get the normal yposition value
+                double newypos = getY(xpos, min, max);
+                ypos = value->process(newypos, newypos > ypos);
+                // stereo processing
+                xpos2 = xpos;
+                ypos2 = ypos;
+                if (std::fabs(stereo) > 1e-4) {
+                    xpos2 = xpos + stereo;
+                    if (xpos2 < 0.0) xpos2 += 1;
+                    xpos2 -= std::floor(xpos2);
+                    double newypos2 = getY(xpos2, min, max);
+                    ypos2 = value2->process(newypos2, newypos2 > ypos2);
+                }
             }
 
             if (useMonitor) {
