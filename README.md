@@ -108,7 +108,7 @@ Audio transients can be used to trigger the envelope or restart its cycle, its h
 
 MIDI can be used to trigger the envelope or restart its cycle, it can also be used to change patterns (defaults to channel 10).
 
-OB#### Pattern sync
+#### Pattern sync
 
 Pattern changes can be synced to the playback beat position, this allows for to make timely transitions in real time in sync with the song position.
 
