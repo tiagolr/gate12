@@ -1,20 +1,5 @@
 #include "CustomLookAndFeel.h"
 
-static void drawSliderBevel(Graphics& g, Rectangle<float> bounds, float corner, Colour bg)
-{
-    bounds = bounds.translated(0.5f, 0.5f);
-    juce::ColourGradient gradient(
-        Colour(0xff0F0F0F).withAlpha(0.35f), bounds.getX(), bounds.getY(),
-        Colours::white.withAlpha(0.12f), bounds.getX(), bounds.getBottom(), false
-    );
-    gradient.addColour(0.5, Colour(0xff0F0F0F).withAlpha(0.02f));
-    g.setGradientFill(gradient);
-    g.fillRoundedRectangle(bounds, corner);
-
-    g.setColour(bg);
-    g.fillRoundedRectangle(bounds.expanded(-1.f), corner);
-}
-
 CustomLookAndFeel::CustomLookAndFeel()
 {
   setColour(ComboBox::backgroundColourId, Colour(COLOR_BG));
@@ -144,16 +129,14 @@ void CustomLookAndFeel::drawLinearSlider(juce::Graphics& g, int x, int y, int wi
     }
 
     if (tag == "stereo_slider") {
+        Rectangle<float> barBounds;
         auto bounds = Rectangle<int>(x, y, width, height).toFloat();
-        drawSliderBevel(g, bounds.expanded(0.5f), 4.f, Colour(COLOR_BEVEL));
-        bounds = bounds.reduced(4.f);
+        g.setColour(Colour(COLOR_ACTIVE));
+        g.drawRoundedRectangle(bounds.expanded(0.5f), 3.f, 1.f);
+        bounds = bounds.reduced(3.f);
         bounds = bounds.withHeight(bounds.getHeight() + 1);
 
-        g.setColour(Colour(COLOR_ACTIVE).darker(0.5f));
-        Path p;
-        p.addRoundedRectangle(bounds, 4.f);
-        g.saveState();
-        g.reduceClipRegion(p);
+        g.setColour(Colour(COLOR_ACTIVE).darker(0.75f));
 
         const float valuePos = juce::jmap((float)slider.getValue(),
             (float)slider.getMinimum(),
@@ -171,36 +154,29 @@ void CustomLookAndFeel::drawLinearSlider(juce::Graphics& g, int x, int y, int wi
         const float snappedZeroPos = std::round(zeroPos);
 
         if (snappedValuePos >= snappedZeroPos) {
-            g.fillRect(juce::Rectangle<float>(
+            barBounds = juce::Rectangle<float>(
                 snappedZeroPos,
                 bounds.getY(),
                 snappedValuePos - snappedZeroPos,
-                bounds.getHeight()));
+                bounds.getHeight());
         }
         else {
-            g.fillRect(juce::Rectangle<float>(
+            barBounds = juce::Rectangle<float>(
                 snappedValuePos,
                 bounds.getY(),
                 snappedZeroPos - snappedValuePos,
-                bounds.getHeight()));
+                bounds.getHeight());
+            
         }
-
+        g.fillRect(barBounds);
         String text = slider.isMouseOverOrDragging()
             ? String(slider.getValue())
             : "Stereo";
 
         g.setFont(FontOptions(16.f));
-        g.setColour(Colours::white);
+        g.setColour(Colour(COLOR_ACTIVE));
         g.drawText(text, bounds, Justification::centred);
 
-        // Center line
-        //g.drawLine(snappedZeroPos,
-        //    bounds.getY(),
-        //    snappedZeroPos,
-        //    bounds.getBottom(),
-        //    2.0f);
-
-        g.restoreState();
         return;
     }
 };

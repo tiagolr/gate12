@@ -128,9 +128,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     settingsButton->setBounds(col-15,row,25,25);
 
     col -= 25;
-    mixDial = std::make_unique<TextDial>(p, "mix", "Mix ", "", TextDialLabel::tdPercx100, 16.f, COLOR_NEUTRAL_LIGHT);
+    mixDial = std::make_unique<TextDial>(p, "mix", "", "", TextDialLabel::tdPercx100, 16.f, COLOR_ACTIVE);
     addAndMakeVisible(*mixDial);
-    mixDial->setBounds(col - 65, row, 65, 25);
+    mixDial->setBounds(col - 40, row, 40, 25);
 
     // SECOND ROW
 
@@ -729,6 +729,11 @@ void GATE12AudioProcessorEditor::paint (Graphics& g)
 
     drawUndoButton(g, undoButton.getBounds().toFloat(), true, Colour(canUndo ? COLOR_ACTIVE : COLOR_NEUTRAL));
     drawUndoButton(g, redoButton.getBounds().toFloat(), false, Colour(canRedo ? COLOR_ACTIVE : COLOR_NEUTRAL));
+
+    bounds = mixDial->getBounds().toFloat().translated(-35, 0);
+    g.setFont(FontOptions(16.f));
+    g.setColour(Colour(COLOR_NEUTRAL));
+    g.drawText("Mix", bounds, Justification::centredLeft);
 }
 
 void GATE12AudioProcessorEditor::drawGear(Graphics& g, Rectangle<int> bounds, float radius, int segs, Colour color, Colour background)
