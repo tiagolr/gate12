@@ -227,7 +227,7 @@ public:
     bool showSequencer = false;
     bool drawSidechain = true;
     size_t bandsFFTWriteIndex = 0;
-    std::array<float, (1 << BANDS_FFT_ORDER) * 2> bandsFFTBuffer;
+    std::array<float, (1 << BANDS_FFT_ORDER) * 2> bandsFFTBuffer{};
     std::atomic<bool> bandsFFTReady = false;
 
     //==============================================================================

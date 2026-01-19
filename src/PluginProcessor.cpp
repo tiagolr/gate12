@@ -1081,7 +1081,7 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
                 }
             }
 
-            double newypos = antiClickCooldown >= 0
+            double newypos = antiClickCooldown > 0
                 ? newypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples)
                 : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
 
@@ -1214,7 +1214,7 @@ void GATE12AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::
                 }
             }
 
-            double newypos = antiClickCooldown >= 0
+            double newypos = antiClickCooldown > 0
                 ? newypos = tween_ease_inout((double)(antiClickSamples - antiClickCooldown), antiClickStart, antiClickTarget, (double)antiClickSamples)
                 : newypos = getY(xpos, min, max); // otherwise get the normal xposition value
 

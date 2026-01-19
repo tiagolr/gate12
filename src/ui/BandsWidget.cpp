@@ -84,6 +84,7 @@ void BandsWidget::recalcFFTMags()
 
 	window.multiplyWithWindowingTable(fftData.data(), fftData.size());
 	fft.performFrequencyOnlyForwardTransform(fftData.data(), true);
+
 	float norm = 1.f / (fftData.size() * 0.5f);
 	for (size_t j = 0; j < fftSize / 2; ++j) {
 	    float mag = fftData[j] * norm;
