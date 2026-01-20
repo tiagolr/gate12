@@ -10,7 +10,8 @@ BandsWidget::BandsWidget(GATE12AudioProcessorEditor& e)
 	slopeBtn.onClick = [this]
 		{
 			auto param = editor.audioProcessor.params.getParameter("split_slope");
-			param->setValueNotifyingHost(param->getValue() > 0.f ? 0.f : 1.f);
+			auto val = int(param->convertFrom0to1(param->getValue()) + 1) % 3;
+			param->setValueNotifyingHost(param->convertTo0to1((float)val));
 		};
 }
 BandsWidget::~BandsWidget()
@@ -158,7 +159,7 @@ void BandsWidget::paint(Graphics& g)
 
 	auto slope = (int)editor.audioProcessor.params.getRawParameterValue("split_slope")->load();
 	g.setColour(Colour(COLOR_ACTIVE));
-	g.drawText(slope == 0 ? "6dB" : "12dB", slopeBtn.getBounds().toFloat(), Justification::centred);
+	g.drawText(slope == 0 ? "6dB" : slope == 1 ? "12dB" : "24dB", slopeBtn.getBounds().toFloat(), Justification::centred);
 }
 
 void BandsWidget::mouseMove(const MouseEvent& e)

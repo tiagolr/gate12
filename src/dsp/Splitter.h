@@ -235,8 +235,9 @@ public:
 	static constexpr float q12 = 0.5f;
 	static constexpr float q24 = 0.7071067811865476f;
 
-	float freqHP = 20000.f;
 	float freqLP = 20.f;
+	float freqHP = 20000.f;
+	bool active = false;
 
 	Splitter() {}
 	~Splitter() {}
@@ -245,6 +246,7 @@ public:
 	void processBlock(int slope, const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void processBlock6dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void processBlock12dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
+	void processBlock24dB(const float* left, const float* right, float* lowl, float* lowr, float* midl, float* midr, float* hil, float* hir, int nsamps);
 	void clear();
 
 private:
