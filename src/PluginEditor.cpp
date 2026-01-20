@@ -851,6 +851,10 @@ void GATE12AudioProcessorEditor::resized()
     settingsButton->setBounds(bounds.withX(col - bounds.getWidth()));
     mixDial->setBounds(mixDial->getBounds().withRightX(settingsButton->getBounds().getX() - 10));
 
+    // second row
+    bandsBtn.setBounds(bandsBtn.getBounds().withRightX(getRight() - PLUG_PADDING));
+    stereoSlider.setBounds(stereoSlider.getBounds().withRightX(bandsBtn.getX() - 10));
+
     // knobs row
     bounds = useSidechain.getBounds();
     useSidechain.setBounds(bounds.withX(col - bounds.getWidth()));
@@ -860,6 +864,7 @@ void GATE12AudioProcessorEditor::resized()
     audioDisplay->setBounds(bounds
         .withX(offset->getBounds().getRight())
         .withRight(col - useSidechain.getBounds().getWidth() - 10));
+    bandsWidget->setBounds(bandsWidget->getBounds().withRightX(getRight() - PLUG_PADDING));
 
     // third row
     bounds = snapButton.getBounds();

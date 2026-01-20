@@ -31,7 +31,7 @@ GATE12AudioProcessor::GATE12AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>("stereo", "Stereo Offset", juce::NormalisableRange<float>(-180.f, 180.f, 1.f), 0.f),
         std::make_unique<juce::AudioParameterFloat>("split_low", "Split Low", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35f), 20.f),
         std::make_unique<juce::AudioParameterFloat>("split_high", "Split High", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.35f), 20000.f),
-        std::make_unique<juce::AudioParameterChoice>("split_slope", "Split Slope", StringArray{"6dB", "12dB"}, 1),
+        std::make_unique<juce::AudioParameterChoice>("split_slope", "Split Slope", StringArray{"6dB", "12dB"}, 0),
         std::make_unique<juce::AudioParameterBool>("snap", "Snap", false),
         std::make_unique<juce::AudioParameterInt>("grid", "Grid", 0, (int)std::size(GRID_SIZES)-1, 2),
         std::make_unique<juce::AudioParameterInt>("seqstep", "Sequencer Step", 0, (int)std::size(GRID_SIZES)-1, 2),
