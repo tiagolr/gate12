@@ -12,7 +12,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     setResizable(true, false);
     setResizeLimits(PLUG_WIDTH, PLUG_HEIGHT, MAX_PLUG_WIDTH, MAX_PLUG_HEIGHT);
     setSize (audioProcessor.plugWidth, audioProcessor.plugHeight);
-    setScaleFactor(audioProcessor.scale);
+    Desktop::getInstance().setGlobalScaleFactor(audioProcessor.scale);
 
     audioProcessor.addChangeListener(this);
     audioProcessor.params.addParameterListener("sync", this);
@@ -124,7 +124,10 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col = getWidth() - PLUG_PADDING;
     settingsButton = std::make_unique<SettingsButton>(p);
     addAndMakeVisible(*settingsButton);
-    settingsButton->onScaleChange = [this]() { setScaleFactor(audioProcessor.scale); };
+    settingsButton->onScaleChange = [this]() 
+        { 
+            Desktop::getInstance().setGlobalScaleFactor(audioProcessor.scale);
+        };
     settingsButton->toggleUIComponents = [this]() { toggleUIComponents(); };
     settingsButton->toggleAbout = [this]() { about.get()->setVisible(true); };
     settingsButton->setBounds(col-15,row,25,25);
