@@ -49,6 +49,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 #endif
 
     addAndMakeVisible(syncMenu);
+    syncMenu.setTitle("Tempo sync");
     syncMenu.setTooltip("Tempo sync");
     syncMenu.addSectionHeading("Tempo Sync");
     syncMenu.addItem("Rate Hz", 1);
@@ -85,10 +86,12 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     triggerLabel.setFont(FontOptions(16.0f));
     triggerLabel.setJustificationType(Justification::centredRight);
     triggerLabel.setText("Trigger", NotificationType::dontSendNotification);
+    triggerLabel.setAccessible(false); // the menu carries the name
     triggerLabel.setBounds(col, row, 60, 25);
     col += 70;
 
     addAndMakeVisible(triggerMenu);
+    triggerMenu.setTitle("Trigger");
     triggerMenu.setTooltip("Envelope trigger:\nSync - song playback\nMIDI - midi notes\nAudio - audio input");
     triggerMenu.addSectionHeading("Trigger");
     triggerMenu.addItem("Sync", 1);
@@ -100,6 +103,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 85;
 
     addAndMakeVisible(algoMenu);
+    algoMenu.setTitle("Transient detection");
     algoMenu.setTooltip("Algorithm used for transient detection");
     algoMenu.addItem("Simple", 1);
     algoMenu.addItem("Drums", 2);
@@ -111,6 +115,8 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 85;
 
     addAndMakeVisible(audioSettingsButton);
+    audioSettingsButton.setTitle("Audio trigger settings");
+    audioSettingsButton.setToggleable(true);
     audioSettingsButton.setBounds(col, row, 25, 25);
     audioSettingsButton.onClick = [this]() {
         audioProcessor.showAudioKnobs = !audioProcessor.showAudioKnobs;
@@ -134,6 +140,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     col -= 25;
     mixDial = std::make_unique<TextDial>(p, "mix", "", "", TextDialLabel::tdPercx100, 16.f, COLOR_ACTIVE);
+    mixDial->setTitle("Mix");
     addAndMakeVisible(*mixDial);
     mixDial->setBounds(col - 40, row, 40, 25);
 
@@ -143,6 +150,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col = PLUG_PADDING;
     for (int i = 0; i < 12; ++i) {
         auto btn = std::make_unique<TextButton>(std::to_string(i + 1));
+        btn->setTitle("Pattern " + String(i + 1));
         btn->setRadioGroupId (1337);
         btn->setToggleState(audioProcessor.pattern->index == i, dontSendNotification);
         btn->setClickingTogglesState (false);
@@ -167,11 +175,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     patSyncLabel.setColour(juce::Label::ColourIds::textColourId, Colour(COLOR_NEUTRAL_LIGHT));
     patSyncLabel.setFont(FontOptions(16.0f));
     patSyncLabel.setText("Pat. Sync", NotificationType::dontSendNotification);
+    patSyncLabel.setAccessible(false); // the menu carries the name
     patSyncLabel.setJustificationType(Justification::centred);
     patSyncLabel.setBounds(col, row, 80, 25);
     col += 90;
 
     addAndMakeVisible(patSyncMenu);
+    patSyncMenu.setTitle("Pattern sync");
     patSyncMenu.setTooltip("Changes pattern in sync with song position during playback");
     patSyncMenu.addSectionHeading("Pattern Sync");
     patSyncMenu.addItem("Off", 1);
@@ -184,6 +194,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     patSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.params, "patsync", patSyncMenu);
 
     addAndMakeVisible(stereoSlider);
+    stereoSlider.setTitle("Stereo offset");
     stereoSliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.params, "stereo", stereoSlider);
     stereoSlider.setComponentID("stereo_slider");
     stereoSlider.setSliderStyle(Slider::LinearBar);
@@ -251,11 +262,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     //col += 75;
 
     tensionatk = std::make_unique<Rotary>(p, "tensionatk", "TAtk", RotaryLabel::percx100, true);
+    tensionatk->setTitle("Attack tension");
     addAndMakeVisible(*tensionatk);
     tensionatk->setBounds(col,row,80,65);
     col += 75;
 
     tensionrel = std::make_unique<Rotary>(p, "tensionrel", "TRel", RotaryLabel::percx100, true);
+    tensionrel->setTitle("Release tension");
     addAndMakeVisible(*tensionrel);
     tensionrel->setBounds(col,row,80,65);
     col += 75;
@@ -264,11 +277,13 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col = PLUG_PADDING;
 
     threshold = std::make_unique<Rotary>(p, "threshold", "Thres", RotaryLabel::gainTodB1f, false, true);
+    threshold->setTitle("Threshold");
     addAndMakeVisible(*threshold);
     threshold->setBounds(col,row,80,65);
     col += 75;
 
     sense = std::make_unique<Rotary>(p, "sense", "Sense", RotaryLabel::percx100, false, true);
+    sense->setTitle("Sensitivity");
     addAndMakeVisible(*sense);
     sense->setBounds(col,row,80,65);
     col += 75;
@@ -279,6 +294,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 75;
 
     highcut = std::make_unique<Rotary>(p, "highcut", "Hi Cut", RotaryLabel::hzLp, false, true);
+    highcut->setTitle("High Cut");
     addAndMakeVisible(*highcut);
     highcut->setBounds(col,row,80,65);
     col += 75;
@@ -297,6 +313,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     useSidechain.setTooltip("Use sidechain for transient detection");
     useSidechain.setButtonText("Sidechain");
     useSidechain.setComponentID("button");
+    useSidechain.setToggleable(true);
     useSidechain.setColour(TextButton::buttonColourId, Colour(COLOR_AUDIO));
     useSidechain.setColour(TextButton::buttonOnColourId, Colour(COLOR_AUDIO));
     useSidechain.setColour(TextButton::textColourOnId, Colour(COLOR_BG));
@@ -313,6 +330,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     useMonitor.setTooltip("Monitor signal used for transient detection");
     useMonitor.setButtonText("Monitor");
     useMonitor.setComponentID("button");
+    useMonitor.setToggleable(true);
     useMonitor.setColour(TextButton::buttonColourId, Colour(COLOR_AUDIO));
     useMonitor.setColour(TextButton::buttonOnColourId, Colour(COLOR_AUDIO));
     useMonitor.setColour(TextButton::textColourOnId, Colour(COLOR_BG));
@@ -335,6 +353,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     addAndMakeVisible(paintButton);
     paintButton.setButtonText("Paint");
     paintButton.setComponentID("button");
+    paintButton.setToggleable(true);
     paintButton.setBounds(col, row, 75, 25);
     paintButton.onClick = [this]() {
         if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Paint) {
@@ -348,7 +367,9 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     addAndMakeVisible(sequencerButton);
     sequencerButton.setButtonText("Seq");
+    sequencerButton.setTitle("Sequencer");
     sequencerButton.setComponentID("button");
+    sequencerButton.setToggleable(true);
     sequencerButton.setBounds(col, row, 75, 25);
     sequencerButton.onClick = [this]() {
         if (audioProcessor.uimode == UIMode::PaintEdit && audioProcessor.luimode == UIMode::Seq) {
@@ -367,6 +388,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 35-4;
 
     addAndMakeVisible(pointMenu);
+    pointMenu.setTitle("Point mode");
     pointMenu.setTooltip("Point mode\nRight click points to change mode");
     pointMenu.addSectionHeading("Point Mode");
     pointMenu.addItem("Hold", 1);
@@ -388,13 +410,17 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col += 85;
 
     addAndMakeVisible(loopButton);
+    loopButton.setTitle("Continuous play");
+    loopButton.setToggleable(true);
     loopButton.setTooltip("Toggle continuous play");
     loopButton.setColour(TextButton::buttonColourId, Colours::transparentWhite);
+    loopButton.setColour(TextButton::buttonOnColourId, Colours::transparentWhite);
     loopButton.setColour(ComboBox::outlineColourId, Colours::transparentWhite);
     loopButton.setBounds(col, row, 25, 25);
     loopButton.onClick = [this]() {
         MessageManager::callAsync([this] {
             audioProcessor.alwaysPlaying = !audioProcessor.alwaysPlaying;
+            loopButton.setToggleState(audioProcessor.alwaysPlaying, dontSendNotification);
             repaint();
         });
     };
@@ -419,6 +445,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     col -= 10+15+5;
     addAndMakeVisible(nudgeRightButton);
+    nudgeRightButton.setTitle("Nudge pattern right");
     nudgeRightButton.setAlpha(0.f);
     nudgeRightButton.setBounds(col, row, 20, 25);
     nudgeRightButton.onClick = [this]() {
@@ -437,6 +464,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
 
     col -= 10+15-5;
     addAndMakeVisible(nudgeLeftButton);
+    nudgeLeftButton.setTitle("Nudge pattern left");
     nudgeLeftButton.setAlpha(0.f);
     nudgeLeftButton.setBounds(col, row, 20, 25);
     nudgeLeftButton.onClick = [this]() {
@@ -456,6 +484,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col -= 30;
     addAndMakeVisible(redoButton);
     redoButton.setButtonText("redo");
+    redoButton.setTitle("Redo");
     redoButton.setComponentID("button");
     redoButton.setBounds(col, row, 20, 25);
     redoButton.setAlpha(0.f);
@@ -474,6 +503,7 @@ GATE12AudioProcessorEditor::GATE12AudioProcessorEditor (GATE12AudioProcessor& p)
     col -= 35;
     addAndMakeVisible(undoButton);
     undoButton.setButtonText("undo");
+    undoButton.setTitle("Undo");
     undoButton.setComponentID("button");
     undoButton.setBounds(col, row, 20, 25);
     undoButton.setAlpha(0.f);
@@ -567,8 +597,10 @@ void GATE12AudioProcessorEditor::toggleUIComponents()
     if (!audioSettingsButton.isVisible()) {
         audioProcessor.showAudioKnobs = false;
     }
+    audioSettingsButton.setToggleState(audioProcessor.showAudioKnobs, dontSendNotification);
 
     loopButton.setVisible(trigger > 0 && trigger < 3);
+    loopButton.setToggleState(audioProcessor.alwaysPlaying, dontSendNotification);
 
     int sync = (int)audioProcessor.params.getRawParameterValue("sync")->load();
     bool showAudioKnobs = audioProcessor.showAudioKnobs;

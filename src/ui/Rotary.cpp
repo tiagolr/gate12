@@ -1,5 +1,6 @@
 #include "Rotary.h"
 #include "../PluginProcessor.h"
+#include "ParamAccessibility.h"
 
 Rotary::Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name, RotaryLabel format, bool isSymmetric, bool isAudioKnob)
     : juce::SettableTooltipClient()
@@ -12,6 +13,8 @@ Rotary::Rotary(GATE12AudioProcessor& p, juce::String paramId, juce::String name,
     , isAudioKnob(isAudioKnob)
 {
     setName(name);
+    setWantsKeyboardFocus(true);
+    setMouseClickGrabsKeyboardFocus(false);
     audioProcessor.params.addParameterListener(paramId, this);
 }
 
@@ -24,7 +27,11 @@ void Rotary::parameterChanged(const juce::String& parameterID, float newValue)
 {
     (void)parameterID;
     (void)newValue;
-    juce::MessageManager::callAsync([this] { repaint(); });
+    juce::MessageManager::callAsync([this] {
+        repaint();
+        if (auto* handler = getAccessibilityHandler())
+            handler->notifyAccessibilityEvent(juce::AccessibilityEvent::valueChanged);
+    });
 }
 
 static float unmapRateSyncNormal(float norm) {
@@ -49,10 +56,19 @@ void Rotary::paint(juce::Graphics& g) {
 
 void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
 {
+    auto text = get_label_text(slider_val, mouse_down);
+
+    g.setColour(Colours::white);
+    g.setFont(16.0f);
+    g.drawText(text, 0, getHeight() - 16, getWidth(), 16, juce::Justification::centred, true);
+}
+
+juce::String Rotary::get_label_text(float slider_val, bool showValue)
+{
     auto text = String(name);
     std::stringstream ss;
 
-    if (mouse_down) {
+    if (showValue) {
         if (format == RotaryLabel::percx100) text = std::to_string((int)std::round((slider_val * 100))) + " %";
         if (format == RotaryLabel::intx100) text = std::to_string((int)std::round((slider_val * 100)));
         else if (format == RotaryLabel::hz) text = std::to_string((int)slider_val) + " Hz";
@@ -112,9 +128,7 @@ void Rotary::draw_label_value(juce::Graphics& g, float slider_val)
         }
     }
 
-    g.setColour(Colours::white);
-    g.setFont(16.0f);
-    g.drawText(text, 0, getHeight() - 16, getWidth(), 16, juce::Justification::centred, true);
+    return text;
 }
 
 void Rotary::mouseDown(const juce::MouseEvent& e) 
@@ -205,4 +219,40 @@ void Rotary::draw_rotary_slider(juce::Graphics& g, float slider_pos) {
     p.addLineSegment (juce::Line<float>(0.0f, -5.0f, 0.0f, -radius + 5.0f), 0.1f);
     juce::PathStrokeType(3.0f, PathStrokeType::JointStyle::curved, PathStrokeType::rounded).createStrokedPath(p, p);
     g.fillPath (p, juce::AffineTransform::rotation (angle).translated(bounds.getWidth() / 2.0f, bounds.getHeight() / 2.0f - 8.0f));
+}
+
+juce::String Rotary::getValueText()
+{
+    auto param = audioProcessor.params.getParameter(paramId);
+    auto text = get_label_text(param->convertFrom0to1(param->getValue()), true);
+    if (format == rateSync) { // read "1/8." and "1/8T" as words
+        if (text.endsWith(".")) text = text.dropLastCharacters(1) + " dotted";
+        else if (text.endsWith("T")) text = text.dropLastCharacters(1) + " triplet";
+    }
+    return text;
+}
+
+bool Rotary::keyPressed(const juce::KeyPress& key)
+{
+    auto param = audioProcessor.params.getParameter(paramId);
+    return ParamAccessibilityHandler::handleKey(*param, key, getAccessibleStep(), getAccessibleMin());
+}
+
+double Rotary::getAccessibleStep()
+{
+    auto steps = audioProcessor.params.getParameter(paramId)->getNumSteps();
+    return steps > 1 && steps < 100 ? 1.0 / (steps - 1) : 0.01;
+}
+
+double Rotary::getAccessibleMin()
+{
+    // the sync knob starts at 1/256, its first choice "Rate Hz" is the rate knob
+    return format == rateSync ? getAccessibleStep() : 0.0;
+}
+
+std::unique_ptr<juce::AccessibilityHandler> Rotary::createAccessibilityHandler()
+{
+    auto param = audioProcessor.params.getParameter(paramId);
+    return std::make_unique<ParamAccessibilityHandler>(*this, *param, getAccessibleStep(), getAccessibleMin(),
+        [this] { return getValueText(); });
 }

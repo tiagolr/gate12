@@ -23,7 +23,10 @@ public:
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseDoubleClick(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+    bool keyPressed(const juce::KeyPress& key) override;
 
+    std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
+    String getValueText();
 
 private:
     String paramId;

@@ -13,6 +13,7 @@
 
 AudioDisplay::AudioDisplay(GATE12AudioProcessor& p) : audioProcessor(p)
 {
+    setAccessible(false); // waveform picture only, nothing to read or change
     startTimerHz(60);
 };
 

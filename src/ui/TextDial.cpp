@@ -1,9 +1,12 @@
 #include "TextDial.h"
 #include "../PluginProcessor.h"
+#include "ParamAccessibility.h"
 
 TextDial::TextDial(GATE12AudioProcessor& p, String paramId, String prefix, String suffix, TextDialLabel format, float fontSize, unsigned int color)
     : audioProcessor(p), paramId(paramId), prefix(prefix), suffix(suffix), format(format), fontSize(fontSize), fontColor(color)
 {
+    setWantsKeyboardFocus(true);
+    setMouseClickGrabsKeyboardFocus(false);
     audioProcessor.params.addParameterListener(paramId, this);
 }
 
@@ -18,16 +21,23 @@ void TextDial::parameterChanged(const juce::String& parameterID, float newValue)
     (void)newValue;
     MessageManager::callAsync([this] {
         repaint();
+        if (auto* handler = getAccessibilityHandler())
+            handler->notifyAccessibilityEvent(AccessibilityEvent::valueChanged);
     });
 }
 
 void TextDial::paint(juce::Graphics& g) {
     g.fillAll(Colour(globals::COLOR_BG));
 
-    auto value = (int)(audioProcessor.params.getRawParameterValue(paramId)->load() * 100);
     g.setFont(fontSize);
     g.setColour(Colour(fontColor));
-    g.drawFittedText(prefix + String(value) + "%" + suffix, getLocalBounds(), Justification::centredLeft, 1);
+    g.drawFittedText(prefix + getValueText() + suffix, getLocalBounds(), Justification::centredLeft, 1);
+}
+
+String TextDial::getValueText()
+{
+    auto value = (int)(audioProcessor.params.getRawParameterValue(paramId)->load() * 100);
+    return String(value) + "%";
 }
 
 void TextDial::mouseDown(const juce::MouseEvent& e)
@@ -86,4 +96,17 @@ void TextDial::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWh
         param->setValueNotifyingHost(param->getValue() + slider_change);
     }
     param->endChangeGesture();
+}
+
+bool TextDial::keyPressed(const juce::KeyPress& key)
+{
+    auto param = audioProcessor.params.getParameter(paramId);
+    return ParamAccessibilityHandler::handleKey(*param, key, 0.01, 0.0);
+}
+
+std::unique_ptr<juce::AccessibilityHandler> TextDial::createAccessibilityHandler()
+{
+    auto param = audioProcessor.params.getParameter(paramId);
+    return std::make_unique<ParamAccessibilityHandler>(*this, *param, 0.01, 0.0,
+        [this] { return getValueText(); });
 }
