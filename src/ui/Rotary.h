@@ -33,6 +33,10 @@ public:
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseDoubleClick(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+    bool keyPressed(const juce::KeyPress& key) override;
+
+    std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
+    juce::String getValueText();
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
 
@@ -48,6 +52,9 @@ private:
     float deg130 = 130.0f * juce::MathConstants<float>::pi / 180.0f;
     void draw_rotary_slider(juce::Graphics& g, float slider_pos);
     void draw_label_value(juce::Graphics& g, float slider_val);
+    juce::String get_label_text(float slider_val, bool showValue);
+    double getAccessibleStep();
+    double getAccessibleMin();
 
     float pixels_per_percent{100.0f};
     float cur_normed_value{0.0f};
